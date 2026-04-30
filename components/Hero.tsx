@@ -4,61 +4,64 @@ const WHATSAPP_NUMBER = "254728588005";
 
 export default function Hero() {
   return (
-    <section className="min-h-[80vh] flex items-center justify-center text-center px-4">
+    <section className="min-h-[85vh] flex items-center justify-center text-center px-4 relative">
 
-      <div className="max-w-3xl">
+      {/* BACKGROUND OVERLAY (IMPORTANT FOR LUXURY FEEL) */}
+      <div className="absolute inset-0 bg-black/70" />
 
-        {/* SEO H1 */}
+      <div className="max-w-3xl relative z-10">
+
+        {/* SEO H1 (KEEP STRONG BUT CLEAN) */}
         <h1 className="text-4xl md:text-5xl font-bold text-yellow-500 leading-tight">
-          Best Hotel in Meru Kenya – Three Steers Hotel
+          Luxury Hotel in Meru, Kenya – Book Direct & Save More
         </h1>
 
-        {/* DESCRIPTION WITH INTERNAL SEO LINK */}
+        {/* VALUE + POSITIONING */}
         <p className="text-gray-300 mt-4 text-lg">
-          Luxury accommodation near Mt Kenya with modern rooms, fine dining,
-          conference facilities, and premium hospitality in Meru County.
-          Learn more about our{" "}
-          <Link href="/blog/best-hotel-in-meru-kenya" className="text-yellow-500 underline">
-            hotel experience in Meru
-          </Link>.
+          Premium accommodation near Mount Kenya with elegant rooms, fine dining,
+          conferences, and professional hospitality at Three Steers Hotel.
         </p>
 
-        <p className="text-gray-500 mt-2 text-sm">
-          Book directly for best rates via WhatsApp or call instantly.
+        {/* TRUST SIGNAL (CRITICAL ADDITION) */}
+        <p className="text-yellow-400 mt-3 text-sm font-medium">
+          ⭐ Rated among top business & travel hotels in Meru
         </p>
 
-        {/* CTA */}
+        {/* URGENCY LINE (VERY IMPORTANT FOR CONVERSION) */}
+        <p className="text-gray-400 mt-2 text-sm">
+          Limited rooms available — book early to secure best rates
+        </p>
+
+        {/* CTA BLOCK (CONVERSION ENGINE) */}
         <div className="mt-6 flex flex-col md:flex-row gap-4 justify-center">
 
+          {/* WHATSAPP (OPTIMIZED MESSAGE) */}
           <a
             href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-              "Hello, I would like to book a room at Three Steers Hotel Meru."
+              "Hello, I would like to book a room at Three Steers Hotel Meru. Please assist with availability, dates, and pricing."
             )}`}
             className="btn btn-green"
           >
-            💬 Book on WhatsApp
+            💬 Book via WhatsApp
           </a>
 
           <a
             href="tel:+254728588005"
             className="btn btn-gold"
           >
-            📞 Call Now
+            📞 Call Reception
           </a>
 
-          <Link href="/rooms" className="btn border border-gray-600 text-white">
-            View Rooms
+          <Link href="/rooms" className="btn btn-outline">
+            View Rooms & Rates
           </Link>
 
         </div>
 
-        {/* TRUST + SEO AUTHORITY LINK */}
-        <p className="text-gray-600 text-xs mt-6">
-          Read why we are rated among the{" "}
-          <Link href="/blog/best-hotel-in-meru-kenya" className="text-gray-400 underline">
-            best hotels in Meru Kenya
-          </Link>{" "}
-          for business travelers, tourists, and conferences.
+        {/* SEO AUTHORITY FOOTER */}
+        <p className="text-gray-500 text-xs mt-6">
+          Explore why travelers choose Three Steers Hotel for business stays,
+          conferences, and luxury accommodation in Meru County.
         </p>
 
       </div>
