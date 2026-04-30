@@ -7,6 +7,7 @@ export const rooms = [
     currency: "KSH",
     desc: "Luxury comfort with modern amenities",
     image: "/images/room1.jpg",
+    tag: "Most Booked",
   },
   {
     id: "executive",
@@ -16,5 +17,6 @@ export const rooms = [
     currency: "KSH",
     desc: "Premium suite with Mt Kenya views",
     image: "/images/room2.jpg",
+    tag: "Best Value",
   },
 ];
