@@ -2,17 +2,19 @@ const rooms = [
   {
     id: "deluxe",
     name: "Deluxe Room",
-    price: "KSH 8,500",
+    price: 8500,
+    currency: "KSH",
     desc: "Luxury comfort with modern amenities",
-    image: "/images/room1.jpg"
+    image: "/images/room1.jpg",
   },
   {
     id: "executive",
     name: "Executive Suite",
-    price: "KSH 12,000",
+    price: 12000,
+    currency: "KSH",
     desc: "Premium suite with Mt Kenya views",
-    image: "/images/room2.jpg"
-  }
+    image: "/images/room2.jpg",
+  },
 ];
 
 export default rooms;
