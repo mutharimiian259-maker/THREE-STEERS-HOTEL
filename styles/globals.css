@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: #0a0a0a;
+  color: white;
+  font-family: 'Inter', sans-serif;
+}
+
+/* GOLD LUXURY ACCENT */
+.gold {
+  color: #D4AF37;
+}
+
+.btn {
+  @apply px-5 py-3 rounded-full font-semibold transition;
+}
+
+.btn-gold {
+  background: #D4AF37;
+  color: black;
+}
+
+.btn-green {
+  background: #25D366;
+  color: white;
+}
+
+/* Smooth UI */
+.card {
+  @apply bg-zinc-900 p-4 rounded-xl shadow-lg hover:scale-105 transition;
+}
