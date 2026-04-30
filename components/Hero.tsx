@@ -1,21 +1,31 @@
+const experiences = [
+  "Mt Kenya Hiking",
+  "Ngare Ndare Forest",
+  "Lewa Conservancy",
+  "Meru National Reserve",
+  "Cultural Tours",
+  "Meru Museum",
+];
+
 export default function Experience() {
   return (
     <section className="p-6">
 
-      <h2 className="gold text-xl font-bold">
+      {/* TITLE (SEO SAFE) */}
+      <h2 className="text-xl font-bold text-yellow-500">
         Fun Experiences in Meru
       </h2>
 
-      <div className="grid md:grid-cols-3 gap-4 mt-4">
+      {/* SEMANTIC STRUCTURE */}
+      <ul className="grid md:grid-cols-3 gap-4 mt-4">
 
-        <div className="card">Mt Kenya Hiking</div>
-        <div className="card">Ngare Ndare Forest</div>
-        <div className="card">Lewa Conservancy</div>
-        <div className="card">Meru National Reserve</div>
-        <div className="card">Cultural Tours</div>
-        <div className="card">Meru Museum</div>
+        {experiences.map((item, index) => (
+          <li key={index} className="card">
+            {item}
+          </li>
+        ))}
 
-      </div>
+      </ul>
 
     </section>
   );
