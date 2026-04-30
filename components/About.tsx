@@ -2,24 +2,27 @@ export default function About() {
   return (
     <section className="p-6">
 
-      <h2 className="gold text-2xl font-bold">
-        Three Steers Hotel, Meru
+      {/* SEO OPTIMIZED H2 */}
+      <h2 className="text-2xl font-bold text-yellow-500">
+        About Three Steers Hotel – Meru, Kenya
       </h2>
 
+      {/* CORE VALUE STATEMENT */}
       <p className="text-gray-300 mt-3 leading-relaxed">
-        Embrace the vibrant pulse of our city hotel, where comfort meets convenience.
-        Indulge in refined luxury and personalized service curated to perfection.
+        Three Steers Hotel is a leading hotel in Meru, Kenya, offering premium accommodation,
+        modern conference facilities, and exceptional hospitality near the Mt Kenya region.
       </p>
 
+      {/* ACCOMMODATION DETAILS */}
       <p className="text-gray-400 mt-3 leading-relaxed">
-        Nestled near the breathtaking Mt Kenya region, Three Steers Hotel offers
-        11 unique room categories designed to meet diverse traveler needs. Whether
-        you seek a cozy hideaway or a luxurious suite, we have it all.
+        We feature 11 unique room categories designed for business travelers, tourists,
+        families, and groups seeking comfort, security, and convenience in Meru town.
       </p>
 
+      {/* FACILITIES / SERVICES */}
       <p className="text-gray-400 mt-3">
-        Enjoy two delightful restaurants, modern conference facilities,
-        a gym, gardens, ample parking, and family-friendly amenities.
+        Guests enjoy two restaurants, conference halls, a fitness gym, landscaped gardens,
+        ample parking, and family-friendly services designed for both short and long stays.
       </p>
 
     </section>
