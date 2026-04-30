@@ -13,20 +13,23 @@ export default function Hero() {
           Best Hotel in Meru Kenya – Three Steers Hotel
         </h1>
 
-        {/* DESCRIPTION */}
+        {/* DESCRIPTION WITH INTERNAL SEO LINK */}
         <p className="text-gray-300 mt-4 text-lg">
           Luxury accommodation near Mt Kenya with modern rooms, fine dining,
           conference facilities, and premium hospitality in Meru County.
+          Learn more about our{" "}
+          <Link href="/blog/best-hotel-in-meru-kenya" className="text-yellow-500 underline">
+            hotel experience in Meru
+          </Link>.
         </p>
 
         <p className="text-gray-500 mt-2 text-sm">
           Book directly for best rates via WhatsApp or call instantly.
         </p>
 
-        {/* CTA (OPTIMIZED ORDER FOR CONVERSION) */}
+        {/* CTA */}
         <div className="mt-6 flex flex-col md:flex-row gap-4 justify-center">
 
-          {/* PRIMARY CTA */}
           <a
             href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
               "Hello, I would like to book a room at Three Steers Hotel Meru."
@@ -36,7 +39,6 @@ export default function Hero() {
             💬 Book on WhatsApp
           </a>
 
-          {/* SECONDARY CTA */}
           <a
             href="tel:+254728588005"
             className="btn btn-gold"
@@ -44,16 +46,19 @@ export default function Hero() {
             📞 Call Now
           </a>
 
-          {/* NAVIGATION CTA */}
-          <Link href="#rooms" className="btn border border-gray-600 text-white">
+          <Link href="/rooms" className="btn border border-gray-600 text-white">
             View Rooms
           </Link>
 
         </div>
 
-        {/* TRUST SIGNAL */}
+        {/* TRUST + SEO AUTHORITY LINK */}
         <p className="text-gray-600 text-xs mt-6">
-          Trusted hotel in Meru Kenya for business travelers, tourists, and conferences.
+          Read why we are rated among the{" "}
+          <Link href="/blog/best-hotel-in-meru-kenya" className="text-gray-400 underline">
+            best hotels in Meru Kenya
+          </Link>{" "}
+          for business travelers, tourists, and conferences.
         </p>
 
       </div>
