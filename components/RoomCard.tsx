@@ -1,53 +1,66 @@
 import Image from "next/image";
 
+const WHATSAPP_NUMBER = "254728588005";
+
 export default function RoomCard({ room }) {
   if (!room) return null;
 
-  const whatsappMessage = encodeURIComponent(
-    `Hello, I want to book the ${room.name} at Three Steers Hotel Meru`
+  const message = encodeURIComponent(
+    `Hello, I want to book the ${room.name} at Three Steers Hotel Meru. Please confirm availability and price.`
   );
 
-  const formattedPrice =
-    room?.currency && room?.price
+  const price =
+    room.price && room.currency
       ? `${room.currency} ${room.price.toLocaleString()}`
       : "Price on request";
 
   return (
-    <div className="card">
+    <div className="card relative overflow-hidden">
 
-      {/* OPTIMIZED IMAGE (Next.js BEST PRACTICE) */}
+      {/* TAG (PSYCHOLOGICAL TRIGGER) */}
+      {room.tag && (
+        <span className="absolute top-3 right-3 bg-yellow-500 text-black text-xs px-2 py-1 rounded">
+          {room.tag}
+        </span>
+      )}
+
+      {/* IMAGE */}
       <div className="relative w-full h-48">
         <Image
           src={room.image || "/images/placeholder.jpg"}
-          alt={room.name || "Hotel room"}
+          alt={room.name}
           fill
-          className="object-cover rounded-lg"
+          className="object-cover"
         />
       </div>
 
-      {/* TITLE */}
-      <h3 className="mt-2 font-bold text-yellow-500">
-        {room.name || "Room"}
-      </h3>
+      {/* CONTENT */}
+      <div className="p-3">
 
-      {/* DESCRIPTION */}
-      <p className="text-sm text-gray-400">
-        {room.desc || "Luxury accommodation"}
-      </p>
+        {/* NAME */}
+        <h3 className="mt-2 font-bold text-yellow-500">
+          {room.name}
+        </h3>
 
-      {/* PRICE */}
-      <p className="mt-1 font-semibold">
-        {formattedPrice}
-      </p>
+        {/* DESCRIPTION */}
+        <p className="text-sm text-gray-400">
+          {room.desc}
+        </p>
 
-      {/* CTA */}
-      <a
-        href={`https://wa.me/254728588005?text=${whatsappMessage}`}
-        className="btn btn-green block mt-3 text-center"
-      >
-        Book Now
-      </a>
+        {/* PRICE */}
+        <p className="mt-1 font-semibold">
+          {price}
+        </p>
 
+        {/* CTA (REVENUE BUTTON) */}
+        <a
+          href={`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`}
+          className="btn btn-green block mt-3 text-center"
+        >
+          Book via WhatsApp
+        </a>
+
+      </div>
     </div>
   );
 }
