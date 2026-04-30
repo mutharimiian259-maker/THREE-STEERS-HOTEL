@@ -1,16 +1,26 @@
 export const HOTEL = {
-  name: "Three Steers Hotel Meru",
+  identity: {
+    name: "Three Steers Hotel Meru",
+    brand: "Three Steers Hotel",
+  },
 
-  domain: "https://www.threesteershotel.com",
+  domain: {
+    primary: "https://www.threesteershotel.com",
+    canonical: "https://www.threesteershotel.com",
+  },
 
   contact: {
-    phone: "+254728588005",
-    whatsapp: "254728588005",
+    phone: {
+      primary: "+254728588005",
+      secondary: "+254735497772",
+      whatsapp: "254728588005",
+    },
     email: "reservation@threesteershotel.com",
   },
 
   location: {
     city: "Meru",
+    region: "Meru County",
     country: "Kenya",
     full: "Meru, Kenya",
     coordinates: {
@@ -20,9 +30,10 @@ export const HOTEL = {
   },
 
   seo: {
-    title: "Three Steers Hotel Meru | Luxury Hotel in Kenya",
-    description:
+    defaultTitle: "Three Steers Hotel Meru | Luxury Hotel in Kenya",
+    defaultDescription:
       "Luxury hotel in Meru, Kenya offering accommodation, dining, conferences, and events near Mount Kenya. Book direct for best rates.",
+
     keywords: [
       "hotel in Meru Kenya",
       "Three Steers Hotel",
@@ -31,4 +42,9 @@ export const HOTEL = {
       "best hotel near Mount Kenya",
     ],
   },
-};
+
+  business: {
+    priceRange: "KSh 5,000 - KSh 40,000",
+    currency: "KES",
+  },
+} as const;
