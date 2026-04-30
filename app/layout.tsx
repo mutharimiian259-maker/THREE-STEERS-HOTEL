@@ -5,25 +5,32 @@ import StickyCTA from "@/components/StickyCTA";
 import Footer from "@/components/Footer";
 import Script from "next/script";
 
+const siteUrl = "https://yourdomain.com";
+
 export const metadata: Metadata = {
-  title: "Three Steers Hotel Meru | Best Hotel in Meru Kenya",
+  metadataBase: new URL(siteUrl),
+
+  title: {
+    default: "Three Steers Hotel Meru | Best Hotel in Kenya",
+    template: "%s | Three Steers Hotel Meru",
+  },
+
   description:
-    "Luxury hotel in Meru Kenya offering rooms, dining, conferences, and Mt Kenya experiences. Book directly via WhatsApp or call for best rates.",
-  metadataBase: new URL("https://yourdomain.com"),
+    "Luxury hotel in Meru Kenya offering accommodation, dining, conferences, and experiences near Mt Kenya. Book directly via WhatsApp for best rates.",
 
   keywords: [
     "hotel in Meru Kenya",
-    "accommodation in Meru",
-    "best hotel near Mt Kenya",
-    "conference venues in Meru",
-    "affordable hotel Meru Kenya",
+    "accommodation Meru",
+    "best hotel Meru",
+    "conference venues Meru",
+    "luxury hotel Kenya",
   ],
 
   openGraph: {
     title: "Three Steers Hotel Meru",
     description:
-      "Luxury hotel in Meru offering accommodation, dining, conferences, and experiences near Mt Kenya.",
-    url: "https://yourdomain.com",
+      "Luxury hotel in Meru offering accommodation, dining, conferences, and Mt Kenya experiences.",
+    url: siteUrl,
     siteName: "Three Steers Hotel",
     type: "website",
     locale: "en_KE",
@@ -36,20 +43,11 @@ export const metadata: Metadata = {
       },
     ],
   },
+
+  alternates: {
+    canonical: siteUrl,
+  },
 };
-
-function ClientLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <Navbar />
-
-      <main className="min-h-screen">{children}</main>
-
-      <Footer />
-      <StickyCTA />
-    </>
-  );
-}
 
 export default function RootLayout({
   children,
@@ -60,9 +58,17 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-black text-white scroll-smooth">
 
-        <ClientLayout>{children}</ClientLayout>
+        {/* NAVBAR */}
+        <Navbar />
 
-        {/* Google Analytics */}
+        {/* MAIN CONTENT */}
+        <main className="min-h-screen">{children}</main>
+
+        {/* CTA + FOOTER */}
+        <StickyCTA />
+        <Footer />
+
+        {/* GOOGLE ANALYTICS */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
           strategy="afterInteractive"
@@ -77,7 +83,7 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* Schema */}
+        {/* SCHEMA (SEO STRUCTURED DATA) */}
         <Script
           id="schema-hotel"
           type="application/ld+json"
@@ -86,20 +92,21 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Hotel",
-              name: "Three Steers Hotel",
+              name: "Three Steers Hotel Meru",
+              url: siteUrl,
+              telephone: "+254728588005",
               address: {
                 "@type": "PostalAddress",
                 addressLocality: "Meru",
                 addressCountry: "KE",
               },
-              telephone: "+254728588005",
-              url: "https://yourdomain.com",
-              image: "/images/hotel.jpg",
+              image: `${siteUrl}/images/hotel.jpg`,
               description:
-                "Luxury hotel in Meru Kenya offering accommodation, conferences, dining and Mt Kenya experiences.",
+                "Luxury hotel in Meru Kenya offering accommodation, dining, conferences and Mt Kenya experiences.",
             }),
           }}
         />
+
       </body>
     </html>
   );
