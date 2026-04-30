@@ -2,32 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
+/* BASE SYSTEM */
 body {
-  background: #0a0a0a;
-  color: white;
-  font-family: 'Inter', sans-serif;
+  @apply bg-black text-white;
 }
 
-/* GOLD LUXURY ACCENT */
-.gold {
-  color: #D4AF37;
+/* DESIGN TOKENS (TAILWIND SAFE APPROACH) */
+:root {
+  --gold: #D4AF37;
+  --green: #25D366;
 }
 
+/* LUXURY TEXT COLOR */
+.text-gold {
+  color: var(--gold);
+}
+
+/* BUTTON SYSTEM */
 .btn {
-  @apply px-5 py-3 rounded-full font-semibold transition;
+  @apply px-5 py-3 rounded-full font-semibold transition duration-200;
 }
 
+/* GOLD BUTTON */
 .btn-gold {
-  background: #D4AF37;
+  background-color: var(--gold);
   color: black;
 }
 
+.btn-gold:hover {
+  opacity: 0.9;
+}
+
+/* GREEN BUTTON */
 .btn-green {
-  background: #25D366;
+  background-color: var(--green);
   color: white;
 }
 
-/* Smooth UI */
+.btn-green:hover {
+  opacity: 0.9;
+}
+
+/* CARD SYSTEM (NO LAYOUT SHIFT FIXED) */
 .card {
-  @apply bg-zinc-900 p-4 rounded-xl shadow-lg hover:scale-105 transition;
+  @apply bg-zinc-900 p-4 rounded-xl shadow-lg transition-transform duration-200;
+}
+
+.card:hover {
+  transform: translateY(-2px);
 }
