@@ -6,10 +6,12 @@ export default function StickyCTA() {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-black text-white flex justify-between items-center p-3 z-50">
 
+      {/* BRAND MESSAGE */}
       <p className="text-sm hidden md:block">
         Book direct for best rates at Three Steers Hotel
       </p>
 
+      {/* ACTION BUTTONS */}
       <div className="flex gap-3">
 
         <a
