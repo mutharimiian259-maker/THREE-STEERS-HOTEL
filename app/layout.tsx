@@ -2,12 +2,12 @@ import "./../styles/globals.css";
 import Navbar from "@/components/Navbar";
 import StickyCTA from "@/components/StickyCTA";
 import Footer from "@/components/Footer";
+import Script from "next/script";
 
 export const metadata = {
   title: "Three Steers Hotel Meru | Best Hotel in Meru Kenya",
   description:
-    "Looking for a hotel in Meru Kenya? Three Steers Hotel offers luxury rooms, conferences, dining, and Mt Kenya experiences. Book directly via WhatsApp or call for best rates.",
-  
+    "Luxury hotel in Meru Kenya offering rooms, dining, conferences, and Mt Kenya experiences. Book directly via WhatsApp or call for best rates.",
   keywords: [
     "hotel in Meru Kenya",
     "accommodation in Meru",
@@ -15,7 +15,6 @@ export const metadata = {
     "conference venues in Meru",
     "affordable hotel Meru Kenya"
   ],
-
   openGraph: {
     title: "Three Steers Hotel Meru",
     description:
@@ -40,10 +39,25 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-black text-white scroll-smooth">
 
+        {/* 🔥 GOOGLE ANALYTICS (CORRECT IMPLEMENTATION) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
+          strategy="afterInteractive"
+        />
+
+        <Script id="ga-script" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-XXXXXXXXXX');
+          `}
+        </Script>
+
         {/* NAVBAR */}
         <Navbar />
 
-        {/* MAIN CONTENT */}
+        {/* MAIN */}
         <main className="min-h-screen">
           {children}
         </main>
@@ -51,12 +65,14 @@ export default function RootLayout({ children }) {
         {/* FOOTER */}
         <Footer />
 
-        {/* MOBILE STICKY CTA */}
+        {/* CTA */}
         <StickyCTA />
 
-        {/* STRUCTURED DATA (SEO BOOST) */}
-        <script
+        {/* SEO STRUCTURED DATA */}
+        <Script
+          id="schema-hotel"
           type="application/ld+json"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
