@@ -1,5 +1,7 @@
-import { config } from "./config";
+import { HOTEL } from "@/lib/config/hotel";
 
-export function createWhatsAppLink(message: string) {
-  return `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(message)}`;
+export function buildWhatsAppLink(message: string) {
+  const encoded = encodeURIComponent(message);
+
+  return `https://wa.me/${HOTEL.contact.whatsapp}?text=${encoded}`;
 }
