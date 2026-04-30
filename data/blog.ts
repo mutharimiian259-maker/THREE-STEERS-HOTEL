@@ -1,4 +1,18 @@
-export const blogPosts = [
+export type BlogPost = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  metaDescription: string;
+  keywords: string[];
+  content: string;
+  author: string;
+  publishedAt: Date;
+  image?: string;
+  category?: string;
+  readingTime?: number;
+};
+
+export const blogPosts: BlogPost[] = [
   {
     slug: "best-hotel-in-meru-kenya",
     title: "Best Hotel in Meru Kenya for Luxury Stay",
@@ -32,7 +46,10 @@ Book directly via WhatsApp for the best rates.
     `,
 
     author: "Three Steers Hotel",
-    publishedAt: "2026-04-30",
+    publishedAt: new Date("2026-04-30"),
+    image: "/images/blog/hotel-meru.jpg",
+    category: "Accommodation",
+    readingTime: 3,
   },
 
   {
@@ -65,6 +82,9 @@ Perfect for business events near Mt Kenya region.
     `,
 
     author: "Three Steers Hotel",
-    publishedAt: "2026-04-30",
+    publishedAt: new Date("2026-04-30"),
+    image: "/images/blog/conference-meru.jpg",
+    category: "Events",
+    readingTime: 4,
   },
 ];
