@@ -2,25 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-/* BASE SYSTEM */
+/* =========================
+   BASE SYSTEM
+========================= */
 body {
-  @apply bg-black text-white;
+  @apply bg-black text-white antialiased;
 }
 
-/* DESIGN TOKENS (TAILWIND SAFE APPROACH) */
+/* =========================
+   DESIGN TOKENS
+   (Single source of visual truth)
+========================= */
 :root {
   --gold: #D4AF37;
   --green: #25D366;
+
+  /* spacing consistency (future-proofing) */
+  --radius: 0.75rem;
 }
 
-/* LUXURY TEXT COLOR */
+/* =========================
+   TYPOGRAPHY UTILITIES
+========================= */
 .text-gold {
   color: var(--gold);
 }
 
-/* BUTTON SYSTEM */
+/* =========================
+   BUTTON SYSTEM (PRODUCTION)
+========================= */
 .btn {
-  @apply px-5 py-3 rounded-full font-semibold transition duration-200;
+  @apply inline-flex items-center justify-center px-5 py-3 rounded-full font-semibold transition-all duration-200;
+}
+
+/* Focus state (accessibility fix) */
+.btn:focus {
+  @apply outline-none ring-2 ring-offset-2 ring-offset-black;
+  ring-color: var(--gold);
 }
 
 /* GOLD BUTTON */
@@ -30,24 +48,40 @@ body {
 }
 
 .btn-gold:hover {
-  opacity: 0.9;
+  filter: brightness(0.95);
 }
 
-/* GREEN BUTTON */
+/* GREEN BUTTON (WhatsApp CTA) */
 .btn-green {
   background-color: var(--green);
   color: white;
 }
 
 .btn-green:hover {
-  opacity: 0.9;
+  filter: brightness(0.95);
 }
 
-/* CARD SYSTEM (NO LAYOUT SHIFT FIXED) */
+/* =========================
+   CARD SYSTEM (HOVER UX FIX)
+========================= */
 .card {
-  @apply bg-zinc-900 p-4 rounded-xl shadow-lg transition-transform duration-200;
+  @apply bg-zinc-900 p-4 rounded-xl shadow-lg transition-all duration-200;
+  border-radius: var(--radius);
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  @apply shadow-xl;
+}
+
+/* =========================
+   LAYOUT SAFETY (PREVENT UI BREAKS)
+========================= */
+img {
+  @apply max-w-full h-auto;
+}
+
+/* Prevent text overflow issues */
+p, h1, h2, h3, h4 {
+  @apply break-words;
 }
