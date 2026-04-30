@@ -5,7 +5,7 @@ import StickyCTA from "@/components/StickyCTA";
 import Footer from "@/components/Footer";
 import Script from "next/script";
 
-const siteUrl = "https://yourdomain.com";
+const siteUrl = "https://www.threesteershotel.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
