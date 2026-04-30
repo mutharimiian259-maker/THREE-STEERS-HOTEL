@@ -11,25 +11,25 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
   title: {
-    default: "Three Steers Hotel Meru | Best Hotel in Kenya",
+    default: "Three Steers Hotel Meru | Book Direct & Save More",
     template: "%s | Three Steers Hotel Meru",
   },
 
   description:
-    "Luxury hotel in Meru Kenya offering accommodation, dining, conferences, and experiences near Mt Kenya. Book directly via WhatsApp for best rates.",
+    "Luxury hotel in Meru, Kenya offering accommodation, dining, conferences, and events near Mount Kenya. Book direct via WhatsApp or call for best rates.",
 
   keywords: [
     "hotel in Meru Kenya",
-    "accommodation Meru",
-    "best hotel Meru",
-    "conference venues Meru",
+    "Three Steers Hotel",
     "luxury hotel Kenya",
+    "conference hotel Meru",
+    "book hotel direct Kenya",
   ],
 
   openGraph: {
     title: "Three Steers Hotel Meru",
     description:
-      "Luxury hotel in Meru offering accommodation, dining, conferences, and Mt Kenya experiences.",
+      "Luxury stay in Meru with premium rooms, dining, and conference facilities.",
     url: siteUrl,
     siteName: "Three Steers Hotel",
     type: "website",
@@ -56,19 +56,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-black text-white scroll-smooth">
+      <body className="bg-white text-gray-900 antialiased">
 
-        {/* NAVBAR */}
+        {/* NAVBAR (NAVIGATION LAYER) */}
         <Navbar />
 
-        {/* MAIN CONTENT */}
-        <main className="min-h-screen">{children}</main>
+        {/* MAIN CONTENT (CONVERSION FLOW AREA) */}
+        <main className="min-h-screen">
+          {children}
+        </main>
 
-        {/* CTA + FOOTER */}
+        {/* PRIMARY CONVERSION ENGINE (MUST ALWAYS FLOAT ABOVE EVERYTHING) */}
         <StickyCTA />
+
+        {/* FOOTER (SECONDARY TRUST + INFO LAYER) */}
         <Footer />
 
-        {/* GOOGLE ANALYTICS */}
+        {/* ANALYTICS (FIX BEFORE DEPLOYMENT) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
           strategy="afterInteractive"
@@ -83,7 +87,7 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* SCHEMA (SEO STRUCTURED DATA) */}
+        {/* ENHANCED HOTEL SCHEMA (SEO BOOST) */}
         <Script
           id="schema-hotel"
           type="application/ld+json"
@@ -95,14 +99,20 @@ export default function RootLayout({
               name: "Three Steers Hotel Meru",
               url: siteUrl,
               telephone: "+254728588005",
+              priceRange: "KSh 5,000 - 40,000",
               address: {
                 "@type": "PostalAddress",
                 addressLocality: "Meru",
                 addressCountry: "KE",
               },
+              geo: {
+                "@type": "GeoCoordinates",
+                latitude: -0.046,
+                longitude: 37.650,
+              },
               image: `${siteUrl}/images/hotel.jpg`,
               description:
-                "Luxury hotel in Meru Kenya offering accommodation, dining, conferences and Mt Kenya experiences.",
+                "Luxury hotel in Meru Kenya offering accommodation, dining, conferences, and events.",
             }),
           }}
         />
