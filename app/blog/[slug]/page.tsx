@@ -1,35 +1,28 @@
 import { blogPosts } from "@/data/blog";
 import { notFound } from "next/navigation";
+import { generateSEO } from "@/lib/seo";
 
 type Props = {
-  params: {
-    slug: string;
-  };
+  params: { slug: string };
 };
 
-/* ---------------- SEO METADATA ---------------- */
+/* ---------------- SEO METADATA (FIXED) ---------------- */
 export async function generateMetadata({ params }: Props) {
   const post = blogPosts.find((p) => p.slug === params.slug);
 
   if (!post) {
-    return {
+    return generateSEO({
       title: "Blog Not Found | Three Steers Hotel",
-    };
+      description: "The requested blog article does not exist.",
+      path: "/blog",
+    });
   }
 
-  return {
+  return generateSEO({
     title: post.title,
     description: post.excerpt,
-    keywords: post.keywords,
-
-    openGraph: {
-      title: post.title,
-      description: post.excerpt,
-      url: `https://threesteershotel.com/blog/${post.slug}`,
-      siteName: "Three Steers Hotel",
-      type: "article",
-    },
-  };
+    path: `/blog/${post.slug}`,
+  });
 }
 
 /* ---------------- PAGE COMPONENT ---------------- */
