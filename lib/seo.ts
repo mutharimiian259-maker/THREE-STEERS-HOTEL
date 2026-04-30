@@ -1,8 +1,8 @@
-import { config } from "./config";
+import { HOTEL } from "@/lib/config/hotel";
 
 type SeoProps = {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   path?: string;
   image?: string;
 };
@@ -12,35 +12,44 @@ export function generateSEO({
   description,
   path = "",
   image = "/images/hotel.jpg",
-}: SeoProps) {
-  const url = `${config.domain}${path}`;
+}: SeoProps = {}) {
+  const fullTitle = title
+    ? `${title} | ${HOTEL.name}`
+    : HOTEL.seo.title;
+
+  const fullDescription = description || HOTEL.seo.description;
+
+  const url = `${HOTEL.domain}${path}`;
 
   return {
-    title,
-    description,
+    title: fullTitle,
+    description: fullDescription,
 
-    metadataBase: new URL(config.domain),
+    metadataBase: new URL(HOTEL.domain),
+
+    keywords: HOTEL.seo.keywords,
 
     openGraph: {
-      title,
-      description,
+      title: fullTitle,
+      description: fullDescription,
       url,
-      siteName: config.siteName,
+      siteName: HOTEL.name,
       type: "website",
+      locale: "en_KE",
       images: [
         {
           url: image,
           width: 1200,
           height: 630,
-          alt: title,
+          alt: fullTitle,
         },
       ],
     },
 
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      title: fullTitle,
+      description: fullDescription,
       images: [image],
     },
 
