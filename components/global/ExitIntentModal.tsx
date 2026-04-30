@@ -6,30 +6,47 @@ export default function ExitIntentModal() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    // Prevent repeat in same session
+    if (sessionStorage.getItem("exit_intent_shown")) return;
+
+    // Disable on mobile
+    if (window.innerWidth < 768) return;
+
+    let triggered = false;
+
     const handler = (e: MouseEvent) => {
-      if (e.clientY < 10) {
+      if (e.clientY < 10 && !triggered) {
+        triggered = true;
+
+        sessionStorage.setItem("exit_intent_shown", "true");
+
         setShow(true);
       }
     };
 
-    window.addEventListener("mousemove", handler);
+    // Delay activation (user must stay at least 5s)
+    const timer = setTimeout(() => {
+      window.addEventListener("mousemove", handler);
+    }, 5000);
 
-    return () => window.removeEventListener("mousemove", handler);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("mousemove", handler);
+    };
   }, []);
 
   if (!show) return null;
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-
-      <div className="bg-white p-6 rounded max-w-md text-center">
+      <div className="bg-white p-6 rounded max-w-md text-center shadow-lg">
 
         <h2 className="text-xl font-bold">
           Wait! Before you go
         </h2>
 
         <p className="text-gray-600 mt-2">
-          Book directly with us for better rates and instant confirmation
+          Book directly with us for better rates and instant confirmation.
         </p>
 
         <a
@@ -47,7 +64,6 @@ export default function ExitIntentModal() {
         </button>
 
       </div>
-
     </div>
   );
 }
