@@ -1,8 +1,9 @@
 import "./../styles/globals.css";
 import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
-import StickyCTA from "@/components/StickyCTA";
-import Footer from "@/components/Footer";
+import StickyCTA from "@/components/global/StickyCTA";
+import Footer from "@/components/global/Footer";
+import ExitIntentModal from "@/components/global/ExitIntentModal";
 import Script from "next/script";
 
 const siteUrl = "https://www.threesteershotel.com";
@@ -58,21 +59,22 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-white text-gray-900 antialiased">
 
-        {/* NAVBAR (NAVIGATION LAYER) */}
+        {/* NAVIGATION */}
         <Navbar />
 
-        {/* MAIN CONTENT (CONVERSION FLOW AREA) */}
+        {/* MAIN CONTENT */}
         <main className="min-h-screen">
           {children}
         </main>
 
-        {/* PRIMARY CONVERSION ENGINE (MUST ALWAYS FLOAT ABOVE EVERYTHING) */}
+        {/* CONVERSION LAYERS */}
         <StickyCTA />
+        <ExitIntentModal />
 
-        {/* FOOTER (SECONDARY TRUST + INFO LAYER) */}
+        {/* TRUST / INFO */}
         <Footer />
 
-        {/* ANALYTICS (FIX BEFORE DEPLOYMENT) */}
+        {/* GOOGLE ANALYTICS (REPLACE ID BEFORE PROD) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
           strategy="afterInteractive"
@@ -87,7 +89,7 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* ENHANCED HOTEL SCHEMA (SEO BOOST) */}
+        {/* HOTEL SCHEMA */}
         <Script
           id="schema-hotel"
           type="application/ld+json"
