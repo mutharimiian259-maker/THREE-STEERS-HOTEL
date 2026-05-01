@@ -1,3 +1,5 @@
+"use client";
+
 export type EventType =
   | "page_view"
   | "room_view"
@@ -5,26 +7,52 @@ export type EventType =
   | "call_click"
   | "booking_intent";
 
+type EventPayload = {
+  event: EventType;
+  data: Record<string, any>;
+  time: string;
+  url: string;
+};
+
 export function trackEvent(
   event: EventType,
   data?: Record<string, any>
 ) {
-  const payload = {
-    event,
-    data: data || {},
-    time: new Date().toISOString(),
-    url: window.location.href,
-  };
+  if (typeof window === "undefined") return;
 
-  // Store locally (no backend needed)
-  const existing = JSON.parse(
-    localStorage.getItem("hotel_analytics") || "[]"
-  );
+  try {
+    const payload: EventPayload = {
+      event,
+      data: data || {},
+      time: new Date().toISOString(),
+      url: window.location.href,
+    };
 
-  existing.push(payload);
+    const existingRaw = localStorage.getItem("hotel_analytics");
 
-  localStorage.setItem("hotel_analytics", JSON.stringify(existing));
+    let existing: EventPayload[] = [];
 
-  // Debug (remove later in production)
-  console.log("TRACKED EVENT:", payload);
+    if (existingRaw) {
+      try {
+        existing = JSON.parse(existingRaw);
+      } catch {
+        existing = [];
+      }
+    }
+
+    existing.push(payload);
+
+    localStorage.setItem(
+      "hotel_analytics",
+      JSON.stringify(existing)
+    );
+
+    if (typeof window.gtag === "function") {
+      window.gtag("event", event, {
+        ...data,
+      });
+    }
+  } catch {
+    return;
+  }
 }
