@@ -11,7 +11,7 @@ export type EventType =
 type Payload = {
   id: string;
   event: EventType;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   time: string;
   url: string;
 };
@@ -19,44 +19,47 @@ type Payload = {
 const STORAGE_KEY = "hotel_analytics";
 const MAX_EVENTS = 200;
 
-function generateId() {
+function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// stable comparison (avoids key-order issues)
-function stableStringify(obj: any) {
-  try {
-    return JSON.stringify(
-      Object.keys(obj || {})
-        .sort()
-        .reduce((acc: any, key) => {
-          acc[key] = obj[key];
-          return acc;
-        }, {})
-    );
-  } catch {
-    return "";
+/**
+ * Fast shallow compare (better than JSON stringify for performance)
+ */
+function isDuplicate(a: Payload, b: Payload): boolean {
+  if (!a || !b) return false;
+  if (a.event !== b.event) return false;
+  if (a.url !== b.url) return false;
+
+  const aKeys = Object.keys(a.data || {});
+  const bKeys = Object.keys(b.data || {});
+
+  if (aKeys.length !== bKeys.length) return false;
+
+  for (const key of aKeys) {
+    if (a.data[key] !== b.data[key]) return false;
   }
+
+  return true;
 }
 
 export function trackEvent(
   event: EventType,
-  data: Record<string, any> = {}
-) {
+  data: Record<string, unknown> = {}
+): void {
   if (typeof window === "undefined") return;
 
+  const payload: Payload = {
+    id: generateId(),
+    event,
+    data,
+    time: new Date().toISOString(),
+    url: window.location.href,
+  };
+
   try {
-    const payload: Payload = {
-      id: generateId(),
-      event,
-      data,
-      time: new Date().toISOString(),
-      url: window.location.href,
-    };
-
-    let events: Payload[] = [];
-
     const raw = localStorage.getItem(STORAGE_KEY);
+    let events: Payload[] = [];
 
     if (raw) {
       try {
@@ -65,7 +68,6 @@ export function trackEvent(
           events = parsed;
         }
       } catch {
-        // recover corrupted storage instead of failing silently
         localStorage.removeItem(STORAGE_KEY);
         events = [];
       }
@@ -73,13 +75,8 @@ export function trackEvent(
 
     const last = events[events.length - 1];
 
-    if (
-      last &&
-      last.event === payload.event &&
-      stableStringify(last.data) === stableStringify(payload.data)
-    ) {
-      return;
-    }
+    // prevent spam duplicates
+    if (last && isDuplicate(last, payload)) return;
 
     events.push(payload);
 
@@ -87,16 +84,16 @@ export function trackEvent(
       events = events.slice(-MAX_EVENTS);
     }
 
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-    } catch {
-      // ignore quota exceeded errors
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
 
+    // Google Analytics safe bridge
     const w = window as any;
 
     if (typeof w.gtag === "function") {
-      w.gtag("event", event, data);
+      w.gtag("event", event, {
+        ...data,
+        page_location: payload.url,
+      });
     }
   } catch (error) {
     console.error("Analytics error:", error);
