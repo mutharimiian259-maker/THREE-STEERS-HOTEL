@@ -1,3 +1,7 @@
+"use client";
+
+import { trackEvent } from "@/lib/analytics/trackEvent";
+
 export type FunnelStep =
   | "VISIT"
   | "ROOM_VIEW"
@@ -5,14 +9,31 @@ export type FunnelStep =
   | "CONTACT"
   | "BOOKED";
 
+const STORAGE_KEY = "hotel_funnel_step";
+
 export function setFunnelStep(step: FunnelStep) {
-  const current = localStorage.getItem("funnel_step");
+  if (typeof window === "undefined") return;
 
-  localStorage.setItem("funnel_step", step);
+  try {
+    const previous = localStorage.getItem(STORAGE_KEY);
 
-  console.log("FUNNEL:", current, "→", step);
+    localStorage.setItem(STORAGE_KEY, step);
+
+    trackEvent("booking_intent", {
+      step,
+      previous,
+    });
+  } catch {
+    return;
+  }
 }
 
 export function getFunnelStep(): FunnelStep | null {
-  return localStorage.getItem("funnel_step") as FunnelStep;
+  if (typeof window === "undefined") return null;
+
+  try {
+    return localStorage.getItem(STORAGE_KEY) as FunnelStep;
+  } catch {
+    return null;
+  }
 }
