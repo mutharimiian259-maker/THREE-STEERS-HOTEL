@@ -5,7 +5,7 @@ import StickyCTA from "@/components/global/StickyCTA";
 import Footer from "@/components/global/Footer";
 import ExitIntentModal from "@/components/global/ExitIntentModal";
 import Script from "next/script";
-import { HOTEL } from "@/lib/config";
+import { HOTEL } from "@/lib/config/hotel";
 
 const siteUrl = HOTEL.domain.primary;
 
@@ -64,7 +64,7 @@ export default function RootLayout({
         <ExitIntentModal />
         <Footer />
 
-        {/* Google Analytics */}
+        {/* GOOGLE ANALYTICS */}
         {gaId && (
           <>
             <Script
@@ -75,15 +75,17 @@ export default function RootLayout({
             <Script id="ga-script" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
-                window.gtag = function(){ window.dataLayer.push(arguments); };
-                window.gtag('js', new Date());
-                window.gtag('config', '${gaId}');
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = gtag;
+
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
               `}
             </Script>
           </>
         )}
 
-        {/* Schema Markup */}
+        {/* STRUCTURED DATA */}
         <Script
           id="schema-hotel"
           type="application/ld+json"
