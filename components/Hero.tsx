@@ -1,67 +1,74 @@
-import Link from "next/link";
+"use client";
 
-const WHATSAPP_NUMBER = "254728588005";
+import Link from "next/link";
+import { HOTEL } from "@/lib/config/hotel";
+import { trackEvent } from "@/lib/analytics/trackEvent";
+import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
 export default function Hero() {
   return (
-    <section className="min-h-[85vh] flex items-center justify-center text-center px-4 relative">
+    <section
+      className="min-h-[85vh] flex items-center justify-center text-center px-4 relative"
+      onMouseEnter={() => setFunnelStep("VISIT")}
+    >
 
-      {/* BACKGROUND OVERLAY (IMPORTANT FOR LUXURY FEEL) */}
       <div className="absolute inset-0 bg-black/70" />
 
       <div className="max-w-3xl relative z-10">
 
-        {/* SEO H1 (KEEP STRONG BUT CLEAN) */}
         <h1 className="text-4xl md:text-5xl font-bold text-yellow-500 leading-tight">
-          Luxury Hotel in Meru, Kenya – Book Direct & Save More
+          Luxury Hotel in {HOTEL.location.city}, Kenya – Book Direct & Save More
         </h1>
 
-        {/* VALUE + POSITIONING */}
         <p className="text-gray-300 mt-4 text-lg">
           Premium accommodation near Mount Kenya with elegant rooms, fine dining,
-          conferences, and professional hospitality at Three Steers Hotel.
+          conferences, and professional hospitality at {HOTEL.identity.name}.
         </p>
 
-        {/* TRUST SIGNAL (CRITICAL ADDITION) */}
         <p className="text-yellow-400 mt-3 text-sm font-medium">
-          ⭐ Rated among top business & travel hotels in Meru
+          ⭐ Rated among top business & travel hotels in {HOTEL.location.city}
         </p>
 
-        {/* URGENCY LINE (VERY IMPORTANT FOR CONVERSION) */}
         <p className="text-gray-400 mt-2 text-sm">
           Limited rooms available — book early to secure best rates
         </p>
 
-        {/* CTA BLOCK (CONVERSION ENGINE) */}
         <div className="mt-6 flex flex-col md:flex-row gap-4 justify-center">
 
-          {/* WHATSAPP (OPTIMIZED MESSAGE) */}
           <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+            href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
               "Hello, I would like to book a room at Three Steers Hotel Meru. Please assist with availability, dates, and pricing."
             )}`}
             className="btn btn-green"
+            onClick={() => {
+              trackEvent("whatsapp_click");
+              setFunnelStep("CONTACT");
+            }}
           >
             💬 Book via WhatsApp
           </a>
 
           <a
-            href="tel:+254728588005"
+            href={`tel:${HOTEL.contact.phone.primary}`}
             className="btn btn-gold"
+            onClick={() => trackEvent("call_click")}
           >
             📞 Call Reception
           </a>
 
-          <Link href="/rooms" className="btn btn-outline">
+          <Link
+            href="/rooms"
+            className="btn btn-outline"
+            onClick={() => setFunnelStep("ROOM_VIEW")}
+          >
             View Rooms & Rates
           </Link>
 
         </div>
 
-        {/* SEO AUTHORITY FOOTER */}
         <p className="text-gray-500 text-xs mt-6">
-          Explore why travelers choose Three Steers Hotel for business stays,
-          conferences, and luxury accommodation in Meru County.
+          Explore why travelers choose {HOTEL.identity.name} for business stays,
+          conferences, and luxury accommodation in {HOTEL.location.region}.
         </p>
 
       </div>
