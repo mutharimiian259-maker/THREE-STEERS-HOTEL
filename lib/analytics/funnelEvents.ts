@@ -46,15 +46,16 @@ export function setFunnelStep(step: FunnelStep) {
 
   try {
     const previousRaw = safeGetItem(STORAGE_KEY);
-    const previous: FunnelStep | null = isValidStep(previousRaw)
-      ? previousRaw
-      : null;
+
+    const previous: FunnelStep | null =
+      previousRaw && isValidStep(previousRaw)
+        ? previousRaw
+        : null;
 
     if (previous === step) return;
 
     safeSetItem(STORAGE_KEY, step);
 
-    // ✅ CORRECT EVENT TYPE
     trackEvent("funnel_step", {
       step,
       previous,
@@ -70,6 +71,9 @@ export function getFunnelStep(): FunnelStep | null {
 
   try {
     const value = safeGetItem(STORAGE_KEY);
+
+    if (!value) return null;
+
     return isValidStep(value) ? value : null;
   } catch {
     return null;
