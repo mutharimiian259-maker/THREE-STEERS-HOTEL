@@ -1,3 +1,9 @@
+"use client";
+
+import { HOTEL } from "@/lib/config";
+import { trackEvent } from "@/lib/analytics/trackEvent";
+import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+
 export default function Accommodation() {
   return (
     <section className="p-6 bg-zinc-900">
@@ -34,10 +40,17 @@ export default function Accommodation() {
 
       {/* STRONG CONVERSION CTA */}
       <a
-        href={`https://wa.me/254728588005?text=${encodeURIComponent(
-          "Hello, I would like to book a room at Three Steers Hotel Meru"
+        href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
+          "Hello, I would like to book a room at " + HOTEL.identity.name
         )}`}
         className="mt-4 inline-block px-6 py-3 bg-green-600 text-white rounded-lg"
+        onClick={() => {
+          trackEvent("booking_intent", {
+            source: "accommodation_cta",
+          });
+
+          setFunnelStep("INTENT");
+        }}
       >
         Book Your Room
       </a>
