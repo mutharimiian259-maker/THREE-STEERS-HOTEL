@@ -11,7 +11,16 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("APP ERROR:", error);
+    try {
+      console.error("APP ERROR:", {
+        message: error?.message,
+        name: error?.name,
+        digest: error?.digest,
+        stack: error?.stack,
+      });
+    } catch {
+      // silent fail
+    }
   }, [error]);
 
   return (
@@ -24,14 +33,19 @@ export default function Error({
         </h2>
 
         <p className="text-gray-400 mt-3">
-          We encountered an unexpected error. Please try again or return home.
+          An unexpected issue occurred. You can retry or return to the homepage.
         </p>
 
-        {/* ACTION BUTTONS */}
         <div className="mt-6 flex flex-col gap-3">
 
           <button
-            onClick={() => reset()}
+            onClick={() => {
+              try {
+                reset();
+              } catch {
+                window.location.reload();
+              }
+            }}
             className="btn btn-green"
           >
             Try Again
