@@ -8,8 +8,9 @@ import Dining from "@/components/Dining";
 import Experience from "@/components/Experience";
 import Link from "next/link";
 import rooms from "@/data/rooms";
-import { HOTEL } from "@/lib/config";
+import { HOTEL } from "@/lib/config/hotel";
 import { trackEvent } from "@/lib/analytics/trackEvent";
+import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
 export default function Home() {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
@@ -17,7 +18,11 @@ export default function Home() {
   return (
     <div>
 
-      <section id="home">
+      {/* HERO */}
+      <section
+        id="home"
+        onMouseEnter={() => setFunnelStep("VISIT")}
+      >
         <h1 className="text-3xl font-bold text-center mt-6">
           {HOTEL.identity.name} – Luxury Hotel in Kenya
         </h1>
@@ -25,7 +30,12 @@ export default function Home() {
         <Hero />
       </section>
 
-      <section id="rooms" className="p-6">
+      {/* ROOMS */}
+      <section
+        id="rooms"
+        className="p-6"
+        onMouseEnter={() => setFunnelStep("ROOM_VIEW")}
+      >
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-yellow-500">
             Rooms & Accommodation in {HOTEL.location.city}
@@ -34,6 +44,7 @@ export default function Home() {
           <Link
             href="/rooms"
             className="text-sm text-yellow-500 underline"
+            onClick={() => setFunnelStep("INTENT")}
           >
             View All →
           </Link>
@@ -41,41 +52,37 @@ export default function Home() {
 
         <div className="grid md:grid-cols-3 gap-4 mt-4">
           {safeRooms.slice(0, 3).map((room: any) => (
-            <div
-              key={room?.id || room?.name}
-              onMouseEnter={() =>
-                trackEvent("room_view", {
-                  room: room?.name || "unknown",
-                })
-              }
-              onClick={() =>
-                trackEvent("room_view", {
-                  room: room?.name || "unknown",
-                })
-              }
-            >
+            <div key={room?.id || room?.name}>
               <RoomCard room={room} />
             </div>
           ))}
         </div>
       </section>
 
-      <section id="facilities">
+      {/* FACILITIES */}
+      <section
+        id="facilities"
+        onMouseEnter={() => setFunnelStep("VISIT")}
+      >
         <Facilities />
       </section>
 
+      {/* CONFERENCE */}
       <section id="conference">
         <Conference />
       </section>
 
+      {/* DINING */}
       <section id="dining">
         <Dining />
       </section>
 
+      {/* EXPERIENCES */}
       <section id="experiences">
         <Experience />
       </section>
 
+      {/* ABOUT */}
       <section id="about" className="p-6">
         <h2 className="text-xl font-bold text-yellow-500">
           Luxury Hotel in {HOTEL.location.city}, {HOTEL.location.country}
@@ -91,17 +98,21 @@ export default function Home() {
         </p>
       </section>
 
+      {/* REVIEWS */}
       <section id="reviews">
         <Reviews />
       </section>
 
+      {/* LOCATION */}
       <section id="location">
         <Location />
       </section>
 
+      {/* BOOKING CTA */}
       <section
         id="booking"
         className="text-center p-10 bg-zinc-900"
+        onMouseEnter={() => setFunnelStep("INTENT")}
       >
         <h2 className="text-3xl font-bold text-yellow-500">
           Book Your Stay at {HOTEL.identity.name}
@@ -118,11 +129,12 @@ export default function Home() {
               "Hello, I want to book a room at " + HOTEL.identity.name
             )}`}
             className="px-6 py-3 bg-green-600 text-white rounded-lg"
-            onClick={() =>
+            onClick={() => {
               trackEvent("whatsapp_click", {
                 source: "homepage_booking",
-              })
-            }
+              });
+              setFunnelStep("CONTACT");
+            }}
           >
             💬 WhatsApp Booking
           </a>
@@ -130,11 +142,12 @@ export default function Home() {
           <a
             href={`tel:${HOTEL.contact.phone.primary}`}
             className="px-6 py-3 bg-yellow-500 text-black rounded-lg"
-            onClick={() =>
+            onClick={() => {
               trackEvent("call_click", {
                 source: "homepage_booking",
-              })
-            }
+              });
+              setFunnelStep("CONTACT");
+            }}
           >
             📞 Call Now
           </a>
