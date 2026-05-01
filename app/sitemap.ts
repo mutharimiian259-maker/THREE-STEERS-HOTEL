@@ -1,61 +1,64 @@
 import { MetadataRoute } from "next";
+import { HOTEL } from "@/lib/config/hotel";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://threesteershotel.com";
+  const baseUrl = HOTEL.domain.primary;
+
+  const now = new Date();
 
   return [
     {
       url: baseUrl,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "daily",
       priority: 1.0,
     },
 
     {
       url: `${baseUrl}/rooms`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
     },
 
     {
       url: `${baseUrl}/about`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
     },
 
     {
       url: `${baseUrl}/contact`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,
     },
 
     {
       url: `${baseUrl}/conference`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.8,
     },
 
     {
       url: `${baseUrl}/dining`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,
     },
 
     {
       url: `${baseUrl}/experiences`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.8,
     },
 
     {
       url: `${baseUrl}/blog`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "daily",
       priority: 0.9,
     },
