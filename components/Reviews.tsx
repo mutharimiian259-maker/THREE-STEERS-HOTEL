@@ -1,6 +1,6 @@
 "use client";
 
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
@@ -36,7 +36,6 @@ export default function Reviews() {
           <div
             key={index}
             className="card"
-            onMouseEnter={() => trackEvent("room_view", { source: "review_section" })}
           >
 
             <p className="text-gray-300">
@@ -63,7 +62,9 @@ export default function Reviews() {
             trackEvent("whatsapp_click", {
               source: "reviews",
             });
-            setFunnelStep("CONTACT");
+
+            // FIX: align with corrected funnel logic
+            setFunnelStep("INTENT");
           }}
         >
           Book Based on Reviews
