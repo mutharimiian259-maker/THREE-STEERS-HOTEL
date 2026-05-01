@@ -6,7 +6,7 @@ export type BlogPost = {
   keywords: string[];
   content: string;
   author: string;
-  publishedAt: Date;
+  publishedAt: string;
   image?: string;
   category?: string;
   readingTime?: number;
@@ -29,24 +29,11 @@ export const blogPosts: BlogPost[] = [
       "luxury hotel Meru Kenya",
     ],
 
-    content: `
-# Best Hotel in Meru Kenya
-
-Three Steers Hotel offers premium accommodation in Meru Kenya with modern rooms, fine dining, and conference facilities.
-
-If you're looking for a hotel near Mt Kenya, this is one of the best choices for both business and leisure travelers.
-
-## Why choose us?
-- 11 room categories
-- Conference halls
-- Fine dining restaurants
-- Gardens & leisure spaces
-
-Book directly via WhatsApp for the best rates.
-    `,
+    content:
+      "Best Hotel in Meru Kenya\n\nThree Steers Hotel offers premium accommodation in Meru Kenya with modern rooms, fine dining, and conference facilities.\n\nWhy choose us:\n- 11 room categories\n- Conference halls\n- Fine dining restaurants\n- Gardens & leisure spaces",
 
     author: "Three Steers Hotel",
-    publishedAt: new Date("2026-04-30"),
+    publishedAt: "2026-04-30",
     image: "/images/blog/hotel-meru.jpg",
     category: "Accommodation",
     readingTime: 3,
@@ -67,22 +54,11 @@ Book directly via WhatsApp for the best rates.
       "corporate events Meru Kenya",
     ],
 
-    content: `
-# Conference Venues in Meru
-
-Three Steers Hotel provides fully equipped conference halls in Meru suitable for seminars, workshops, and corporate meetings.
-
-## Facilities include:
-- High-speed WiFi
-- Audio-visual equipment
-- Catering services
-- Flexible seating capacity
-
-Perfect for business events near Mt Kenya region.
-    `,
+    content:
+      "Conference Venues in Meru\n\nThree Steers Hotel provides fully equipped conference halls in Meru suitable for seminars, workshops, and corporate meetings.\n\nFacilities include:\n- High-speed WiFi\n- Audio-visual equipment\n- Catering services\n- Flexible seating capacity",
 
     author: "Three Steers Hotel",
-    publishedAt: new Date("2026-04-30"),
+    publishedAt: "2026-04-30",
     image: "/images/blog/conference-meru.jpg",
     category: "Events",
     readingTime: 4,
