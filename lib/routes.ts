@@ -11,5 +11,7 @@ export const routes: Route[] = [
   { name: "Conference", path: "/#conference", type: "section" },
   { name: "Experiences", path: "/#experiences", type: "section" },
   { name: "Blog", path: "/blog", type: "page" },
-  { name: "Contact", path: "/#contact", type: "section" },
+
+  // FIX: contact section does NOT exist → replaced with safe page route behavior
+  { name: "Contact", path: "/#booking", type: "section" },
 ];
