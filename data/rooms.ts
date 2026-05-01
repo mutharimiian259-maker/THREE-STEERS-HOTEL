@@ -14,7 +14,7 @@ export type Room = {
   view?: string;
 };
 
-export const rooms: Room[] = [
+const rooms: Room[] = [
   {
     id: "deluxe",
     slug: "deluxe-room",
@@ -44,3 +44,5 @@ export const rooms: Room[] = [
     view: "Mountain View",
   },
 ];
+
+export default rooms;
