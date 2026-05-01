@@ -1,67 +1,82 @@
+"use client";
+
 import Image from "next/image";
+import { HOTEL } from "@/lib/config/hotel";
+import { trackEvent } from "@/lib/analytics/trackEvent";
+import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
-const WHATSAPP_NUMBER = "254728588005";
+type Room = {
+  id: string | number;
+  name: string;
+  price?: number;
+  currency?: string;
+  desc?: string;
+  image?: string;
+  tag?: string;
+  slug?: string;
+};
 
-export default function RoomCard({ room }) {
+export default function RoomCard({ room }: { room: Room }) {
   if (!room) return null;
 
   const message = encodeURIComponent(
-    `Hello, I would like to book the ${room.name} at Three Steers Hotel Meru. Please confirm availability, prices, and dates.`
+    `Hello, I would like to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, prices, and dates.`
   );
 
   const price =
-    room?.price && room?.currency
+    room.price && room.currency
       ? `${room.currency} ${room.price.toLocaleString()}`
       : "Price on request";
 
   return (
-    <div className="card relative overflow-hidden bg-white">
+    <div
+      className="card relative overflow-hidden bg-white"
+      onMouseEnter={() => {
+        trackEvent("room_view", { room: room.name });
+        setFunnelStep("ROOM_VIEW");
+      }}
+    >
 
-      {/* TAG (PSYCHOLOGICAL TRIGGER) */}
       {room.tag && (
         <span className="absolute top-3 right-3 bg-yellow-500 text-black text-xs px-2 py-1 rounded z-10">
           {room.tag}
         </span>
       )}
 
-      {/* IMAGE (OPTIMIZED) */}
       <div className="relative w-full h-48">
         <Image
           src={room.image || "/images/placeholder.jpg"}
           alt={room.name}
           fill
-          priority={false}
           className="object-cover"
         />
       </div>
 
-      {/* CONTENT */}
       <div className="p-4">
 
-        {/* ROOM NAME */}
         <h3 className="text-lg font-bold text-gray-900">
           {room.name}
         </h3>
 
-        {/* DESCRIPTION */}
         <p className="text-sm text-gray-500 mt-1">
           {room.desc}
         </p>
 
-        {/* PRICE ANCHOR */}
         <p className="mt-2 font-semibold text-yellow-600">
           {price} / night
         </p>
 
-        {/* VALUE SIGNAL (IMPORTANT ADDITION) */}
         <p className="text-xs text-gray-400 mt-1">
           Includes comfort, privacy & premium hotel service
         </p>
 
-        {/* CTA (CONVERSION OPTIMIZED) */}
         <a
-          href={`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`}
+          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${message}`}
           className="btn btn-green block mt-4 text-center"
+          onClick={() => {
+            trackEvent("whatsapp_click", { room: room.name });
+            setFunnelStep("CONTACT");
+          }}
         >
           Book This Room via WhatsApp
         </a>
