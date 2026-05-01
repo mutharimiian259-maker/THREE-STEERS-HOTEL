@@ -8,6 +8,10 @@ import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 export default function ExitIntentModal() {
   const [show, setShow] = useState(false);
 
+  const whatsappNumber = HOTEL.contact.phone.whatsapp
+    .replace("+", "")
+    .replace(/\s/g, "");
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -24,6 +28,7 @@ export default function ExitIntentModal() {
         sessionStorage.setItem("exit_intent_shown", "true");
 
         setFunnelStep("INTENT");
+
         trackEvent("booking_intent", {
           source: "exit_intent",
         });
@@ -57,7 +62,7 @@ export default function ExitIntentModal() {
         </p>
 
         <a
-          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
+          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
             "Hello, I saw your website and would like to book a room at Three Steers Hotel Meru."
           )}`}
           className="mt-4 inline-block bg-green-500 text-white px-5 py-2 rounded"
@@ -67,6 +72,8 @@ export default function ExitIntentModal() {
             });
             setFunnelStep("CONTACT");
           }}
+          target="_blank"
+          rel="noopener noreferrer"
         >
           Book via WhatsApp
         </a>
