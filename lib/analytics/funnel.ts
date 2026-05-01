@@ -54,9 +54,10 @@ export function setFunnelStep(step: FunnelStep) {
 
     safeSetItem(STORAGE_KEY, step);
 
-    trackEvent("booking_intent", {
-      funnel_step: step,
-      previous_step: previous,
+    // ✅ CORRECT EVENT TYPE
+    trackEvent("funnel_step", {
+      step,
+      previous,
       source: "funnel_engine",
     });
   } catch {
