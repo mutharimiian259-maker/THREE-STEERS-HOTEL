@@ -6,7 +6,6 @@ export const HOTEL = {
 
   domain: {
     primary: "https://www.threesteershotel.com",
-    canonical: "https://www.threesteershotel.com",
   },
 
   contact: {
@@ -33,7 +32,6 @@ export const HOTEL = {
     defaultTitle: "Three Steers Hotel Meru | Luxury Hotel in Kenya",
     defaultDescription:
       "Luxury hotel in Meru, Kenya offering accommodation, dining, conferences, and events near Mount Kenya. Book direct for best rates.",
-
     keywords: [
       "hotel in Meru Kenya",
       "Three Steers Hotel",
@@ -43,8 +41,12 @@ export const HOTEL = {
     ],
   },
 
-  business: {
-    priceRange: "KSh 5,000 - KSh 40,000",
+  pricing: {
+    range: "KSh 5,000 - KSh 40,000",
     currency: "KES",
+  },
+
+  analytics: {
+    gaId: "G-XXXXXXXXXX",
   },
 } as const;
