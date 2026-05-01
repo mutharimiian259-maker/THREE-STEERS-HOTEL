@@ -1,3 +1,9 @@
+"use client";
+
+import { HOTEL } from "@/lib/config/hotel";
+import { trackEvent } from "@/lib/analytics/trackEvent";
+import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+
 export default function Reviews() {
   const reviews = [
     {
@@ -15,18 +21,23 @@ export default function Reviews() {
   ];
 
   return (
-    <section className="p-6">
+    <section
+      className="p-6"
+      onMouseEnter={() => setFunnelStep("INTENT")}
+    >
 
-      {/* SEO TITLE */}
       <h2 className="text-xl font-bold text-yellow-500">
-        Guest Reviews – Three Steers Hotel Meru
+        Guest Reviews – {HOTEL.identity.name}
       </h2>
 
-      {/* REVIEWS */}
       <div className="grid gap-3 mt-3">
 
         {reviews.map((review, index) => (
-          <div key={index} className="card">
+          <div
+            key={index}
+            className="card"
+            onMouseEnter={() => trackEvent("room_view", { source: "review_section" })}
+          >
 
             <p className="text-gray-300">
               “{review.text}”
@@ -41,14 +52,19 @@ export default function Reviews() {
 
       </div>
 
-      {/* CONVERSION CTA */}
       <div className="mt-6 text-center">
 
         <a
-          href={`https://wa.me/254728588005?text=${encodeURIComponent(
-            "Hello, I saw your reviews and would like to book a stay at Three Steers Hotel Meru"
+          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
+            "Hello, I saw your reviews and would like to book a stay at Three Steers Hotel Meru."
           )}`}
           className="px-6 py-3 bg-green-600 text-white rounded-lg inline-block"
+          onClick={() => {
+            trackEvent("whatsapp_click", {
+              source: "reviews",
+            });
+            setFunnelStep("CONTACT");
+          }}
         >
           Book Based on Reviews
         </a>
