@@ -1,4 +1,4 @@
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 
 type SeoProps = {
   title?: string;
@@ -31,8 +31,6 @@ export function generateSEO({
   return {
     title: fullTitle,
     description: fullDescription,
-
-    metadataBase: new URL(baseUrl),
 
     keywords: HOTEL.seo.keywords,
 
