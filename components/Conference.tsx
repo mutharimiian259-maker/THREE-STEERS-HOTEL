@@ -1,19 +1,25 @@
+"use client";
+
+import { HOTEL } from "@/lib/config/hotel";
+import { trackEvent } from "@/lib/analytics/trackEvent";
+import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+
 export default function Conference() {
   return (
-    <section className="p-6 bg-zinc-900">
+    <section
+      className="p-6 bg-zinc-900"
+      onMouseEnter={() => setFunnelStep("INTENT")}
+    >
 
-      {/* SEO OPTIMIZED TITLE */}
       <h2 className="text-xl font-bold text-yellow-500">
-        Conference & Event Spaces in Meru, Kenya
+        Conference & Event Spaces in {HOTEL.location.city}, {HOTEL.location.country}
       </h2>
 
-      {/* DESCRIPTION */}
       <p className="text-gray-400 mt-2">
-        Three Steers Hotel provides fully equipped conference and event facilities
-        designed for corporate meetings, seminars, workshops, and private events.
+        {HOTEL.identity.name} provides fully equipped conference and event facilities
+        designed for corporate meetings, seminars, workshops, and private events in {HOTEL.location.full}.
       </p>
 
-      {/* FEATURES */}
       <ul className="mt-3 text-sm text-gray-300 space-y-2">
         <li>✔ Flexible spaces (10 – 300 guests)</li>
         <li>✔ High-speed WiFi & AV equipment</li>
@@ -21,17 +27,26 @@ export default function Conference() {
         <li>✔ Full catering and beverage services</li>
       </ul>
 
-      {/* ROOMS */}
       <div className="grid md:grid-cols-2 gap-4 mt-4">
 
-        <div className="card">
+        <div
+          className="card"
+          onMouseEnter={() =>
+            trackEvent("room_view", { source: "conference_summit_hall" })
+          }
+        >
           <h3 className="font-bold text-yellow-500">Summit Hall</h3>
           <p className="text-sm text-gray-400">
             Ideal for large corporate events, conferences, and official gatherings.
           </p>
         </div>
 
-        <div className="card">
+        <div
+          className="card"
+          onMouseEnter={() =>
+            trackEvent("room_view", { source: "conference_room_2" })
+          }
+        >
           <h3 className="font-bold text-yellow-500">Conference Room 2</h3>
           <p className="text-sm text-gray-400">
             Perfect for board meetings, workshops, and small seminars.
@@ -40,12 +55,20 @@ export default function Conference() {
 
       </div>
 
-      {/* CTA (SAFE + ENCODED) */}
       <a
-        href={`https://wa.me/254728588005?text=${encodeURIComponent(
-          "Hello, I would like to book a conference space at Three Steers Hotel Meru"
+        href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
+          "Hello, I would like to book a conference space at " +
+            HOTEL.identity.name +
+            " in " +
+            HOTEL.location.city
         )}`}
         className="mt-4 inline-block px-6 py-3 bg-green-600 text-white rounded-lg"
+        onClick={() => {
+          trackEvent("booking_intent", {
+            source: "conference_cta",
+          });
+          setFunnelStep("CONTACT");
+        }}
       >
         Make Enquiry
       </a>
