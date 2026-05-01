@@ -6,6 +6,7 @@ export const HOTEL = {
 
   domain: {
     primary: "https://www.threesteershotel.com",
+    canonical: "https://www.threesteershotel.com",
   },
 
   contact: {
@@ -24,7 +25,7 @@ export const HOTEL = {
     full: "Meru, Kenya",
     coordinates: {
       lat: -0.046,
-      lng: 37.650,
+      lng: 37.65,
     },
   },
 
@@ -42,11 +43,21 @@ export const HOTEL = {
   },
 
   pricing: {
-    range: "KSh 5,000 - KSh 40,000",
     currency: "KES",
+    range: {
+      min: 5000,
+      max: 40000,
+      display: "KSh 5,000 - 40,000",
+    },
   },
 
   analytics: {
     gaId: "G-XXXXXXXXXX",
+  },
+
+  business: {
+    checkIn: "12:00",
+    checkOut: "10:00",
+    starRating: 4,
   },
 } as const;
