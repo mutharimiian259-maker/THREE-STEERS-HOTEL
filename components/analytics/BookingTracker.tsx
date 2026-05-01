@@ -1,22 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 
 export default function BookingTracker() {
-  const handleIntent = (type: string) => {
+  useEffect(() => {
     trackEvent("booking_intent", {
-      type,
-      page: window.location.pathname,
+      type: "page_view",
+      page: typeof window !== "undefined" ? window.location.pathname : "",
     });
-  };
+  }, []);
 
-  return (
-    <div className="hidden">
-
-      {/* Invisible tracking hooks if needed */}
-      <a onClick={() => handleIntent("whatsapp")} />
-      <a onClick={() => handleIntent("call")} />
-
-    </div>
-  );
+  return null;
 }
