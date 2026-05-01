@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { routes } from "@/lib/routes";
-import { HOTEL } from "@/lib/config";
+import { HOTEL } from "@/lib/config/hotel";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep, getFunnelStep } from "@/lib/analytics/funnelEvents";
 
@@ -14,6 +14,17 @@ export default function Navbar() {
   useEffect(() => {
     setCurrentStep(getFunnelStep());
   }, []);
+
+  const handleNavClick = (routeName: string) => {
+    setFunnelStep("INTENT");
+
+    trackEvent("page_view", {
+      page: routeName,
+      source: "navbar",
+    });
+
+    setCurrentStep(getFunnelStep());
+  };
 
   return (
     <nav className="flex items-center justify-between p-4 bg-black border-b border-zinc-800 sticky top-0 z-50">
@@ -41,20 +52,15 @@ export default function Navbar() {
           <Link
             key={route.path}
             href={route.path}
-            className={`transition hover:text-yellow-500 ${
-              currentStep === "ROOM_VIEW" ? "text-yellow-500" : ""
-            }`}
-            onClick={() => {
-              // FIX: avoid duplicate page_view (already tracked globally)
-              setFunnelStep("INTENT");
-            }}
+            className="transition hover:text-yellow-500"
+            onClick={() => handleNavClick(route.name)}
           >
             {route.name}
           </Link>
         ))}
       </div>
 
-      {/* PRIMARY CTA */}
+      {/* CTA */}
       <a
         href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
           "Hello, I would like to book a room at Three Steers Hotel Meru."
@@ -62,9 +68,7 @@ export default function Navbar() {
         className="btn btn-green"
         onClick={() => {
           trackEvent("whatsapp_click", { source: "navbar" });
-
-          // FIX: align funnel consistency (INTENT is correct stage)
-          setFunnelStep("INTENT");
+          setFunnelStep("CONTACT");
         }}
       >
         Book via WhatsApp
