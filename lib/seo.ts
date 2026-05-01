@@ -14,18 +14,25 @@ export function generateSEO({
   image = "/images/hotel.jpg",
 }: SeoProps = {}) {
   const fullTitle = title
-    ? `${title} | ${HOTEL.name}`
-    : HOTEL.seo.title;
+    ? `${title} | ${HOTEL.identity.name}`
+    : HOTEL.seo.defaultTitle;
 
-  const fullDescription = description || HOTEL.seo.description;
+  const fullDescription =
+    description || HOTEL.seo.defaultDescription;
 
-  const url = `${HOTEL.domain}${path}`;
+  const baseUrl = HOTEL.domain.primary;
+
+  const url = `${baseUrl}${path}`;
+
+  const absoluteImage = image.startsWith("http")
+    ? image
+    : `${baseUrl}${image}`;
 
   return {
     title: fullTitle,
     description: fullDescription,
 
-    metadataBase: new URL(HOTEL.domain),
+    metadataBase: new URL(baseUrl),
 
     keywords: HOTEL.seo.keywords,
 
@@ -33,12 +40,12 @@ export function generateSEO({
       title: fullTitle,
       description: fullDescription,
       url,
-      siteName: HOTEL.name,
+      siteName: HOTEL.identity.name,
       type: "website",
       locale: "en_KE",
       images: [
         {
-          url: image,
+          url: absoluteImage,
           width: 1200,
           height: 630,
           alt: fullTitle,
@@ -50,7 +57,7 @@ export function generateSEO({
       card: "summary_large_image",
       title: fullTitle,
       description: fullDescription,
-      images: [image],
+      images: [absoluteImage],
     },
 
     alternates: {
