@@ -23,6 +23,22 @@ function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// stable comparison (avoids key-order issues)
+function stableStringify(obj: any) {
+  try {
+    return JSON.stringify(
+      Object.keys(obj || {})
+        .sort()
+        .reduce((acc: any, key) => {
+          acc[key] = obj[key];
+          return acc;
+        }, {})
+    );
+  } catch {
+    return "";
+  }
+}
+
 export function trackEvent(
   event: EventType,
   data: Record<string, any> = {}
@@ -38,14 +54,19 @@ export function trackEvent(
       url: window.location.href,
     };
 
-    const raw = localStorage.getItem(STORAGE_KEY);
-
     let events: Payload[] = [];
+
+    const raw = localStorage.getItem(STORAGE_KEY);
 
     if (raw) {
       try {
-        events = JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          events = parsed;
+        }
       } catch {
+        // recover corrupted storage instead of failing silently
+        localStorage.removeItem(STORAGE_KEY);
         events = [];
       }
     }
@@ -55,7 +76,7 @@ export function trackEvent(
     if (
       last &&
       last.event === payload.event &&
-      JSON.stringify(last.data) === JSON.stringify(payload.data)
+      stableStringify(last.data) === stableStringify(payload.data)
     ) {
       return;
     }
@@ -66,7 +87,11 @@ export function trackEvent(
       events = events.slice(-MAX_EVENTS);
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    } catch {
+      // ignore quota exceeded errors
+    }
 
     const w = window as any;
 
@@ -74,7 +99,6 @@ export function trackEvent(
       w.gtag("event", event, data);
     }
   } catch (error) {
-    // prevent analytics from breaking app flow
     console.error("Analytics error:", error);
   }
 }
