@@ -1,7 +1,6 @@
 "use client";
 
-import { HOTEL } from "@/lib/config/hotel";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+import { HOTEL } from "@/lib/config";
 
 export default function Facilities() {
   const facilities = [
@@ -16,10 +15,7 @@ export default function Facilities() {
   ];
 
   return (
-    <div
-      className="p-6 bg-zinc-900"
-      onMouseEnter={() => setFunnelStep("VISIT")}
-    >
+    <div className="p-6 bg-zinc-900">
 
       <h2 className="text-2xl font-bold text-yellow-500 text-center">
         Premium Facilities at {HOTEL.identity.name}
@@ -31,15 +27,16 @@ export default function Facilities() {
       </p>
 
       <div className="grid md:grid-cols-4 gap-4 mt-8">
+
         {facilities.map((item, index) => (
           <div
             key={index}
             className="bg-black border border-zinc-800 p-4 rounded-lg text-center hover:border-yellow-500 transition"
-            onMouseEnter={() => setFunnelStep("INTENT")}
           >
             <p className="text-white text-sm">{item}</p>
           </div>
         ))}
+
       </div>
 
     </div>
