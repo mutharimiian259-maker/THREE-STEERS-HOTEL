@@ -1,15 +1,11 @@
 "use client";
 
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
 export default function Dining() {
   return (
-    <section
-      className="p-6"
-      onMouseEnter={() => setFunnelStep("VISIT")}
-    >
+    <section className="p-6">
 
       <h2 className="text-xl font-bold text-yellow-500">
         Restaurants & Dining at {HOTEL.identity.name}, {HOTEL.location.city}
@@ -22,36 +18,21 @@ export default function Dining() {
 
       <div className="grid md:grid-cols-3 gap-4 mt-4">
 
-        <div
-          className="card"
-          onMouseEnter={() =>
-            trackEvent("room_view", { source: "dining_aberdares" })
-          }
-        >
+        <div className="card">
           <h3 className="font-bold text-yellow-500">Aberdares Restaurant</h3>
           <p className="text-sm text-gray-400">
             A diverse menu offering local and international cuisine for all tastes.
           </p>
         </div>
 
-        <div
-          className="card"
-          onMouseEnter={() =>
-            trackEvent("room_view", { source: "dining_nyambene" })
-          }
-        >
+        <div className="card">
           <h3 className="font-bold text-yellow-500">Nyambene Restaurant</h3>
           <p className="text-sm text-gray-400">
             Contemporary dining space serving fresh, modern, and authentic dishes.
           </p>
         </div>
 
-        <div
-          className="card"
-          onMouseEnter={() =>
-            trackEvent("room_view", { source: "dining_masters_lounge" })
-          }
-        >
+        <div className="card">
           <h3 className="font-bold text-yellow-500">Master’s Lounge</h3>
           <p className="text-sm text-gray-400">
             Relaxed lounge atmosphere perfect for drinks, meetings, and socializing.
@@ -74,7 +55,9 @@ export default function Dining() {
             trackEvent("booking_intent", {
               source: "dining_cta",
             });
-            setFunnelStep("CONTACT");
+
+            // FIX: unified funnel logic
+            // DO NOT downgrade to CONTACT here — keep INTENT consistency system-wide
           }}
         >
           Reserve a Table
