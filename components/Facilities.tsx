@@ -1,3 +1,8 @@
+"use client";
+
+import { HOTEL } from "@/lib/config/hotel";
+import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+
 export default function Facilities() {
   const facilities = [
     "Free High-Speed WiFi",
@@ -11,22 +16,26 @@ export default function Facilities() {
   ];
 
   return (
-    <div className="p-6 bg-zinc-900">
+    <div
+      className="p-6 bg-zinc-900"
+      onMouseEnter={() => setFunnelStep("VISIT")}
+    >
 
       <h2 className="text-2xl font-bold text-yellow-500 text-center">
-        Hotel Facilities
+        Premium Facilities at {HOTEL.identity.name}
       </h2>
 
       <p className="text-gray-400 text-center mt-2 max-w-xl mx-auto">
-        Enjoy premium comfort and convenience with our modern facilities
-        designed for both business and leisure guests.
+        Enjoy premium comfort and convenience with modern facilities
+        designed for both business and leisure guests in {HOTEL.location.city}.
       </p>
 
       <div className="grid md:grid-cols-4 gap-4 mt-8">
         {facilities.map((item, index) => (
           <div
             key={index}
-            className="bg-black border border-zinc-800 p-4 rounded-lg text-center"
+            className="bg-black border border-zinc-800 p-4 rounded-lg text-center hover:border-yellow-500 transition"
+            onMouseEnter={() => setFunnelStep("INTENT")}
           >
             <p className="text-white text-sm">{item}</p>
           </div>
