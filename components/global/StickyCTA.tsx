@@ -8,6 +8,10 @@ import { HOTEL } from "@/lib/config/hotel";
 export default function StickyCTA() {
   const clickedRef = useRef(false);
 
+  const whatsappNumber = HOTEL.contact.phone.whatsapp
+    .replace("+", "")
+    .replace(/\s/g, "");
+
   const handleWhatsAppClick = () => {
     if (clickedRef.current) return;
     clickedRef.current = true;
@@ -40,11 +44,13 @@ export default function StickyCTA() {
       <div className="flex gap-3">
 
         <a
-          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
+          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
             "Hello, I would like to book a room at Three Steers Hotel Meru."
           )}`}
           onClick={handleWhatsAppClick}
           className="bg-green-500 px-4 py-2 rounded text-sm"
+          target="_blank"
+          rel="noopener noreferrer"
         >
           WhatsApp
         </a>
