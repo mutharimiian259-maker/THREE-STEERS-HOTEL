@@ -5,7 +5,7 @@ import StickyCTA from "@/components/global/StickyCTA";
 import Footer from "@/components/global/Footer";
 import ExitIntentModal from "@/components/global/ExitIntentModal";
 import Script from "next/script";
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 
 const siteUrl = HOTEL.domain.primary;
 
@@ -48,7 +48,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const gaId = (HOTEL as any)?.analytics?.gaId;
+  const gaId = HOTEL.analytics?.gaId;
 
   return (
     <html lang="en">
@@ -64,7 +64,8 @@ export default function RootLayout({
         <ExitIntentModal />
         <Footer />
 
-        {gaId && (
+        {/* Google Analytics Safe Load */}
+        {gaId ? (
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
@@ -74,14 +75,15 @@ export default function RootLayout({
             <Script id="ga-script" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
+                function gtag(){window.dataLayer.push(arguments);}
                 gtag('js', new Date());
                 gtag('config', '${gaId}');
               `}
             </Script>
           </>
-        )}
+        ) : null}
 
+        {/* Schema Markup */}
         <Script
           id="schema-hotel"
           type="application/ld+json"
@@ -93,10 +95,11 @@ export default function RootLayout({
               name: HOTEL.identity.name,
               url: siteUrl,
               telephone: HOTEL.contact.phone.primary,
-              priceRange: HOTEL.business?.priceRange || "N/A",
+              priceRange: HOTEL.pricing.range.display,
               address: {
                 "@type": "PostalAddress",
                 addressLocality: HOTEL.location.city,
+                addressRegion: HOTEL.location.region,
                 addressCountry: HOTEL.location.country,
               },
               geo: {
