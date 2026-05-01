@@ -21,25 +21,46 @@ function isValidStep(value: any): value is FunnelStep {
   );
 }
 
+function safeGetItem(key: string): string | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSetItem(key: string, value: string) {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    return;
+  }
+}
+
 export function setFunnelStep(step: FunnelStep) {
   if (typeof window === "undefined") return;
 
   try {
-    const previousRaw = localStorage.getItem(STORAGE_KEY);
+    const previousRaw = safeGetItem(STORAGE_KEY);
     const previous: FunnelStep | null = isValidStep(previousRaw)
       ? previousRaw
       : null;
 
     if (previous === step) return;
 
-    localStorage.setItem(STORAGE_KEY, step);
+    safeSetItem(STORAGE_KEY, step);
 
-    trackEvent("funnel_step", {
-      step,
-      previous,
+    trackEvent("booking_intent", {
+      funnel_step: step,
+      previous_step: previous,
+      source: "funnel_engine",
     });
-  } catch (error) {
-    console.error("Funnel storage error:", error);
+  } catch {
+    return;
   }
 }
 
@@ -47,10 +68,9 @@ export function getFunnelStep(): FunnelStep | null {
   if (typeof window === "undefined") return null;
 
   try {
-    const value = localStorage.getItem(STORAGE_KEY);
+    const value = safeGetItem(STORAGE_KEY);
     return isValidStep(value) ? value : null;
-  } catch (error) {
-    console.error("Funnel read error:", error);
+  } catch {
     return null;
   }
 }
