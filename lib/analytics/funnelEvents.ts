@@ -1,7 +1,5 @@
 "use client";
 
-import { trackEvent } from "@/lib/analytics/trackEvent";
-
 export type FunnelStep =
   | "VISIT"
   | "ROOM_VIEW"
@@ -11,7 +9,7 @@ export type FunnelStep =
 
 const STORAGE_KEY = "hotel_funnel_step";
 
-function isValidStep(value: any): value is FunnelStep {
+function isValidStep(value: unknown): value is FunnelStep {
   return (
     value === "VISIT" ||
     value === "ROOM_VIEW" ||
@@ -22,60 +20,48 @@ function isValidStep(value: any): value is FunnelStep {
 }
 
 function safeGetItem(key: string): string | null {
-  if (typeof window === "undefined") return null;
-
   try {
+    if (typeof window === "undefined") return null;
     return localStorage.getItem(key);
   } catch {
     return null;
   }
 }
 
-function safeSetItem(key: string, value: string) {
-  if (typeof window === "undefined") return;
-
+function safeSetItem(key: string, value: string): void {
   try {
+    if (typeof window === "undefined") return;
     localStorage.setItem(key, value);
   } catch {
-    return;
+    // ignore storage failures (private mode, quota, etc.)
   }
 }
 
-export function setFunnelStep(step: FunnelStep) {
-  if (typeof window === "undefined") return;
+export function setFunnelStep(step: FunnelStep): void {
+  const previousRaw = safeGetItem(STORAGE_KEY);
+  const previous = isValidStep(previousRaw) ? previousRaw : null;
 
+  if (previous === step) return;
+
+  safeSetItem(STORAGE_KEY, step);
+
+  // fire event (non-blocking, safe failure isolation)
   try {
-    const previousRaw = safeGetItem(STORAGE_KEY);
-
-    const previous: FunnelStep | null =
-      previousRaw && isValidStep(previousRaw)
-        ? previousRaw
-        : null;
-
-    if (previous === step) return;
-
-    safeSetItem(STORAGE_KEY, step);
-
-    trackEvent("funnel_step", {
-      step,
-      previous,
-      source: "funnel_engine",
-    });
+    window.dispatchEvent(
+      new CustomEvent("funnel_step", {
+        detail: {
+          step,
+          previous,
+          source: "funnel_engine",
+        },
+      })
+    );
   } catch {
-    return;
+    // do nothing
   }
 }
 
 export function getFunnelStep(): FunnelStep | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const value = safeGetItem(STORAGE_KEY);
-
-    if (!value) return null;
-
-    return isValidStep(value) ? value : null;
-  } catch {
-    return null;
-  }
+  const value = safeGetItem(STORAGE_KEY);
+  return isValidStep(value) ? value : null;
 }
