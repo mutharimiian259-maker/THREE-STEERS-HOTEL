@@ -4,22 +4,22 @@ import { useEffect, useRef } from "react";
 import { trackEvent } from "./trackEvent";
 
 export function useAnalytics(pageName: string) {
-  const hasTrackedRef = useRef(false);
+  const lastTrackedPage = useRef<string | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
     if (!pageName) return;
 
-    // Prevent duplicate firing (Strict Mode + re-renders)
-    if (hasTrackedRef.current) return;
-    hasTrackedRef.current = true;
+    // Prevent duplicate tracking for same page
+    if (lastTrackedPage.current === pageName) return;
+
+    lastTrackedPage.current = pageName;
 
     try {
       trackEvent("page_view", {
         page: pageName,
       });
     } catch (error) {
-      console.error("[ANALYTICS HOOK ERROR]", error);
+      console.error("[ANALYTICS ERROR]", error);
     }
   }, [pageName]);
 }
