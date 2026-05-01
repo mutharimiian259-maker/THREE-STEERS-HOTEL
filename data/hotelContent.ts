@@ -1,58 +1,50 @@
+import { HOTEL } from "@/lib/config/hotel";
+
 export const hotelContent = {
   brand: {
-    name: "Three Steers Hotel, Meru",
+    name: HOTEL.identity.name,
     tagline:
       "Embrace the vibrant pulse of our city hotel, where comfort meets convenience.",
-    description:
-      "A luxury hotel in Meru nestled around Mt. Kenya offering 11 room categories, fine dining, conferencing, and premium hospitality experiences.",
+    description: HOTEL.seo.defaultDescription,
   },
 
   contacts: {
-    email: "reservation@threesteershotel.com",
-    phones: ["+254728588005", "+254735497772"],
+    email: HOTEL.contact.email,
+    phones: [
+      HOTEL.contact.phone.primary,
+      HOTEL.contact.phone.secondary,
+    ],
   },
 
   navigation: [
-    "Home",
-    "Rooms & Suites",
-    "Food & Drinks",
-    "Events & Offers",
-    "Conferencing & Banqueting",
-    "Fun Experiences",
-    "Blogs",
-    "Careers",
-    "Media",
-    "Contact Us",
+    { name: "Home", path: "/" },
+    { name: "Rooms & Suites", path: "/rooms" },
+    { name: "Food & Drinks", path: "/dining" },
+    { name: "Events & Offers", path: "/offers" },
+    { name: "Conferencing & Banqueting", path: "/conference" },
+    { name: "Fun Experiences", path: "/experiences" },
+    { name: "Blogs", path: "/blog" },
+    { name: "Careers", path: "/careers" },
+    { name: "Media", path: "/media" },
+    { name: "Contact Us", path: "/contact" },
   ],
 
   highlights: {
     rooms: {
       title: "Accommodation Categories",
       description:
-        "11 room categories across Batian and Lenana wings for every traveler.",
-      wings: ["Batian Wing", "Lenana Wing"],
+        "Multiple room categories designed for business and leisure travelers.",
     },
 
     dining: {
       title: "Food & Drinks",
-      restaurants: [
-        "Aberdares Restaurant",
-        "Nyambene Restaurant",
-        "Master's Lounge",
-      ],
       description:
-        "Tantalizing culinary experiences crafted by skilled chefs.",
+        "Premium dining experiences crafted by expert chefs.",
     },
 
     conferences: {
       title: "Meetings, Seminars & Events",
       capacity: "10 to 300 guests",
-      features: [
-        "Flexible Spaces",
-        "Full Event Support",
-        "Quality Catering",
-        "Guest Accommodation Rates",
-      ],
     },
 
     experiences: [
