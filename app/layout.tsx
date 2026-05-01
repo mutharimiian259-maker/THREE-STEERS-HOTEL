@@ -48,7 +48,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const gaId = HOTEL.analytics?.gaId;
+  const gaId = HOTEL.analytics?.gaId ?? null;
 
   return (
     <html lang="en">
@@ -64,8 +64,8 @@ export default function RootLayout({
         <ExitIntentModal />
         <Footer />
 
-        {/* Google Analytics Safe Load */}
-        {gaId ? (
+        {/* Google Analytics */}
+        {gaId && (
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
@@ -75,13 +75,13 @@ export default function RootLayout({
             <Script id="ga-script" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
-                function gtag(){window.dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gaId}');
+                window.gtag = function(){ window.dataLayer.push(arguments); };
+                window.gtag('js', new Date());
+                window.gtag('config', '${gaId}');
               `}
             </Script>
           </>
-        ) : null}
+        )}
 
         {/* Schema Markup */}
         <Script
