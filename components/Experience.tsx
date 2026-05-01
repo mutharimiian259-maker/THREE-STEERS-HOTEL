@@ -1,8 +1,7 @@
 "use client";
 
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
 const experiences = [
   { id: "mt-kenya-hiking", name: "Mt Kenya Hiking" },
@@ -12,10 +11,7 @@ const experiences = [
 
 export default function Experience() {
   return (
-    <section
-      className="p-6"
-      onMouseEnter={() => setFunnelStep("VISIT")}
-    >
+    <section className="p-6">
 
       <h2 className="text-xl font-bold text-yellow-500">
         Top Things to Do in {HOTEL.location.city}, {HOTEL.location.region}
@@ -32,11 +28,6 @@ export default function Experience() {
           <li
             key={item.id}
             className="card text-center font-medium hover:border-yellow-500 transition"
-            onMouseEnter={() =>
-              trackEvent("room_view", {
-                source: `experience_${item.id}`,
-              })
-            }
           >
             {item.name}
           </li>
@@ -58,7 +49,9 @@ export default function Experience() {
             trackEvent("booking_intent", {
               source: "experience_cta",
             });
-            setFunnelStep("CONTACT");
+
+            // FIX: align funnel model consistently
+            // experience CTA = intent stage, not contact
           }}
         >
           Book Stay + Experiences
