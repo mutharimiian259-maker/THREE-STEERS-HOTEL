@@ -1,23 +1,21 @@
 import "./../styles/globals.css";
 import type { Metadata } from "next";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/global/Navbar";
 import StickyCTA from "@/components/global/StickyCTA";
 import Footer from "@/components/global/Footer";
 import ExitIntentModal from "@/components/global/ExitIntentModal";
 import Script from "next/script";
-
-const siteUrl = "https://www.threesteershotel.com";
+import { HOTEL } from "@/lib/config/hotel";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(HOTEL.domain.primary),
 
   title: {
-    default: "Three Steers Hotel Meru | Book Direct & Save More",
-    template: "%s | Three Steers Hotel Meru",
+    default: HOTEL.seo.defaultTitle,
+    template: `%s | ${HOTEL.identity.name}`,
   },
 
-  description:
-    "Luxury hotel in Meru, Kenya offering accommodation, dining, conferences, and events near Mount Kenya. Book direct via WhatsApp or call for best rates.",
+  description: HOTEL.seo.defaultDescription,
 
   keywords: [
     "hotel in Meru Kenya",
@@ -28,11 +26,10 @@ export const metadata: Metadata = {
   ],
 
   openGraph: {
-    title: "Three Steers Hotel Meru",
-    description:
-      "Luxury stay in Meru with premium rooms, dining, and conference facilities.",
-    url: siteUrl,
-    siteName: "Three Steers Hotel",
+    title: HOTEL.identity.name,
+    description: HOTEL.seo.defaultDescription,
+    url: HOTEL.domain.primary,
+    siteName: HOTEL.identity.name,
     type: "website",
     locale: "en_KE",
     images: [
@@ -40,13 +37,13 @@ export const metadata: Metadata = {
         url: "/images/hotel.jpg",
         width: 1200,
         height: 630,
-        alt: "Three Steers Hotel Meru",
+        alt: HOTEL.identity.name,
       },
     ],
   },
 
   alternates: {
-    canonical: siteUrl,
+    canonical: HOTEL.domain.primary,
   },
 };
 
@@ -58,25 +55,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-white text-gray-900 antialiased">
-
-        {/* NAVIGATION */}
         <Navbar />
 
-        {/* MAIN CONTENT */}
-        <main className="min-h-screen">
-          {children}
-        </main>
+        <main className="min-h-screen">{children}</main>
 
-        {/* CONVERSION LAYERS */}
         <StickyCTA />
         <ExitIntentModal />
-
-        {/* TRUST / INFO */}
         <Footer />
 
-        {/* GOOGLE ANALYTICS (REPLACE ID BEFORE PROD) */}
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
+          src={`https://www.googletagmanager.com/gtag/js?id=${HOTEL.analytics.gaId}`}
           strategy="afterInteractive"
         />
 
@@ -85,11 +73,10 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-XXXXXXXXXX');
+            gtag('config', '${HOTEL.analytics.gaId}');
           `}
         </Script>
 
-        {/* HOTEL SCHEMA */}
         <Script
           id="schema-hotel"
           type="application/ld+json"
@@ -98,27 +85,25 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Hotel",
-              name: "Three Steers Hotel Meru",
-              url: siteUrl,
-              telephone: "+254728588005",
-              priceRange: "KSh 5,000 - 40,000",
+              name: HOTEL.identity.name,
+              url: HOTEL.domain.primary,
+              telephone: HOTEL.contact.phone.primary,
+              priceRange: HOTEL.pricing.range,
               address: {
                 "@type": "PostalAddress",
-                addressLocality: "Meru",
-                addressCountry: "KE",
+                addressLocality: HOTEL.location.city,
+                addressCountry: HOTEL.location.country,
               },
               geo: {
                 "@type": "GeoCoordinates",
-                latitude: -0.046,
-                longitude: 37.650,
+                latitude: HOTEL.location.coordinates.lat,
+                longitude: HOTEL.location.coordinates.lng,
               },
-              image: `${siteUrl}/images/hotel.jpg`,
-              description:
-                "Luxury hotel in Meru Kenya offering accommodation, dining, conferences, and events.",
+              image: `${HOTEL.domain.primary}/images/hotel.jpg`,
+              description: HOTEL.seo.defaultDescription,
             }),
           }}
         />
-
       </body>
     </html>
   );
