@@ -1,15 +1,11 @@
 "use client";
 
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
 export default function Conference() {
   return (
-    <section
-      className="p-6 bg-zinc-900"
-      onMouseEnter={() => setFunnelStep("INTENT")}
-    >
+    <section className="p-6 bg-zinc-900">
 
       <h2 className="text-xl font-bold text-yellow-500">
         Conference & Event Spaces in {HOTEL.location.city}, {HOTEL.location.country}
@@ -29,24 +25,14 @@ export default function Conference() {
 
       <div className="grid md:grid-cols-2 gap-4 mt-4">
 
-        <div
-          className="card"
-          onMouseEnter={() =>
-            trackEvent("room_view", { source: "conference_summit_hall" })
-          }
-        >
+        <div className="card">
           <h3 className="font-bold text-yellow-500">Summit Hall</h3>
           <p className="text-sm text-gray-400">
             Ideal for large corporate events, conferences, and official gatherings.
           </p>
         </div>
 
-        <div
-          className="card"
-          onMouseEnter={() =>
-            trackEvent("room_view", { source: "conference_room_2" })
-          }
-        >
+        <div className="card">
           <h3 className="font-bold text-yellow-500">Conference Room 2</h3>
           <p className="text-sm text-gray-400">
             Perfect for board meetings, workshops, and small seminars.
@@ -67,7 +53,9 @@ export default function Conference() {
           trackEvent("booking_intent", {
             source: "conference_cta",
           });
-          setFunnelStep("CONTACT");
+
+          // FIX: unified funnel model
+          // DO NOT downgrade to CONTACT
         }}
       >
         Make Enquiry
