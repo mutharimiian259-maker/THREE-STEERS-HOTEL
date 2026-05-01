@@ -2,13 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { routes } from "@/lib/routes";
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep, getFunnelStep } from "@/lib/analytics/funnelEvents";
 
 export default function Navbar() {
-  const currentStep = typeof window !== "undefined" ? getFunnelStep() : null;
+  const [currentStep, setCurrentStep] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentStep(getFunnelStep());
+  }, []);
 
   return (
     <nav className="flex items-center justify-between p-4 bg-black border-b border-zinc-800 sticky top-0 z-50">
@@ -40,7 +45,7 @@ export default function Navbar() {
               currentStep === "ROOM_VIEW" ? "text-yellow-500" : ""
             }`}
             onClick={() => {
-              trackEvent("page_view", { page: route.name });
+              // FIX: avoid duplicate page_view (already tracked globally)
               setFunnelStep("INTENT");
             }}
           >
@@ -57,7 +62,9 @@ export default function Navbar() {
         className="btn btn-green"
         onClick={() => {
           trackEvent("whatsapp_click", { source: "navbar" });
-          setFunnelStep("CONTACT");
+
+          // FIX: align funnel consistency (INTENT is correct stage)
+          setFunnelStep("INTENT");
         }}
       >
         Book via WhatsApp
