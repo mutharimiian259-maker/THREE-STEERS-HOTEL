@@ -1,29 +1,92 @@
+"use client";
+
+import Link from "next/link";
+import { trackEvent } from "@/lib/analytics/trackEvent";
+import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+import { HOTEL } from "@/lib/config/hotel";
+
 export default function About() {
   return (
-    <section className="p-6">
+    <section
+      className="p-6"
+      onMouseEnter={() => setFunnelStep("VISIT")}
+    >
 
-      {/* SEO OPTIMIZED H2 */}
       <h2 className="text-2xl font-bold text-yellow-500">
-        About Three Steers Hotel – Meru, Kenya
+        About {HOTEL.identity.name} – {HOTEL.location.city}, Kenya
       </h2>
 
-      {/* CORE VALUE STATEMENT */}
       <p className="text-gray-300 mt-3 leading-relaxed">
-        Three Steers Hotel is a leading hotel in Meru, Kenya, offering premium accommodation,
-        modern conference facilities, and exceptional hospitality near the Mt Kenya region.
+        {HOTEL.identity.name} is a leading hotel in {HOTEL.location.city}, Kenya,
+        offering premium accommodation, modern conference facilities,
+        and exceptional hospitality near the Mt Kenya region.
       </p>
 
-      {/* ACCOMMODATION DETAILS */}
-      <p className="text-gray-400 mt-3 leading-relaxed">
-        We feature 11 unique room categories designed for business travelers, tourists,
-        families, and groups seeking comfort, security, and convenience in Meru town.
+      <h3 className="text-lg font-semibold text-yellow-400 mt-4">
+        Accommodation Experience
+      </h3>
+
+      <p className="text-gray-400 mt-2 leading-relaxed">
+        We feature 11 unique room categories designed for business travelers,
+        tourists, families, and groups seeking comfort, security, and convenience
+        in {HOTEL.location.city}.
       </p>
 
-      {/* FACILITIES / SERVICES */}
-      <p className="text-gray-400 mt-3">
-        Guests enjoy two restaurants, conference halls, a fitness gym, landscaped gardens,
-        ample parking, and family-friendly services designed for both short and long stays.
+      <h3 className="text-lg font-semibold text-yellow-400 mt-4">
+        Facilities & Services
+      </h3>
+
+      <p className="text-gray-400 mt-2">
+        Guests enjoy restaurants, conference halls, fitness facilities, landscaped gardens,
+        ample parking, and premium hospitality services for both short and long stays.
       </p>
+
+      {/* INTERNAL NAVIGATION (SEO + CONVERSION BOOST) */}
+      <div className="mt-6 flex gap-4 flex-wrap">
+
+        <Link
+          href="/rooms"
+          className="text-yellow-500 underline"
+          onClick={() => trackEvent("booking_intent", { source: "about_rooms" })}
+        >
+          View Rooms
+        </Link>
+
+        <Link
+          href="/#dining"
+          className="text-yellow-500 underline"
+          onClick={() => trackEvent("booking_intent", { source: "about_dining" })}
+        >
+          Explore Dining
+        </Link>
+
+        <Link
+          href="/#booking"
+          className="text-yellow-500 underline"
+          onClick={() => setFunnelStep("INTENT")}
+        >
+          Book Now
+        </Link>
+
+      </div>
+
+      {/* DIRECT CONVERSION CTA */}
+      <div className="mt-6">
+
+        <a
+          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
+            "Hello, I would like to know more about Three Steers Hotel and make a booking."
+          )}`}
+          className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg"
+          onClick={() => {
+            trackEvent("whatsapp_click", { source: "about_section" });
+            setFunnelStep("CONTACT");
+          }}
+        >
+          Talk to Reservations
+        </a>
+
+      </div>
 
     </section>
   );
