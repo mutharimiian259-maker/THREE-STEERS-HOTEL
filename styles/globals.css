@@ -11,18 +11,15 @@ body {
 
 /* =========================
    DESIGN TOKENS
-   (Single source of visual truth)
 ========================= */
 :root {
   --gold: #D4AF37;
   --green: #25D366;
-
-  /* spacing consistency (future-proofing) */
   --radius: 0.75rem;
 }
 
 /* =========================
-   TYPOGRAPHY UTILITIES
+   TYPOGRAPHY
 ========================= */
 .text-gold {
   color: var(--gold);
@@ -35,10 +32,10 @@ body {
   @apply inline-flex items-center justify-center px-5 py-3 rounded-full font-semibold transition-all duration-200;
 }
 
-/* Focus state (accessibility fix) */
-.btn:focus {
-  @apply outline-none ring-2 ring-offset-2 ring-offset-black;
-  ring-color: var(--gold);
+/* Focus accessibility */
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.5);
 }
 
 /* GOLD BUTTON */
@@ -51,7 +48,11 @@ body {
   filter: brightness(0.95);
 }
 
-/* GREEN BUTTON (WhatsApp CTA) */
+.btn-gold:active {
+  transform: scale(0.98);
+}
+
+/* GREEN BUTTON */
 .btn-green {
   background-color: var(--green);
   color: white;
@@ -61,27 +62,37 @@ body {
   filter: brightness(0.95);
 }
 
+.btn-green:active {
+  transform: scale(0.98);
+}
+
 /* =========================
-   CARD SYSTEM (HOVER UX FIX)
+   CARD SYSTEM
 ========================= */
 .card {
-  @apply bg-zinc-900 p-4 rounded-xl shadow-lg transition-all duration-200;
+  @apply bg-zinc-900 p-4 rounded-xl shadow-lg transition-all duration-200 border border-zinc-800;
   border-radius: var(--radius);
 }
 
 .card:hover {
   transform: translateY(-3px);
-  @apply shadow-xl;
+  @apply shadow-xl border-zinc-700;
 }
 
 /* =========================
-   LAYOUT SAFETY (PREVENT UI BREAKS)
+   LAYOUT SAFETY
 ========================= */
 img {
   @apply max-w-full h-auto;
 }
 
-/* Prevent text overflow issues */
 p, h1, h2, h3, h4 {
   @apply break-words;
+}
+
+/* =========================
+   OPTIONAL: GLOBAL CONTAINER (IMPORTANT FOR SCALE)
+========================= */
+.container {
+  @apply max-w-6xl mx-auto px-4;
 }
