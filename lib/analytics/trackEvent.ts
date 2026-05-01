@@ -17,7 +17,7 @@ type Payload = {
 };
 
 const STORAGE_KEY = "hotel_analytics";
-const MAX_EVENTS = 200; // prevent storage overflow
+const MAX_EVENTS = 200;
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -50,8 +50,8 @@ export function trackEvent(
       }
     }
 
-    // ✅ Deduplication (simple recent check)
     const last = events[events.length - 1];
+
     if (
       last &&
       last.event === payload.event &&
@@ -62,22 +62,19 @@ export function trackEvent(
 
     events.push(payload);
 
-    // ✅ Prevent storage overflow
     if (events.length > MAX_EVENTS) {
       events = events.slice(-MAX_EVENTS);
     }
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
 
-    // ✅ Only fire GA in production
-    if (
-      typeof window !== "undefined" &&
-      process.env.NODE_ENV === "production" &&
-      typeof (window as any).gtag === "function"
-    ) {
-      (window as any).gtag("event", event, data);
+    const w = window as any;
+
+    if (typeof w.gtag === "function") {
+      w.gtag("event", event, data);
     }
   } catch (error) {
+    // prevent analytics from breaking app flow
     console.error("Analytics error:", error);
   }
 }
