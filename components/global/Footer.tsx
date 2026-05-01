@@ -5,6 +5,10 @@ import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
 export default function Footer() {
+  const whatsappNumber = HOTEL.contact.phone.whatsapp
+    .replace("+", "")
+    .replace(/\s/g, "");
+
   return (
     <footer className="bg-black text-white border-t border-zinc-800 mt-20">
 
@@ -21,12 +25,15 @@ export default function Footer() {
 
         <div>
           <h3 className="font-semibold mb-3">Contact</h3>
+
           <p className="text-sm text-zinc-400">
             {HOTEL.location.full}
           </p>
+
           <p className="text-sm text-zinc-400">
             {HOTEL.contact.phone.primary}
           </p>
+
           <p className="text-sm text-zinc-400">
             {HOTEL.contact.email}
           </p>
@@ -36,7 +43,7 @@ export default function Footer() {
           <h3 className="font-semibold mb-3">Book Now</h3>
 
           <a
-            href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
+            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
               "Hello, I would like to book a room at Three Steers Hotel Meru."
             )}`}
             className="inline-block bg-green-500 text-white px-4 py-2 rounded-md text-sm"
@@ -46,9 +53,12 @@ export default function Footer() {
               });
               setFunnelStep("CONTACT");
             }}
+            target="_blank"
+            rel="noopener noreferrer"
           >
             WhatsApp Booking
           </a>
+
         </div>
 
       </div>
