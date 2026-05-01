@@ -5,12 +5,15 @@ import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { HOTEL } from "@/lib/config/hotel";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+import { setFunnelStep, getFunnelStep } from "@/lib/analytics/funnelEvents";
 
 export default function Navbar() {
+  const currentStep = typeof window !== "undefined" ? getFunnelStep() : null;
+
   return (
     <nav className="flex items-center justify-between p-4 bg-black border-b border-zinc-800 sticky top-0 z-50">
 
+      {/* BRAND */}
       <Link
         href="/"
         className="flex items-center gap-2"
@@ -27,30 +30,37 @@ export default function Navbar() {
         </span>
       </Link>
 
+      {/* NAV LINKS */}
       <div className="hidden md:flex gap-6 text-sm text-gray-300">
-        {routes?.map((route) => (
+        {routes.map((route) => (
           <Link
             key={route.path}
             href={route.path}
-            className="hover:text-yellow-500 transition"
-            onClick={() => setFunnelStep("VISIT")}
+            className={`transition hover:text-yellow-500 ${
+              currentStep === "ROOM_VIEW" ? "text-yellow-500" : ""
+            }`}
+            onClick={() => {
+              trackEvent("page_view", { page: route.name });
+              setFunnelStep("INTENT");
+            }}
           >
             {route.name}
           </Link>
         ))}
       </div>
 
+      {/* PRIMARY CTA */}
       <a
         href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
           "Hello, I would like to book a room at Three Steers Hotel Meru."
         )}`}
         className="btn btn-green"
         onClick={() => {
-          trackEvent("whatsapp_click");
+          trackEvent("whatsapp_click", { source: "navbar" });
           setFunnelStep("CONTACT");
         }}
       >
-        Book Now
+        Book via WhatsApp
       </a>
 
     </nav>
