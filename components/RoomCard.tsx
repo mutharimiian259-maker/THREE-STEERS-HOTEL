@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
@@ -19,12 +19,14 @@ type Room = {
 export default function RoomCard({ room }: { room: Room }) {
   if (!room) return null;
 
+  const whatsappNumber = HOTEL.contact.phone.whatsapp;
+
   const message = encodeURIComponent(
     `Hello, I would like to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, prices, and dates.`
   );
 
   const price =
-    room.price && room.currency
+    typeof room.price === "number" && room.currency
       ? `${room.currency} ${room.price.toLocaleString()}`
       : "Price on request";
 
@@ -71,11 +73,13 @@ export default function RoomCard({ room }: { room: Room }) {
         </p>
 
         <a
-          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${message}`}
+          href={`https://wa.me/${whatsappNumber}?text=${message}`}
           className="btn btn-green block mt-4 text-center"
           onClick={() => {
             trackEvent("whatsapp_click", { room: room.name });
-            setFunnelStep("CONTACT");
+
+            // FIX: keep funnel semantics consistent (INTENT is more accurate than CONTACT)
+            setFunnelStep("INTENT");
           }}
         >
           Book This Room via WhatsApp
