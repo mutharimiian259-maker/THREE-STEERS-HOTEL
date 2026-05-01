@@ -1,6 +1,6 @@
 "use client";
 
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
@@ -14,12 +14,15 @@ export default function ContactInfo() {
         Contact {HOTEL.identity.name}
       </h2>
 
-      {/* EMAIL (SOFT INTENT) */}
+      {/* EMAIL (SOFT LEAD ONLY) */}
       <a
         href={`mailto:${HOTEL.contact.email}`}
         className="block mt-2 text-gray-400 hover:text-white"
         onClick={() => {
-          trackEvent("booking_intent", { source: "email_contact" });
+          trackEvent("booking_intent", {
+            source: "email_contact",
+            intent_level: "low",
+          });
         }}
       >
         {HOTEL.contact.email}
@@ -36,14 +39,17 @@ export default function ContactInfo() {
           href={`tel:${phone}`}
           className="px-6 py-2 bg-yellow-500 text-black rounded-lg m-2 inline-block"
           onClick={() => {
-            trackEvent("call_click", { source: "contact_section" });
+            trackEvent("call_click", {
+              source: "contact_section",
+            });
+
             setFunnelStep("INTENT");
           }}
         >
           Call Now
         </a>
 
-        {/* WHATSAPP (CONVERSION ACTION) */}
+        {/* WHATSAPP (PRIMARY CONVERSION ACTION) */}
         <a
           href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
             "Hello, I would like to make a booking at " +
@@ -51,8 +57,12 @@ export default function ContactInfo() {
           )}`}
           className="px-6 py-2 bg-green-600 text-white rounded-lg m-2 inline-block"
           onClick={() => {
-            trackEvent("whatsapp_click", { source: "contact_section" });
-            setFunnelStep("CONTACT");
+            trackEvent("whatsapp_click", {
+              source: "contact_section",
+            });
+
+            // FIX: unify funnel model
+            setFunnelStep("INTENT");
           }}
         >
           WhatsApp
