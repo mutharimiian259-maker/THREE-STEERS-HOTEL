@@ -6,11 +6,12 @@ import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 import { HOTEL } from "@/lib/config/hotel";
 
 export default function About() {
+  const whatsappNumber = HOTEL.contact.phone.whatsapp
+    .replace("+", "")
+    .replace(/\s/g, "");
+
   return (
-    <section
-      className="p-6"
-      onMouseEnter={() => setFunnelStep("VISIT")}
-    >
+    <section className="p-6" onMouseEnter={() => setFunnelStep("VISIT")}>
 
       <h2 className="text-2xl font-bold text-yellow-500">
         About {HOTEL.identity.name} – {HOTEL.location.city}, Kenya
@@ -41,13 +42,15 @@ export default function About() {
         ample parking, and premium hospitality services for both short and long stays.
       </p>
 
-      {/* INTERNAL NAVIGATION (SEO + CONVERSION BOOST) */}
+      {/* INTERNAL NAVIGATION */}
       <div className="mt-6 flex gap-4 flex-wrap">
 
         <Link
           href="/rooms"
           className="text-yellow-500 underline"
-          onClick={() => trackEvent("booking_intent", { source: "about_rooms" })}
+          onClick={() =>
+            trackEvent("page_view", { source: "about_rooms" })
+          }
         >
           View Rooms
         </Link>
@@ -55,7 +58,9 @@ export default function About() {
         <Link
           href="/#dining"
           className="text-yellow-500 underline"
-          onClick={() => trackEvent("booking_intent", { source: "about_dining" })}
+          onClick={() =>
+            trackEvent("page_view", { source: "about_dining" })
+          }
         >
           Explore Dining
         </Link>
@@ -70,11 +75,11 @@ export default function About() {
 
       </div>
 
-      {/* DIRECT CONVERSION CTA */}
+      {/* WHATSAPP CTA */}
       <div className="mt-6">
 
         <a
-          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
+          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
             "Hello, I would like to know more about Three Steers Hotel and make a booking."
           )}`}
           className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg"
