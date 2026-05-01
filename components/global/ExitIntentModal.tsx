@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { HOTEL } from "@/lib/config/hotel";
+import { trackEvent } from "@/lib/analytics/trackEvent";
+import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
 export default function ExitIntentModal() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Prevent repeat in same session
+    if (typeof window === "undefined") return;
+
     if (sessionStorage.getItem("exit_intent_shown")) return;
 
-    // Disable on mobile
     if (window.innerWidth < 768) return;
 
     let triggered = false;
@@ -20,11 +23,15 @@ export default function ExitIntentModal() {
 
         sessionStorage.setItem("exit_intent_shown", "true");
 
+        setFunnelStep("INTENT");
+        trackEvent("booking_intent", {
+          source: "exit_intent",
+        });
+
         setShow(true);
       }
     };
 
-    // Delay activation (user must stay at least 5s)
     const timer = setTimeout(() => {
       window.addEventListener("mousemove", handler);
     }, 5000);
@@ -46,12 +53,20 @@ export default function ExitIntentModal() {
         </h2>
 
         <p className="text-gray-600 mt-2">
-          Book directly with us for better rates and instant confirmation.
+          Book directly with {HOTEL.identity.name} for better rates and instant confirmation.
         </p>
 
         <a
-          href="https://wa.me/254728588005"
+          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
+            "Hello, I saw your website and would like to book a room at Three Steers Hotel Meru."
+          )}`}
           className="mt-4 inline-block bg-green-500 text-white px-5 py-2 rounded"
+          onClick={() => {
+            trackEvent("whatsapp_click", {
+              source: "exit_intent",
+            });
+            setFunnelStep("CONTACT");
+          }}
         >
           Book via WhatsApp
         </a>
