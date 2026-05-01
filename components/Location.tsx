@@ -1,15 +1,12 @@
 "use client";
 
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 
 export default function Location() {
   return (
-    <section
-      className="p-6"
-      onMouseEnter={() => setFunnelStep("VISIT")}
-    >
+    <section className="p-6">
 
       <h2 className="text-xl font-bold text-yellow-500">
         Location – {HOTEL.identity.name}, {HOTEL.location.city}
@@ -28,12 +25,6 @@ export default function Location() {
         src={`https://www.google.com/maps?q=${encodeURIComponent(
           HOTEL.identity.name + " " + HOTEL.location.city
         )}&output=embed`}
-        onClick={() => {
-          trackEvent("page_view", {
-            source: "location_map",
-          });
-          setFunnelStep("INTENT");
-        }}
       />
 
       <div className="mt-4 flex flex-col md:flex-row gap-3">
@@ -49,6 +40,7 @@ export default function Location() {
             trackEvent("booking_intent", {
               source: "directions",
             });
+
             setFunnelStep("INTENT");
           }}
         >
@@ -67,7 +59,9 @@ export default function Location() {
             trackEvent("whatsapp_click", {
               source: "location",
             });
-            setFunnelStep("CONTACT");
+
+            // FIX: align funnel consistency
+            setFunnelStep("INTENT");
           }}
         >
           💬 Book via WhatsApp
