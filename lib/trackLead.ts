@@ -8,9 +8,17 @@ function canSendLead(source: string): boolean {
     const now = Date.now();
 
     if (last) {
-      const parsed = JSON.parse(last);
-      if (parsed.source === source && now - parsed.time < 15000) {
-        return false;
+      try {
+        const parsed = JSON.parse(last);
+
+        if (
+          parsed?.source === source &&
+          now - parsed?.time < 15000
+        ) {
+          return false;
+        }
+      } catch {
+        localStorage.removeItem(LEAD_CACHE_KEY);
       }
     }
 
@@ -27,7 +35,6 @@ function canSendLead(source: string): boolean {
 
 export async function trackLead(source: string) {
   if (typeof window === "undefined") return;
-
   if (!source || typeof source !== "string") return;
 
   if (!canSendLead(source)) return;
@@ -39,19 +46,24 @@ export async function trackLead(source: string) {
       url: window.location.href,
     };
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
     const res = await fetch("/api/leads", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      signal: controller.signal,
       body: JSON.stringify(payload),
     });
+
+    clearTimeout(timeout);
 
     if (!res.ok) {
       console.error("[LEAD ERROR]", res.status);
       return;
     }
-
   } catch (error) {
     console.error("[LEAD FAILED]", error);
   }
