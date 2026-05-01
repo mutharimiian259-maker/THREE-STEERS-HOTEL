@@ -1,4 +1,4 @@
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 
 export const hotelContent = {
   brand: {
@@ -19,14 +19,16 @@ export const hotelContent = {
   navigation: [
     { name: "Home", path: "/" },
     { name: "Rooms & Suites", path: "/rooms" },
-    { name: "Food & Drinks", path: "/dining" },
-    { name: "Events & Offers", path: "/offers" },
-    { name: "Conferencing & Banqueting", path: "/conference" },
-    { name: "Fun Experiences", path: "/experiences" },
+
+    // FIXED: align with actual page structure (section-based routing)
+    { name: "Food & Drinks", path: "/#dining" },
+    { name: "Conferencing & Banqueting", path: "/#conference" },
+    { name: "Fun Experiences", path: "/#experiences" },
+
     { name: "Blogs", path: "/blog" },
-    { name: "Careers", path: "/careers" },
-    { name: "Media", path: "/media" },
-    { name: "Contact Us", path: "/contact" },
+
+    // FIXED: no /contact page exists → align with booking section
+    { name: "Contact Us", path: "/#booking" },
   ],
 
   highlights: {
@@ -64,6 +66,11 @@ export const hotelContent = {
       "Cookie Policy",
       "Recruitment Policy",
     ],
-    social: ["Facebook", "Instagram", "Twitter"],
+
+    social: [
+      { name: "Facebook", url: "#" },
+      { name: "Instagram", url: "#" },
+      { name: "Twitter", url: "#" },
+    ],
   },
 };
