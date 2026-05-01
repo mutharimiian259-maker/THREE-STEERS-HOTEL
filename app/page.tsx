@@ -7,7 +7,7 @@ import Conference from "@/components/Conference";
 import Dining from "@/components/Dining";
 import Experience from "@/components/Experience";
 import Link from "next/link";
-import { rooms } from "@/data/rooms";
+import rooms from "@/data/rooms";
 import { HOTEL } from "@/lib/config/hotel";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnelEvents";
@@ -32,7 +32,7 @@ export default function Home() {
       <section id="rooms" className="p-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-yellow-500">
-            Rooms & Accommodation in Meru
+            Rooms & Accommodation in {HOTEL.location.city}
           </h2>
 
           <Link
@@ -47,10 +47,12 @@ export default function Home() {
           {safeRooms.slice(0, 3).map((room: any) => (
             <div
               key={room.id}
-              onClick={() => {
-                trackEvent("room_view", { room: room.name });
-                setFunnelStep("ROOM_VIEW");
-              }}
+              onMouseEnter={() =>
+                trackEvent("room_view", {
+                  room: room.name,
+                })
+              }
+              onClick={() => setFunnelStep("ROOM_VIEW")}
             >
               <RoomCard room={room} />
             </div>
@@ -76,7 +78,7 @@ export default function Home() {
 
       <section id="about" className="p-6">
         <h2 className="text-xl font-bold text-yellow-500">
-          Luxury Hotel in Meru Kenya
+          Luxury Hotel in {HOTEL.location.city}, {HOTEL.location.country}
         </h2>
 
         <p className="text-gray-300 mt-3 leading-relaxed">
@@ -113,7 +115,9 @@ export default function Home() {
         <div className="mt-6 flex flex-col md:flex-row justify-center gap-4">
 
           <a
-            href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=Hello%20I%20want%20to%20book%20a%20room%20at%20${HOTEL.identity.name}`}
+            href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
+              "Hello, I want to book a room at " + HOTEL.identity.name
+            )}`}
             className="px-6 py-3 bg-green-600 text-white rounded-lg"
             onClick={() => {
               trackEvent("whatsapp_click");
