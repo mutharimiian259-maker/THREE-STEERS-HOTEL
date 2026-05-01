@@ -1,22 +1,32 @@
 "use client";
 
+import { useRef } from "react";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnelEvents";
 import { HOTEL } from "@/lib/config/hotel";
 
 export default function StickyCTA() {
+  const clickedRef = useRef(false);
 
   const handleWhatsAppClick = () => {
+    if (clickedRef.current) return;
+    clickedRef.current = true;
+
     trackEvent("whatsapp_click", {
       source: "sticky_cta",
     });
+
     setFunnelStep("CONTACT");
   };
 
   const handleCallClick = () => {
+    if (clickedRef.current) return;
+    clickedRef.current = true;
+
     trackEvent("call_click", {
       source: "sticky_cta",
     });
+
     setFunnelStep("CONTACT");
   };
 
