@@ -7,6 +7,11 @@ type SeoProps = {
   image?: string;
 };
 
+function joinUrl(base: string, path: string): string {
+  if (!path) return base;
+  return `${base.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export function generateSEO({
   title,
   description,
@@ -22,17 +27,24 @@ export function generateSEO({
 
   const baseUrl = HOTEL.domain.primary;
 
-  const url = `${baseUrl}${path}`;
+  const url = joinUrl(baseUrl, path);
 
-  const absoluteImage = image.startsWith("http")
-    ? image
-    : `${baseUrl}${image}`;
+  const safeImage =
+    typeof image === "string" && image.length > 0
+      ? image
+      : "/images/hotel.jpg";
+
+  const absoluteImage = safeImage.startsWith("http")
+    ? safeImage
+    : joinUrl(baseUrl, safeImage);
 
   return {
     title: fullTitle,
     description: fullDescription,
 
-    keywords: HOTEL.seo.keywords,
+    keywords: Array.isArray(HOTEL.seo.keywords)
+      ? [...HOTEL.seo.keywords]
+      : [],
 
     openGraph: {
       title: fullTitle,
