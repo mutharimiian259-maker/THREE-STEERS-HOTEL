@@ -1,7 +1,37 @@
 import { HOTEL } from "@/lib/config";
 
-export function buildWhatsAppLink(message: string) {
-  const encoded = encodeURIComponent(message);
+/**
+ * Cleans phone number for WhatsApp API compatibility
+ */
+function sanitizePhone(phone: string) {
+  return phone.replace(/[^\d]/g, "");
+}
 
-  return `https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encoded}`;
+/**
+ * Builds a tracked WhatsApp booking link
+ */
+export function buildWhatsAppLink(
+  message: string,
+  options?: {
+    source?: string;
+    room?: string;
+  }
+) {
+  const phone = sanitizePhone(HOTEL.contact.phone.whatsapp);
+
+  if (!phone) {
+    throw new Error("WhatsApp number is missing in HOTEL config");
+  }
+
+  const enrichedMessage = `
+${message}
+
+---
+Source: ${options?.source ?? "direct"}
+${options?.room ? `Room: ${options.room}` : ""}
+`.trim();
+
+  const encoded = encodeURIComponent(enrichedMessage);
+
+  return `https://wa.me/${phone}?text=${encoded}`;
 }
