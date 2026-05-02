@@ -1,42 +1,34 @@
 "use client";
 
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { HOTEL } from "@/lib/config";
-
-const WHATSAPP_NUMBER = HOTEL.contact.phone.whatsapp;
+import { useEffect } from "react";
+import { FunnelEvents } from "@/lib/analytics/conversionEvents";
 
 export default function BookingTracker() {
-  const handleWhatsAppClick = () => {
-    trackEvent("whatsapp_click", {
-      source: "booking_tracker",
-    });
-  };
+  useEffect(() => {
+    const handleClick = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
 
-  const handleCallClick = () => {
-    trackEvent("call_click", {
-      source: "booking_tracker",
-    });
-  };
+      const link = target.closest("a") as HTMLAnchorElement | null;
+      if (!link) return;
 
-  return (
-    <div className="hidden">
+      const href = link.getAttribute("href") || "";
 
-      {/* WhatsApp tracking wrapper */}
-      <a
-        href={`https://wa.me/${WHATSAPP_NUMBER}`}
-        onClick={handleWhatsAppClick}
-      >
-        WhatsApp
-      </a>
+      if (href.includes("wa.me")) {
+        FunnelEvents.whatsappClick(window.location.pathname);
+      }
 
-      {/* Call tracking wrapper */}
-      <a
-        href={`tel:${HOTEL.contact.phone.primary}`}
-        onClick={handleCallClick}
-      >
-        Call
-      </a>
+      if (href.startsWith("tel:")) {
+        FunnelEvents.callClick(window.location.pathname);
+      }
+    };
 
-    </div>
-  );
+    document.addEventListener("click", handleClick);
+
+    return () => {
+      document.removeEventListener("click", handleClick);
+    };
+  }, []);
+
+  return null;
 }
