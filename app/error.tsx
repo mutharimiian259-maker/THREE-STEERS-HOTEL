@@ -10,18 +10,24 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+
   useEffect(() => {
     try {
-      console.error("APP ERROR:", {
-        message: error?.message,
-        name: error?.name,
-        digest: error?.digest,
-        stack: error?.stack,
-      });
+      console.error("APP ERROR:", error?.message, error?.digest);
     } catch {
       // silent fail
     }
   }, [error]);
+
+  const handleReset = () => {
+    try {
+      reset();
+    } catch {
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center text-center px-6">
@@ -39,13 +45,7 @@ export default function Error({
         <div className="mt-6 flex flex-col gap-3">
 
           <button
-            onClick={() => {
-              try {
-                reset();
-              } catch {
-                window.location.reload();
-              }
-            }}
+            onClick={handleReset}
             className="btn btn-green"
           >
             Try Again
