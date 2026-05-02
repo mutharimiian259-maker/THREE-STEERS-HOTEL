@@ -2,15 +2,22 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import rooms from "@/data/rooms";
 import { generateSEO } from "@/lib/seo";
+import { HOTEL } from "@/lib/config";
 
 type Props = {
   params: { slug: string };
 };
 
-export async function generateMetadata({ params }: Props) {
-  const room = Array.isArray(rooms)
-    ? rooms.find((r) => r.slug === params.slug)
+/* ---------------- SINGLE SOURCE LOOKUP ---------------- */
+function getRoom(slug: string) {
+  return Array.isArray(rooms)
+    ? rooms.find((r) => r.slug === slug)
     : null;
+}
+
+/* ---------------- METADATA ---------------- */
+export async function generateMetadata({ params }: Props) {
+  const room = getRoom(params.slug);
 
   if (!room) {
     return generateSEO({
@@ -27,18 +34,24 @@ export async function generateMetadata({ params }: Props) {
   });
 }
 
+/* ---------------- PAGE ---------------- */
 export default function RoomPage({ params }: Props) {
-  const room = Array.isArray(rooms)
-    ? rooms.find((r) => r.slug === params.slug)
-    : null;
+  const room = getRoom(params.slug);
 
   if (!room) return notFound();
 
+  const whatsappNumber = HOTEL.contact.phone.whatsapp;
+
   const message = encodeURIComponent(
-    `Hello, I want to book the ${room.name} at Three Steers Hotel Meru. Please confirm availability, pricing, and check-in details.`
+    `Hello, I want to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, pricing, and check-in details.`
   );
 
   const imageSrc = room.image || "/images/placeholder.jpg";
+
+  const price =
+    typeof room.price === "number"
+      ? `${room.currency ?? "KES"} ${room.price.toLocaleString()}`
+      : "Price on request";
 
   return (
     <main className="max-w-4xl mx-auto p-6">
@@ -47,7 +60,7 @@ export default function RoomPage({ params }: Props) {
       <div className="relative w-full h-72">
         <Image
           src={imageSrc}
-          alt={room.name || "Room"}
+          alt={room.name}
           fill
           priority
           sizes="(max-width: 768px) 100vw, 50vw"
@@ -62,13 +75,13 @@ export default function RoomPage({ params }: Props) {
 
       {/* DESCRIPTION */}
       <p className="text-gray-500 mt-2">
-        Experience comfort, privacy, and premium hospitality at Three Steers Hotel Meru.
+        Experience comfort, privacy, and premium hospitality at {HOTEL.identity.name}.
         Designed for business travelers and leisure guests.
       </p>
 
       {/* PRICE */}
       <p className="text-white mt-3 text-lg font-semibold">
-        {room.currency} {Number(room.price || 0).toLocaleString()} / night
+        {price} / night
       </p>
 
       {/* FEATURES */}
@@ -87,7 +100,7 @@ export default function RoomPage({ params }: Props) {
       {/* CTA 1 */}
       <div className="mt-6">
         <a
-          href={`https://wa.me/254728588005?text=${message}`}
+          href={`https://wa.me/${whatsappNumber}?text=${message}`}
           className="btn btn-green block text-center"
         >
           💬 Check Availability & Book Now
@@ -97,7 +110,7 @@ export default function RoomPage({ params }: Props) {
       {/* CTA 2 */}
       <div className="mt-4">
         <a
-          href="tel:+254728588005"
+          href={`tel:${HOTEL.contact.phone.primary}`}
           className="btn btn-gold block text-center"
         >
           📞 Call Reception for Instant Booking
