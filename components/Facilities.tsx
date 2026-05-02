@@ -2,20 +2,20 @@
 
 import { HOTEL } from "@/lib/config";
 
-export default function Facilities() {
-  const facilities = [
-    "Free High-Speed WiFi",
-    "Secure Parking",
-    "Conference & Meeting Rooms",
-    "On-site Restaurant & Bar",
-    "24/7 Front Desk",
-    "Room Service",
-    "Airport Transfers",
-    "Laundry Services",
-  ];
+const facilities = [
+  "Free High-Speed WiFi",
+  "Secure Parking",
+  "Conference & Meeting Rooms",
+  "On-site Restaurant & Bar",
+  "24/7 Front Desk",
+  "Room Service",
+  "Airport Transfers",
+  "Laundry Services",
+];
 
+export default function Facilities() {
   return (
-    <div className="p-6 bg-zinc-900">
+    <section className="p-6 bg-zinc-900">
 
       <h2 className="text-2xl font-bold text-yellow-500 text-center">
         Premium Facilities at {HOTEL.identity.name}
@@ -26,19 +26,19 @@ export default function Facilities() {
         designed for both business and leisure guests in {HOTEL.location.city}.
       </p>
 
-      <div className="grid md:grid-cols-4 gap-4 mt-8">
+      <ul className="grid md:grid-cols-4 gap-4 mt-8 list-none">
 
-        {facilities.map((item, index) => (
-          <div
-            key={index}
+        {facilities.map((item) => (
+          <li
+            key={item}
             className="bg-black border border-zinc-800 p-4 rounded-lg text-center hover:border-yellow-500 transition"
           >
             <p className="text-white text-sm">{item}</p>
-          </div>
+          </li>
         ))}
 
-      </div>
+      </ul>
 
-    </div>
+    </section>
   );
 }
