@@ -1,18 +1,33 @@
 "use client";
 
 import { HOTEL } from "@/lib/config";
+import { IMAGES } from "@/lib/images";
+import Image from "next/image";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 
 const experiences = [
-  { id: "mt-kenya-hiking", name: "Mt Kenya Hiking" },
-  { id: "ngare-ndare-forest", name: "Ngare Ndare Forest" },
-  { id: "lewa-conservancy", name: "Lewa Conservancy Safari" },
+  {
+    id: "mt-kenya-hiking",
+    name: "Mt Kenya Hiking",
+    image: IMAGES.experiences.sunrise,
+  },
+  {
+    id: "ngare-ndare-forest",
+    name: "Ngare Ndare Forest",
+    image: IMAGES.experiences.natureWalk,
+  },
+  {
+    id: "lewa-conservancy",
+    name: "Lewa Conservancy Safari",
+    image: IMAGES.experiences.safari,
+  },
 ];
 
 export default function Experience() {
   return (
     <section className="p-6">
 
+      {/* TITLE */}
       <h2 className="text-xl font-bold text-yellow-500">
         Top Things to Do in {HOTEL.location.city}, {HOTEL.location.region}
       </h2>
@@ -22,19 +37,41 @@ export default function Experience() {
         including Mt Kenya hiking, wildlife safaris, and cultural experiences in {HOTEL.location.region}.
       </p>
 
-      <ul className="grid md:grid-cols-3 gap-4 mt-4">
+      {/* VISUAL EXPERIENCE GRID */}
+      <ul className="grid md:grid-cols-3 gap-4 mt-6">
 
         {experiences.map((item) => (
           <li
             key={item.id}
-            className="card text-center font-medium hover:border-yellow-500 transition"
+            className="relative rounded-lg overflow-hidden h-56 cursor-pointer"
+            onClick={() =>
+              trackEvent("experience_view", {
+                experience: item.name,
+              })
+            }
           >
-            {item.name}
+
+            {/* IMAGE */}
+            <Image
+              src={item.image}
+              alt={item.name}
+              fill
+              className="object-cover"
+            />
+
+            {/* OVERLAY */}
+            <div className="absolute inset-0 bg-black/40 flex items-end p-3">
+              <p className="text-white font-medium text-sm">
+                {item.name}
+              </p>
+            </div>
+
           </li>
         ))}
 
       </ul>
 
+      {/* CTA */}
       <div className="mt-6 text-center">
 
         <a
@@ -49,9 +86,6 @@ export default function Experience() {
             trackEvent("booking_intent", {
               source: "experience_cta",
             });
-
-            // FIX: align funnel model consistently
-            // experience CTA = intent stage, not contact
           }}
         >
           Book Stay + Experiences
