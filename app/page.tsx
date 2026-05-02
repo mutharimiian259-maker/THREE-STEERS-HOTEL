@@ -9,14 +9,15 @@ import Experience from "@/components/Experience";
 import Link from "next/link";
 import rooms from "@/data/rooms";
 import { HOTEL } from "@/lib/config";
-import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnel";
 
 export default function Home() {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
 
   return (
-    <div>
+    <div
+      onLoad={() => setFunnelStep("VISIT")}
+    >
 
       {/* HERO */}
       <section id="home">
@@ -25,6 +26,7 @@ export default function Home() {
 
       {/* ROOMS */}
       <section id="rooms" className="p-6">
+
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-yellow-500">
             Rooms & Accommodation in {HOTEL.location.city}
@@ -40,16 +42,20 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-4 mt-4">
-          {safeRooms.slice(0, 3).map((room: any) => (
-            <div key={room?.id}>
+          {safeRooms.slice(0, 3).map((room: any, index: number) => (
+            <div key={room?.id ?? room?.slug ?? index}>
               <RoomCard room={room} />
             </div>
           ))}
         </div>
+
       </section>
 
       {/* FACILITIES */}
-      <section id="facilities">
+      <section
+        id="facilities"
+        onMouseEnter={() => setFunnelStep("VISIT")}
+      >
         <Facilities />
       </section>
 
@@ -99,6 +105,7 @@ export default function Home() {
         id="booking"
         className="text-center p-10 bg-zinc-900"
       >
+
         <h2 className="text-3xl font-bold text-yellow-500">
           Book Your Stay at {HOTEL.identity.name}
         </h2>
@@ -114,12 +121,7 @@ export default function Home() {
               "Hello, I want to book a room at " + HOTEL.identity.name
             )}`}
             className="px-6 py-3 bg-green-600 text-white rounded-lg"
-            onClick={() => {
-              trackEvent("whatsapp_click", {
-                source: "homepage_booking",
-              });
-              setFunnelStep("CONTACT");
-            }}
+            onClick={() => setFunnelStep("CONTACT")}
           >
             💬 WhatsApp Booking
           </a>
@@ -127,17 +129,13 @@ export default function Home() {
           <a
             href={`tel:${HOTEL.contact.phone.primary}`}
             className="px-6 py-3 bg-yellow-500 text-black rounded-lg"
-            onClick={() => {
-              trackEvent("call_click", {
-                source: "homepage_booking",
-              });
-              setFunnelStep("CONTACT");
-            }}
+            onClick={() => setFunnelStep("CONTACT")}
           >
             📞 Call Now
           </a>
 
         </div>
+
       </section>
 
     </div>
