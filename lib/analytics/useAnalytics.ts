@@ -4,22 +4,16 @@ import { useEffect, useRef } from "react";
 import { trackEvent } from "./trackEvent";
 
 export function useAnalytics(pageName: string) {
-  const lastTrackedPage = useRef<string | null>(null);
+  const tracked = useRef(false);
 
   useEffect(() => {
     if (!pageName) return;
+    if (tracked.current) return;
 
-    // Prevent duplicate tracking for same page
-    if (lastTrackedPage.current === pageName) return;
+    tracked.current = true;
 
-    lastTrackedPage.current = pageName;
-
-    try {
-      trackEvent("page_view", {
-        page: pageName,
-      });
-    } catch (error) {
-      console.error("[ANALYTICS ERROR]", error);
-    }
+    trackEvent("page_view", {
+      page: pageName,
+    });
   }, [pageName]);
 }
