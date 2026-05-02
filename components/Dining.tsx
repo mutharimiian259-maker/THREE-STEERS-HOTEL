@@ -1,12 +1,15 @@
 "use client";
 
 import { HOTEL } from "@/lib/config";
+import { IMAGES } from "@/lib/images";
+import Image from "next/image";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 
 export default function Dining() {
   return (
     <section className="p-6">
 
+      {/* TITLE */}
       <h2 className="text-xl font-bold text-yellow-500">
         Restaurants & Dining at {HOTEL.identity.name}, {HOTEL.location.city}
       </h2>
@@ -16,36 +19,89 @@ export default function Dining() {
         dishes, premium service, and relaxing dining environments in {HOTEL.location.full}.
       </p>
 
-      <div className="grid md:grid-cols-3 gap-4 mt-4">
+      {/* VISUAL DINING GRID */}
+      <div className="grid md:grid-cols-3 gap-4 mt-6">
 
-        <div className="card">
-          <h3 className="font-bold text-yellow-500">Aberdares Restaurant</h3>
-          <p className="text-sm text-gray-400">
-            A diverse menu offering local and international cuisine for all tastes.
-          </p>
+        {/* Aberdares Restaurant */}
+        <div
+          className="relative h-56 rounded-lg overflow-hidden cursor-pointer"
+          onClick={() =>
+            trackEvent("dining_view", { restaurant: "Aberdares Restaurant" })
+          }
+        >
+          <Image
+            src={IMAGES.food.fineDining}
+            alt="Aberdares Restaurant"
+            fill
+            className="object-cover"
+          />
+
+          <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-3">
+            <h3 className="font-bold text-yellow-400">
+              Aberdares Restaurant
+            </h3>
+            <p className="text-xs text-white">
+              Local & international cuisine crafted by expert chefs
+            </p>
+          </div>
         </div>
 
-        <div className="card">
-          <h3 className="font-bold text-yellow-500">Nyambene Restaurant</h3>
-          <p className="text-sm text-gray-400">
-            Contemporary dining space serving fresh, modern, and authentic dishes.
-          </p>
+        {/* Nyambene Restaurant */}
+        <div
+          className="relative h-56 rounded-lg overflow-hidden cursor-pointer"
+          onClick={() =>
+            trackEvent("dining_view", { restaurant: "Nyambene Restaurant" })
+          }
+        >
+          <Image
+            src={IMAGES.food.buffetBreakfast}
+            alt="Nyambene Restaurant"
+            fill
+            className="object-cover"
+          />
+
+          <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-3">
+            <h3 className="font-bold text-yellow-400">
+              Nyambene Restaurant
+            </h3>
+            <p className="text-xs text-white">
+              Fresh, modern and authentic dining experience
+            </p>
+          </div>
         </div>
 
-        <div className="card">
-          <h3 className="font-bold text-yellow-500">Master’s Lounge</h3>
-          <p className="text-sm text-gray-400">
-            Relaxed lounge atmosphere perfect for drinks, meetings, and socializing.
-          </p>
+        {/* Master’s Lounge */}
+        <div
+          className="relative h-56 rounded-lg overflow-hidden cursor-pointer"
+          onClick={() =>
+            trackEvent("dining_view", { restaurant: "Master’s Lounge" })
+          }
+        >
+          <Image
+            src={IMAGES.food.drinks}
+            alt="Master’s Lounge"
+            fill
+            className="object-cover"
+          />
+
+          <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-3">
+            <h3 className="font-bold text-yellow-400">
+              Master’s Lounge
+            </h3>
+            <p className="text-xs text-white">
+              Relaxed atmosphere for drinks, meetings & socializing
+            </p>
+          </div>
         </div>
 
       </div>
 
+      {/* CTA */}
       <div className="mt-6 text-center">
 
         <a
           href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
-            "Hello, I would like to inquire about dining reservations at " +
+            "Hello, I would like to reserve a dining table at " +
               HOTEL.identity.name +
               " in " +
               HOTEL.location.city
@@ -55,9 +111,6 @@ export default function Dining() {
             trackEvent("booking_intent", {
               source: "dining_cta",
             });
-
-            // FIX: unified funnel logic
-            // DO NOT downgrade to CONTACT here — keep INTENT consistency system-wide
           }}
         >
           Reserve a Table
