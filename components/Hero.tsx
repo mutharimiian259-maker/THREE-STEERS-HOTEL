@@ -8,23 +8,27 @@ import { IMAGES } from "@/lib/images";
 import Image from "next/image";
 
 export default function Hero() {
+  const heroImage =
+    IMAGES.hotel.exteriorHero || "/images/hotel/exterior-hero.jpg";
+
   return (
-    <section className="min-h-[85vh] flex items-center justify-center text-center px-4 relative">
+    <section className="relative min-h-[85vh] flex items-center justify-center text-center px-4 overflow-hidden">
 
       {/* BACKGROUND IMAGE */}
       <Image
-        src={IMAGES.hotel.exteriorHero}
+        src={heroImage}
         alt="Three Steers Hotel exterior view"
         fill
         priority
-        className="object-cover"
+        sizes="100vw"
+        className="object-cover z-0"
       />
 
-      {/* OVERLAY */}
-      <div className="absolute inset-0 bg-black/70" />
+      {/* DARK OVERLAY */}
+      <div className="absolute inset-0 bg-black/70 z-10" />
 
       {/* CONTENT */}
-      <div className="max-w-3xl relative z-10">
+      <div className="max-w-3xl relative z-20">
 
         <h1 className="text-4xl md:text-5xl font-bold text-yellow-500 leading-tight">
           Luxury Hotel in {HOTEL.location.city}, Kenya – Book Direct & Save More
@@ -39,12 +43,19 @@ export default function Hero() {
           ⭐ Rated among top business & travel hotels in {HOTEL.location.city}
         </p>
 
-        <p className="text-gray-400 mt-2 text-sm">
-          Limited rooms available — book early to secure best rates
+        {/* TRUST + URGENCY */}
+        <p className="text-gray-300 mt-2 text-sm">
+          Trusted by business travelers & tourists visiting Mt Kenya region
         </p>
 
+        <p className="text-red-400 mt-1 text-sm">
+          Limited rooms available — secure your stay today
+        </p>
+
+        {/* CTA */}
         <div className="mt-6 flex flex-col md:flex-row gap-4 justify-center">
 
+          {/* PRIMARY CTA */}
           <a
             href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
               "Hello, I would like to book a room at Three Steers Hotel Meru. Please assist with availability, dates, and pricing."
@@ -58,6 +69,7 @@ export default function Hero() {
             💬 Book via WhatsApp
           </a>
 
+          {/* SECONDARY CTA */}
           <a
             href={`tel:${HOTEL.contact.phone.primary}`}
             className="btn btn-gold"
@@ -69,9 +81,10 @@ export default function Hero() {
             📞 Call Reception
           </a>
 
+          {/* EXPLORATION CTA */}
           <Link
             href="/rooms"
-            className="btn btn"
+            className="btn"
             onClick={() => setFunnelStep("ROOM_VIEW")}
           >
             View Rooms & Rates
