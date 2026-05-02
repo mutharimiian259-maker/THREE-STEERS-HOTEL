@@ -8,9 +8,9 @@ import Dining from "@/components/Dining";
 import Experience from "@/components/Experience";
 import Link from "next/link";
 import rooms from "@/data/rooms";
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+import { setFunnelStep } from "@/lib/analytics/funnel";
 
 export default function Home() {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
@@ -19,23 +19,12 @@ export default function Home() {
     <div>
 
       {/* HERO */}
-      <section
-        id="home"
-        onMouseEnter={() => setFunnelStep("VISIT")}
-      >
-        <h1 className="text-3xl font-bold text-center mt-6">
-          {HOTEL.identity.name} – Luxury Hotel in Kenya
-        </h1>
-
+      <section id="home">
         <Hero />
       </section>
 
       {/* ROOMS */}
-      <section
-        id="rooms"
-        className="p-6"
-        onMouseEnter={() => setFunnelStep("ROOM_VIEW")}
-      >
+      <section id="rooms" className="p-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-yellow-500">
             Rooms & Accommodation in {HOTEL.location.city}
@@ -52,7 +41,7 @@ export default function Home() {
 
         <div className="grid md:grid-cols-3 gap-4 mt-4">
           {safeRooms.slice(0, 3).map((room: any) => (
-            <div key={room?.id || room?.name}>
+            <div key={room?.id}>
               <RoomCard room={room} />
             </div>
           ))}
@@ -60,10 +49,7 @@ export default function Home() {
       </section>
 
       {/* FACILITIES */}
-      <section
-        id="facilities"
-        onMouseEnter={() => setFunnelStep("VISIT")}
-      >
+      <section id="facilities">
         <Facilities />
       </section>
 
@@ -112,7 +98,6 @@ export default function Home() {
       <section
         id="booking"
         className="text-center p-10 bg-zinc-900"
-        onMouseEnter={() => setFunnelStep("INTENT")}
       >
         <h2 className="text-3xl font-bold text-yellow-500">
           Book Your Stay at {HOTEL.identity.name}
