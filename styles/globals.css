@@ -3,13 +3,6 @@
 @tailwind utilities;
 
 /* =========================
-   BASE SYSTEM
-========================= */
-body {
-  @apply bg-black text-white antialiased;
-}
-
-/* =========================
    DESIGN TOKENS
 ========================= */
 :root {
@@ -91,7 +84,7 @@ p, h1, h2, h3, h4 {
 }
 
 /* =========================
-   OPTIONAL: GLOBAL CONTAINER (IMPORTANT FOR SCALE)
+   OPTIONAL: GLOBAL CONTAINER
 ========================= */
 .container {
   @apply max-w-6xl mx-auto px-4;
