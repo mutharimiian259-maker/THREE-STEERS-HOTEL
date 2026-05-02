@@ -5,7 +5,8 @@ export default function BlogPage() {
   return (
     <main className="p-6">
 
-      <h1 className="text-3xl gold font-bold">
+      {/* PAGE TITLE */}
+      <h1 className="text-3xl text-gold font-bold">
         Hotel Blog – Three Steers Meru
       </h1>
 
@@ -13,10 +14,11 @@ export default function BlogPage() {
         Travel guides, hotel tips, and conference insights in Meru Kenya.
       </p>
 
+      {/* BLOG GRID */}
       <div className="grid md:grid-cols-2 gap-4 mt-6">
 
         {blogPosts.map((post) => (
-          <div key={post.slug} className="card p-4">
+          <article key={post.slug} className="card p-4">
 
             <h2 className="text-xl font-bold text-white">
               {post.title}
@@ -33,7 +35,7 @@ export default function BlogPage() {
               Read More →
             </Link>
 
-          </div>
+          </article>
         ))}
 
       </div>
