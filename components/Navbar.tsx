@@ -6,10 +6,10 @@ import { routes } from "@/lib/routes";
 import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnel";
+import { IMAGES } from "@/lib/images";
 
 export default function Navbar() {
   const handleNavClick = (routeName: string) => {
-    // Navigation is still VISIT, not INTENT
     setFunnelStep("VISIT");
 
     trackEvent("page_view", {
@@ -28,10 +28,11 @@ export default function Navbar() {
         onClick={() => setFunnelStep("VISIT")}
       >
         <Image
-          src="/logo.png"
+          src={IMAGES.hotel.logo}
           alt={`${HOTEL.identity.name} Logo`}
           width={45}
           height={45}
+          priority
         />
         <span className="text-yellow-500 font-bold">
           {HOTEL.identity.name}
