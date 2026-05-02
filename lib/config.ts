@@ -52,7 +52,7 @@ export const HOTEL = {
   },
 
   analytics: {
-    gaId: "G-XXXXXXXXXX",
+    gaId: null,
   },
 
   business: {
@@ -60,4 +60,4 @@ export const HOTEL = {
     checkOut: "10:00",
     starRating: 4,
   },
-} as const;
+};
