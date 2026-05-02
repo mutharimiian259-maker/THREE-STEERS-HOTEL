@@ -1,11 +1,11 @@
-import "./../styles/globals.css";
+import "@/styles/globals.css";
 import type { Metadata } from "next";
 import Navbar from "@/components/global/Navbar";
 import StickyCTA from "@/components/global/StickyCTA";
 import Footer from "@/components/global/Footer";
 import ExitIntentModal from "@/components/global/ExitIntentModal";
 import Script from "next/script";
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 
 const siteUrl = HOTEL.domain.primary;
 
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
   description: HOTEL.seo.defaultDescription,
 
-  keywords: HOTEL.seo.keywords,
+  keywords: [...HOTEL.seo.keywords],
 
   openGraph: {
     title: HOTEL.identity.name,
@@ -48,11 +48,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const gaId = HOTEL.analytics?.gaId ?? null;
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
   return (
     <html lang="en">
-      <body className="bg-white text-gray-900 antialiased">
+      <body className="bg-black text-white antialiased">
 
         <Navbar />
 
