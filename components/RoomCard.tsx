@@ -5,6 +5,7 @@ import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnel";
 import { IMAGES } from "@/lib/images";
+import { useMemo } from "react";
 
 type Room = {
   id: string | number;
@@ -31,8 +32,8 @@ export default function RoomCard({ room }: { room: Room }) {
       ? `${room.currency} ${room.price.toLocaleString()}`
       : "Price on request";
 
-  // IMAGE MAPPING (CONTROLLED SYSTEM)
-  const getRoomImage = (room: Room) => {
+  // OPTIMIZED IMAGE MAPPING (memoized)
+  const roomImage = useMemo(() => {
     const slug = room.slug?.toLowerCase();
 
     switch (slug) {
@@ -55,9 +56,15 @@ export default function RoomCard({ room }: { room: Room }) {
         return IMAGES.rooms.lenana.familyRoom;
 
       default:
-        return IMAGES.hotel.exteriorHero;
+        return IMAGES.rooms.lenana.standardSingle;
     }
-  };
+  }, [room.slug]);
+
+  // DYNAMIC URGENCY (psychological variation)
+  const urgencyText =
+    room.price && room.price > 20000
+      ? "Premium suite — limited executive availability"
+      : "High demand — book early to secure this room";
 
   return (
     <div
@@ -77,7 +84,7 @@ export default function RoomCard({ room }: { room: Room }) {
       {/* IMAGE */}
       <div className="relative w-full h-48">
         <Image
-          src={getRoomImage(room)}
+          src={roomImage}
           alt={room.name}
           fill
           className="object-cover"
@@ -87,31 +94,35 @@ export default function RoomCard({ room }: { room: Room }) {
       {/* CONTENT */}
       <div className="p-4">
 
+        {/* ROOM NAME */}
         <h3 className="text-lg font-bold text-gray-900">
           {room.name}
         </h3>
 
+        {/* DESCRIPTION */}
         <p className="text-sm text-gray-500 mt-1">
           {room.desc}
         </p>
 
-        <p className="mt-2 font-semibold text-yellow-600">
+        {/* PRICE (PRIMARY VISUAL WEIGHT) */}
+        <p className="mt-2 font-bold text-yellow-600 text-lg">
           {price} / night
         </p>
 
+        {/* VALUE LINE */}
         <p className="text-xs text-gray-400 mt-1">
           Includes comfort, privacy & premium hotel service
         </p>
 
-        {/* URGENCY (CONVERSION BOOST) */}
+        {/* URGENCY */}
         <p className="text-xs text-red-500 mt-1">
-          Limited availability — book early to secure this room
+          {urgencyText}
         </p>
 
         {/* CTA */}
         <a
           href={`https://wa.me/${whatsappNumber}?text=${message}`}
-          className="btn btn-green block mt-4 text-center"
+          className="btn btn-green block mt-4 text-center font-semibold"
           onClick={() => {
             trackEvent("whatsapp_click", { room: room.name });
             setFunnelStep("INTENT");
