@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+import { setFunnelStep } from "@/lib/analytics/funnel";
 
 export default function Hero() {
   return (
@@ -40,8 +40,8 @@ export default function Hero() {
             onClick={() => {
               trackEvent("whatsapp_click", { source: "hero" });
 
-              // FIX: funnel should reflect intent, not contact (clean conversion model)
-              setFunnelStep("INTENT");
+              // HERO = highest intent signal
+              setFunnelStep("CONTACT");
             }}
           >
             💬 Book via WhatsApp
@@ -52,6 +52,9 @@ export default function Hero() {
             className="btn btn-gold"
             onClick={() => {
               trackEvent("call_click", { source: "hero" });
+
+              // keep funnel consistent with contact action
+              setFunnelStep("CONTACT");
             }}
           >
             📞 Call Reception
@@ -59,7 +62,7 @@ export default function Hero() {
 
           <Link
             href="/rooms"
-            className="btn btn-outline"
+            className="btn btn"
             onClick={() => setFunnelStep("ROOM_VIEW")}
           >
             View Rooms & Rates
