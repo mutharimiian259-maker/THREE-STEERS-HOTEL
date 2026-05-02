@@ -3,19 +3,19 @@ import Image from "next/image";
 import rooms from "@/data/rooms";
 import { generateSEO } from "@/lib/seo";
 import { HOTEL } from "@/lib/config";
+import { trackLead } from "@/lib/analytics/trackLead";
 
 type Props = {
   params: { slug: string };
 };
 
-/* ---------------- SINGLE SOURCE LOOKUP ---------------- */
 function getRoom(slug: string) {
   return Array.isArray(rooms)
     ? rooms.find((r) => r.slug === slug)
     : null;
 }
 
-/* ---------------- METADATA ---------------- */
+/* ---------------- SEO ---------------- */
 export async function generateMetadata({ params }: Props) {
   const room = getRoom(params.slug);
 
@@ -24,6 +24,7 @@ export async function generateMetadata({ params }: Props) {
       title: "Room Not Found | Three Steers Hotel",
       description: "The requested room does not exist.",
       path: "/rooms",
+      intent: "room",
     });
   }
 
@@ -31,6 +32,12 @@ export async function generateMetadata({ params }: Props) {
     title: `${room.name} | Three Steers Hotel Meru`,
     description: room.desc,
     path: `/rooms/${room.slug}`,
+    intent: "room",
+    keywords: [
+      `${room.name} Meru`,
+      "hotel rooms in Meru Kenya",
+      "book hotel room Meru",
+    ],
   });
 }
 
@@ -46,7 +53,13 @@ export default function RoomPage({ params }: Props) {
     `Hello, I want to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, pricing, and check-in details.`
   );
 
-  const imageSrc = room.image || "/images/placeholder.jpg";
+  // TRACK ROOM VIEW (IMPORTANT FOR REVENUE ANALYTICS)
+  if (typeof window !== "undefined") {
+    trackLead("room_view");
+  }
+
+  const imageSrc =
+    room.image || "/images/hotel/rooms/default-room.jpg";
 
   const price =
     typeof room.price === "number"
@@ -97,21 +110,23 @@ export default function RoomPage({ params }: Props) {
         Most guests book this room for its balance of comfort and value.
       </p>
 
-      {/* CTA 1 */}
+      {/* PRIMARY CTA (WHATSAPP = REVENUE CORE) */}
       <div className="mt-6">
         <a
           href={`https://wa.me/${whatsappNumber}?text=${message}`}
           className="btn btn-green block text-center"
+          onClick={() => trackLead("booking_intent")}
         >
           💬 Check Availability & Book Now
         </a>
       </div>
 
-      {/* CTA 2 */}
+      {/* SECONDARY CTA */}
       <div className="mt-4">
         <a
           href={`tel:${HOTEL.contact.phone.primary}`}
           className="btn btn-gold block text-center"
+          onClick={() => trackLead("call_click")}
         >
           📞 Call Reception for Instant Booking
         </a>
