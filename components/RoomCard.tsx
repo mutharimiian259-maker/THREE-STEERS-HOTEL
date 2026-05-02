@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+import { setFunnelStep } from "@/lib/analytics/funnel";
 
 type Room = {
   id: string | number;
@@ -30,10 +30,15 @@ export default function RoomCard({ room }: { room: Room }) {
       ? `${room.currency} ${room.price.toLocaleString()}`
       : "Price on request";
 
+  const safeImage =
+    typeof room.image === "string" && room.image.trim().length > 0
+      ? room.image
+      : "/images/placeholder.jpg";
+
   return (
     <div
       className="card relative overflow-hidden bg-white"
-      onMouseEnter={() => {
+      onClick={() => {
         trackEvent("room_view", { room: room.name });
         setFunnelStep("ROOM_VIEW");
       }}
@@ -47,7 +52,7 @@ export default function RoomCard({ room }: { room: Room }) {
 
       <div className="relative w-full h-48">
         <Image
-          src={room.image || "/images/placeholder.jpg"}
+          src={safeImage}
           alt={room.name}
           fill
           className="object-cover"
@@ -78,7 +83,7 @@ export default function RoomCard({ room }: { room: Room }) {
           onClick={() => {
             trackEvent("whatsapp_click", { room: room.name });
 
-            // FIX: keep funnel semantics consistent (INTENT is more accurate than CONTACT)
+            // keep funnel clean and consistent
             setFunnelStep("INTENT");
           }}
         >
