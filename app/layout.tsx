@@ -19,7 +19,9 @@ export const metadata: Metadata = {
 
   description: HOTEL.seo.defaultDescription,
 
-  keywords: [...HOTEL.seo.keywords],
+  keywords: Array.isArray(HOTEL.seo.keywords)
+    ? [...HOTEL.seo.keywords]
+    : [],
 
   openGraph: {
     title: HOTEL.identity.name,
@@ -50,8 +52,12 @@ export default function RootLayout({
 }) {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
+  const safeGaId = typeof gaId === "string" && gaId.trim().length > 0
+    ? gaId
+    : null;
+
   return (
-    <html lang="en">
+    <html lang="en" dir="ltr">
       <body className="bg-black text-white antialiased">
 
         <Navbar />
@@ -65,10 +71,10 @@ export default function RootLayout({
         <Footer />
 
         {/* GOOGLE ANALYTICS */}
-        {gaId && (
+        {safeGaId && (
           <>
             <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              src={`https://www.googletagmanager.com/gtag/js?id=${safeGaId}`}
               strategy="afterInteractive"
             />
 
@@ -79,7 +85,7 @@ export default function RootLayout({
                 window.gtag = gtag;
 
                 gtag('js', new Date());
-                gtag('config', '${gaId}');
+                gtag('config', '${safeGaId}');
               `}
             </Script>
           </>
