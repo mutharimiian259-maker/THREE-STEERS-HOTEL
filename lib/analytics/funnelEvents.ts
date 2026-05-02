@@ -1,5 +1,3 @@
-"use client";
-
 export type FunnelStep =
   | "VISIT"
   | "ROOM_VIEW"
@@ -22,7 +20,7 @@ function isValidStep(value: unknown): value is FunnelStep {
 function safeGetItem(key: string): string | null {
   try {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem(key);
+    return window.localStorage.getItem(key);
   } catch {
     return null;
   }
@@ -31,9 +29,9 @@ function safeGetItem(key: string): string | null {
 function safeSetItem(key: string, value: string): void {
   try {
     if (typeof window === "undefined") return;
-    localStorage.setItem(key, value);
+    window.localStorage.setItem(key, value);
   } catch {
-    // ignore storage failures (private mode, quota, etc.)
+    // ignore storage failures
   }
 }
 
@@ -45,19 +43,20 @@ export function setFunnelStep(step: FunnelStep): void {
 
   safeSetItem(STORAGE_KEY, step);
 
-  // fire event (non-blocking, safe failure isolation)
   try {
-    window.dispatchEvent(
-      new CustomEvent("funnel_step", {
-        detail: {
-          step,
-          previous,
-          source: "funnel_engine",
-        },
-      })
-    );
+    if (typeof window === "undefined") return;
+
+    const event = new CustomEvent("funnel_step", {
+      detail: {
+        step,
+        previous: previous ?? "UNKNOWN",
+        source: "funnel_engine",
+      },
+    });
+
+    window.dispatchEvent(event);
   } catch {
-    // do nothing
+    // silent fail
   }
 }
 
