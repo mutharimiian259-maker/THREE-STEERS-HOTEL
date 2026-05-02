@@ -2,28 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { routes } from "@/lib/routes";
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep, getFunnelStep } from "@/lib/analytics/funnelEvents";
+import { setFunnelStep, getFunnelStep } from "@/lib/analytics/funnel";
 
 export default function Navbar() {
-  const [currentStep, setCurrentStep] = useState<string | null>(null);
-
-  useEffect(() => {
-    setCurrentStep(getFunnelStep());
-  }, []);
-
   const handleNavClick = (routeName: string) => {
     setFunnelStep("INTENT");
 
-    trackEvent("page_view", {
+    trackEvent("booking_intent", {
       page: routeName,
       source: "navbar",
     });
-
-    setCurrentStep(getFunnelStep());
   };
 
   return (
