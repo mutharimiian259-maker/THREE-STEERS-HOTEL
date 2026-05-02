@@ -5,13 +5,14 @@ import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep, getFunnelStep } from "@/lib/analytics/funnel";
+import { setFunnelStep } from "@/lib/analytics/funnel";
 
 export default function Navbar() {
   const handleNavClick = (routeName: string) => {
-    setFunnelStep("INTENT");
+    // Navigation is still VISIT, not INTENT
+    setFunnelStep("VISIT");
 
-    trackEvent("booking_intent", {
+    trackEvent("page_view", {
       page: routeName,
       source: "navbar",
     });
@@ -51,18 +52,20 @@ export default function Navbar() {
         ))}
       </div>
 
-      {/* CTA */}
+      {/* PRIMARY CTA */}
       <a
         href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
-          "Hello, I would like to book a room at Three Steers Hotel Meru."
+          "Hello, I would like to book a room at " +
+            HOTEL.identity.name +
+            " in Meru. Please assist me with availability and pricing."
         )}`}
-        className="btn btn-green"
+        className="btn btn-green font-semibold px-5 py-2"
         onClick={() => {
           trackEvent("whatsapp_click", { source: "navbar" });
-          setFunnelStep("CONTACT");
+          setFunnelStep("INTENT");
         }}
       >
-        Book via WhatsApp
+        Book Now
       </a>
 
     </nav>
