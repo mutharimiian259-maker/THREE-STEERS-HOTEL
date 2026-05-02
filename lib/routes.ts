@@ -10,8 +10,7 @@ export const routes: Route[] = [
   { name: "Dining", path: "/#dining", type: "section" },
   { name: "Conference", path: "/#conference", type: "section" },
   { name: "Experiences", path: "/#experiences", type: "section" },
-  { name: "Blog", path: "/blog", type: "page" },
 
-  // FIX: contact section does NOT exist → replaced with safe page route behavior
+  // FIX: convert Contact into reliable conversion route behavior
   { name: "Contact", path: "/#booking", type: "section" },
 ];
