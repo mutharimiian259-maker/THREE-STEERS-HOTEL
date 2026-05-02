@@ -7,7 +7,10 @@ import ExitIntentModal from "@/components/global/ExitIntentModal";
 import Script from "next/script";
 import { HOTEL } from "@/lib/config";
 
-const siteUrl = HOTEL.domain.primary;
+const siteUrl =
+  typeof HOTEL.domain.primary === "string" && HOTEL.domain.primary.length > 0
+    ? HOTEL.domain.primary
+    : "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -19,9 +22,7 @@ export const metadata: Metadata = {
 
   description: HOTEL.seo.defaultDescription,
 
-  keywords: Array.isArray(HOTEL.seo.keywords)
-    ? [...HOTEL.seo.keywords]
-    : [],
+  keywords: HOTEL.seo.keywords,
 
   openGraph: {
     title: HOTEL.identity.name,
@@ -52,9 +53,30 @@ export default function RootLayout({
 }) {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
-  const safeGaId = typeof gaId === "string" && gaId.trim().length > 0
-    ? gaId
-    : null;
+  const safeGaId =
+    typeof gaId === "string" && gaId.trim().length > 0 ? gaId : null;
+
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "Hotel",
+    name: HOTEL.identity.name ?? "",
+    url: siteUrl,
+    telephone: HOTEL.contact.phone.primary ?? "",
+    priceRange: HOTEL.pricing.range.display ?? "",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: HOTEL.location.city ?? "",
+      addressRegion: HOTEL.location.region ?? "",
+      addressCountry: HOTEL.location.country ?? "",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: HOTEL.location.coordinates?.lat ?? 0,
+      longitude: HOTEL.location.coordinates?.lng ?? 0,
+    },
+    image: `${siteUrl}/images/hotel.jpg`,
+    description: HOTEL.seo.defaultDescription ?? "",
+  };
 
   return (
     <html lang="en" dir="ltr">
@@ -97,27 +119,7 @@ export default function RootLayout({
           type="application/ld+json"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Hotel",
-              name: HOTEL.identity.name,
-              url: siteUrl,
-              telephone: HOTEL.contact.phone.primary,
-              priceRange: HOTEL.pricing.range.display,
-              address: {
-                "@type": "PostalAddress",
-                addressLocality: HOTEL.location.city,
-                addressRegion: HOTEL.location.region,
-                addressCountry: HOTEL.location.country,
-              },
-              geo: {
-                "@type": "GeoCoordinates",
-                latitude: HOTEL.location.coordinates.lat,
-                longitude: HOTEL.location.coordinates.lng,
-              },
-              image: `${siteUrl}/images/hotel.jpg`,
-              description: HOTEL.seo.defaultDescription,
-            }),
+            __html: JSON.stringify(schemaData),
           }}
         />
 
