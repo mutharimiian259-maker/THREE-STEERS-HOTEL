@@ -33,10 +33,10 @@ export const metadata: Metadata = {
     locale: "en_KE",
     images: [
       {
-        url: `${siteUrl}/images/hotel.jpg`,
+        url: `${siteUrl}/images/hotel/exterior-hero.jpg`,
         width: 1200,
         height: 630,
-        alt: HOTEL.identity.name,
+        alt: `${HOTEL.identity.name} exterior view`,
       },
     ],
   },
@@ -74,7 +74,7 @@ export default function RootLayout({
       latitude: HOTEL.location.coordinates?.lat ?? 0,
       longitude: HOTEL.location.coordinates?.lng ?? 0,
     },
-    image: `${siteUrl}/images/hotel.jpg`,
+    image: `${siteUrl}/images/hotel/exterior-hero.jpg`,
     description: HOTEL.seo.defaultDescription ?? "",
   };
 
