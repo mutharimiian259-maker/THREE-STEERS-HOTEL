@@ -32,19 +32,18 @@ export default function RoomCard({ room }: { room: Room }) {
       ? `${room.currency} ${room.price.toLocaleString()}`
       : "Price on request";
 
-  // OPTIMIZED IMAGE MAPPING (memoized)
+  // ✅ FIXED: STRICT SLUG MATCHING (BASED ON DATA)
   const roomImage = useMemo(() => {
-    const slug = room.slug?.toLowerCase();
-
-    switch (slug) {
-      case "honeymoon":
-        return IMAGES.rooms.batian.honeymoon;
-
-      case "deluxe-twin":
+    switch (room.slug) {
+      case "deluxe-room":
         return IMAGES.rooms.batian.deluxeTwin;
 
       case "executive-suite":
         return IMAGES.rooms.batian.executiveSuite;
+
+      // future-ready (when you add them)
+      case "honeymoon":
+        return IMAGES.rooms.batian.honeymoon;
 
       case "standard-single":
         return IMAGES.rooms.lenana.standardSingle;
@@ -56,14 +55,14 @@ export default function RoomCard({ room }: { room: Room }) {
         return IMAGES.rooms.lenana.familyRoom;
 
       default:
-        return IMAGES.rooms.lenana.standardSingle;
+        return IMAGES.hotel.exteriorHero; // fallback must feel premium
     }
   }, [room.slug]);
 
-  // DYNAMIC URGENCY (psychological variation)
+  // ✅ IMPROVED URGENCY (MORE NATURAL)
   const urgencyText =
-    room.price && room.price > 20000
-      ? "Premium suite — limited executive availability"
+    room.price && room.price >= 12000
+      ? "Popular choice — limited premium availability"
       : "High demand — book early to secure this room";
 
   return (
@@ -85,7 +84,7 @@ export default function RoomCard({ room }: { room: Room }) {
       <div className="relative w-full h-48">
         <Image
           src={roomImage}
-          alt={room.name}
+          alt={`${room.name} at ${HOTEL.identity.name}`}
           fill
           className="object-cover"
         />
@@ -94,32 +93,26 @@ export default function RoomCard({ room }: { room: Room }) {
       {/* CONTENT */}
       <div className="p-4">
 
-        {/* ROOM NAME */}
         <h3 className="text-lg font-bold text-gray-900">
           {room.name}
         </h3>
 
-        {/* DESCRIPTION */}
         <p className="text-sm text-gray-500 mt-1">
           {room.desc}
         </p>
 
-        {/* PRICE (PRIMARY VISUAL WEIGHT) */}
         <p className="mt-2 font-bold text-yellow-600 text-lg">
           {price} / night
         </p>
 
-        {/* VALUE LINE */}
         <p className="text-xs text-gray-400 mt-1">
           Includes comfort, privacy & premium hotel service
         </p>
 
-        {/* URGENCY */}
         <p className="text-xs text-red-500 mt-1">
           {urgencyText}
         </p>
 
-        {/* CTA */}
         <a
           href={`https://wa.me/${whatsappNumber}?text=${message}`}
           className="btn btn-green block mt-4 text-center font-semibold"
