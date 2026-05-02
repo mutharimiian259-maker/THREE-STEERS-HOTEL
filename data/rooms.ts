@@ -8,10 +8,14 @@ export type Room = {
   image: string;
   tag?: string;
 
+  wing: "batian" | "lenana";
+
   maxGuests?: number;
   bedType?: string;
   amenities?: string[];
   view?: string;
+
+  demand?: "high" | "medium" | "low";
 };
 
 const rooms: Room[] = [
@@ -21,13 +25,15 @@ const rooms: Room[] = [
     name: "Deluxe Room",
     price: 8500,
     currency: "KES",
-    desc: "Luxury comfort with modern amenities",
-    image: "/images/room1.jpg",
+    desc: "Luxury comfort with modern amenities in a calm setting.",
+    image: "/images/rooms/batian/deluxe-room/hero.jpg",
     tag: "Most Booked",
+    wing: "batian",
     maxGuests: 2,
     bedType: "Queen Bed",
     amenities: ["WiFi", "Breakfast", "Room Service", "Hot Shower"],
     view: "City View",
+    demand: "high",
   },
   {
     id: "executive",
@@ -35,13 +41,46 @@ const rooms: Room[] = [
     name: "Executive Suite",
     price: 12000,
     currency: "KES",
-    desc: "Premium suite with Mt Kenya views",
-    image: "/images/room2.jpg",
+    desc: "Premium suite offering Mt Kenya views and executive comfort.",
+    image: "/images/rooms/batian/executive-suite/hero.jpg",
     tag: "Best Value",
+    wing: "batian",
     maxGuests: 3,
     bedType: "King Bed",
     amenities: ["WiFi", "Breakfast", "Lounge Access", "Mini Bar"],
     view: "Mountain View",
+    demand: "high",
+  },
+  {
+    id: "standard-single",
+    slug: "standard-single",
+    name: "Standard Single Room",
+    price: 6000,
+    currency: "KES",
+    desc: "Comfortable and affordable room for solo travelers.",
+    image: "/images/rooms/lenana-wing/standard-single/hero.jpg",
+    wing: "lenana",
+    maxGuests: 1,
+    bedType: "Single Bed",
+    amenities: ["WiFi", "Breakfast", "Hot Shower"],
+    view: "Garden View",
+    demand: "medium",
+  },
+  {
+    id: "family-room",
+    slug: "family-room",
+    name: "Family Room",
+    price: 15000,
+    currency: "KES",
+    desc: "Spacious room designed for families and group stays.",
+    image: "/images/rooms/lenana-wing/family-room/hero.jpg",
+    tag: "Family Choice",
+    wing: "lenana",
+    maxGuests: 4,
+    bedType: "Multiple Beds",
+    amenities: ["WiFi", "Breakfast", "Extra Space", "Living Area"],
+    view: "Garden View",
+    demand: "medium",
   },
 ];
 
