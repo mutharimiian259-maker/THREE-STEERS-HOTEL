@@ -1,12 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
-import { rooms } from "@/data/rooms";
+import rooms from "@/data/rooms";
+import { HOTEL } from "@/lib/config";
 
 export default function RoomsPage() {
+  const safeRooms = Array.isArray(rooms) ? rooms : [];
+
   return (
     <main className="p-6 max-w-6xl mx-auto">
 
-      {/* SECTION: HEADER (SEO + CONTEXT) */}
+      {/* HEADER */}
       <header className="text-center">
 
         <h1 className="text-3xl font-bold text-yellow-500">
@@ -20,61 +23,69 @@ export default function RoomsPage() {
 
       </header>
 
-      {/* SECTION: GUIDANCE (CONVERSION SUPPORT) */}
+      {/* GUIDANCE */}
       <div className="text-center mt-4 mb-8">
         <p className="text-sm text-yellow-600 font-medium">
           ⭐ Recommended: Deluxe & Executive suites for best experience
         </p>
       </div>
 
-      {/* SECTION: ROOMS GRID */}
+      {/* ROOMS GRID */}
       <section className="grid md:grid-cols-2 gap-6 mt-6">
 
-        {rooms.map((room) => (
-          <Link
-            key={room.id}
-            href={`/rooms/${room.slug}`}
-            className="card block overflow-hidden hover:scale-[1.01] transition"
-          >
+        {safeRooms.map((room: any) => {
+          const imageSrc = room.image || "/images/placeholder.jpg";
 
-            {/* IMAGE (OPTIMIZED) */}
-            <div className="relative w-full h-52">
-              <Image
-                src={room.image}
-                alt={room.name}
-                fill
-                className="object-cover"
-              />
-            </div>
+          const price =
+            typeof room.price === "number"
+              ? `${room.currency ?? "KES"} ${room.price.toLocaleString()}`
+              : "Price on request";
 
-            {/* CONTENT */}
-            <div className="p-3">
+          return (
+            <Link
+              key={room.id}
+              href={`/rooms/${room.slug}`}
+              className="card block overflow-hidden hover:scale-[1.01] transition"
+            >
 
-              <h2 className="text-xl text-yellow-500 font-bold mt-2">
-                {room.name}
-              </h2>
+              {/* IMAGE */}
+              <div className="relative w-full h-52">
+                <Image
+                  src={imageSrc}
+                  alt={room.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
 
-              <p className="text-gray-500 text-sm mt-1">
-                {room.desc}
-              </p>
+              {/* CONTENT */}
+              <div className="p-3">
 
-              <p className="mt-2 font-semibold text-white">
-                {room.currency} {room.price.toLocaleString()}
-              </p>
+                <h2 className="text-xl text-yellow-500 font-bold mt-2">
+                  {room.name}
+                </h2>
 
-              {/* ACTION HINT (IMPORTANT PSYCHOLOGY TRIGGER) */}
-              <p className="text-xs text-gray-400 mt-2">
-                Click to view details & book instantly
-              </p>
+                <p className="text-gray-500 text-sm mt-1">
+                  {room.desc}
+                </p>
 
-            </div>
+                <p className="mt-2 font-semibold text-white">
+                  {price}
+                </p>
 
-          </Link>
-        ))}
+                <p className="text-xs text-gray-400 mt-2">
+                  Click to view details & book instantly
+                </p>
+
+              </div>
+
+            </Link>
+          );
+        })}
 
       </section>
 
-      {/* SECTION: FINAL BOOKING PUSH */}
+      {/* FINAL CTA */}
       <section className="text-center mt-12">
 
         <p className="text-gray-600">
@@ -82,7 +93,7 @@ export default function RoomsPage() {
         </p>
 
         <a
-          href="https://wa.me/254728588005"
+          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}`}
           className="inline-block mt-4 bg-green-500 text-white px-6 py-3 rounded"
         >
           Talk to Reception
