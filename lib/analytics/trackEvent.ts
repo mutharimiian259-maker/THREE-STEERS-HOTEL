@@ -1,5 +1,3 @@
-"use client";
-
 export type EventType =
   | "page_view"
   | "room_view"
@@ -23,9 +21,6 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/**
- * Fast shallow compare (better than JSON stringify for performance)
- */
 function isDuplicate(a: Payload, b: Payload): boolean {
   if (!a || !b) return false;
   if (a.event !== b.event) return false;
@@ -58,24 +53,23 @@ export function trackEvent(
   };
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
     let events: Payload[] = [];
 
-    if (raw) {
-      try {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+
+      if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
           events = parsed;
         }
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-        events = [];
       }
+    } catch {
+      events = [];
     }
 
     const last = events[events.length - 1];
 
-    // prevent spam duplicates
     if (last && isDuplicate(last, payload)) return;
 
     events.push(payload);
@@ -84,10 +78,15 @@ export function trackEvent(
       events = events.slice(-MAX_EVENTS);
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    } catch {
+      // ignore storage failures
+    }
 
-    // Google Analytics safe bridge
-    const w = window as any;
+    const w = window as Window & {
+      gtag?: (...args: unknown[]) => void;
+    };
 
     if (typeof w.gtag === "function") {
       w.gtag("event", event, {
@@ -95,7 +94,7 @@ export function trackEvent(
         page_location: payload.url,
       });
     }
-  } catch (error) {
-    console.error("Analytics error:", error);
+  } catch {
+    // silent fail
   }
 }
