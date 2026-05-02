@@ -17,18 +17,27 @@ export const hotelContent = {
   },
 
   navigation: [
-    { name: "Home", path: "/" },
-    { name: "Rooms & Suites", path: "/rooms" },
+    { name: "Home", path: "/", type: "navigation" },
 
-    // FIXED: align with actual page structure (section-based routing)
-    { name: "Food & Drinks", path: "/#dining" },
-    { name: "Conferencing & Banqueting", path: "/#conference" },
-    { name: "Fun Experiences", path: "/#experiences" },
+    { name: "Rooms & Suites", path: "/rooms", type: "revenue" },
 
-    { name: "Blogs", path: "/blog" },
+    { name: "Food & Drinks", path: "/#dining", type: "engagement" },
 
-    // FIXED: no /contact page exists → align with booking section
-    { name: "Contact Us", path: "/#booking" },
+    {
+      name: "Conferencing & Banqueting",
+      path: "/#conference",
+      type: "high_value",
+    },
+
+    { name: "Fun Experiences", path: "/#experiences", type: "engagement" },
+
+    { name: "Blogs", path: "/blog", type: "seo" },
+
+    {
+      name: "Contact Us",
+      path: "/#booking",
+      type: "conversion",
+    },
   ],
 
   highlights: {
@@ -36,28 +45,44 @@ export const hotelContent = {
       title: "Accommodation Categories",
       description:
         "Multiple room categories designed for business and leisure travelers.",
+      priority: "high",
     },
 
     dining: {
       title: "Food & Drinks",
       description:
         "Premium dining experiences crafted by expert chefs.",
+      priority: "medium",
     },
 
     conferences: {
       title: "Meetings, Seminars & Events",
+      description:
+        "Professional event spaces for corporate and private functions.",
       capacity: "10 to 300 guests",
+      priority: "high",
     },
 
-    experiences: [
-      "Ngare Ndare Forest Reserve",
-      "Mt. Kenya Hiking",
-      "Lewa Wildlife Conservancy",
-      "Meru National Reserve Game Drives",
-      "Meru Museum",
-      "Swimming Pool",
-      "Ol Pejeta Conservancy",
-    ],
+    experiences: {
+      wildlife: [
+        "Lewa Wildlife Conservancy",
+        "Ol Pejeta Conservancy",
+        "Meru National Reserve Game Drives",
+      ],
+
+      adventure: [
+        "Mt. Kenya Hiking",
+        "Ngare Ndare Forest Reserve",
+      ],
+
+      culture: [
+        "Meru Museum",
+      ],
+
+      leisure: [
+        "Swimming Pool",
+      ],
+    },
   },
 
   footer: {
