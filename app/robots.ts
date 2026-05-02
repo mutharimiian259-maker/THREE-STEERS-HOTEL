@@ -8,14 +8,27 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
 
-        // optional but improves crawl efficiency for e-commerce/hotel funnels
-        disallow: ["/api/", "/admin/"],
+        // CORE REVENUE PAGES (fully indexable)
+        allow: [
+          "/",
+          "/rooms",
+          "/blog",
+        ],
+
+        // SYSTEM + NON-SEO PAGES (block completely)
+        disallow: [
+          "/api/",
+          "/admin/",
+          "/dashboard/",
+          "/private/",
+        ],
       },
     ],
 
-    // Next.js App Router auto-generates sitemap at /sitemap.xml
     sitemap: `${baseUrl}/sitemap.xml`,
+
+    // OPTIONAL BUT POWERFUL (crawl optimization hint)
+    host: baseUrl,
   };
 }
