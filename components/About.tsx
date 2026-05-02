@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnel";
 import { HOTEL } from "@/lib/config";
+import { IMAGES } from "@/lib/images";
 
 function sanitizePhone(phone: string) {
   return phone.replace(/[^\d]/g, "");
@@ -15,19 +17,30 @@ export default function About() {
   return (
     <section className="p-6">
 
-      {/* correct lifecycle-based funnel signal */}
-      <div onLoad={() => setFunnelStep("VISIT")} />
-
+      {/* TITLE */}
       <h2 className="text-2xl font-bold text-yellow-500">
         About {HOTEL.identity.name} – {HOTEL.location.city}, Kenya
       </h2>
 
-      <p className="text-gray-300 mt-3 leading-relaxed">
+      {/* HERO TRUST IMAGE */}
+      <div className="relative h-64 mt-4 rounded-lg overflow-hidden">
+        <Image
+          src={IMAGES.hotel.lobby}
+          alt="Three Steers Hotel Lobby"
+          fill
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+      </div>
+
+      {/* DESCRIPTION */}
+      <p className="text-gray-300 mt-4 leading-relaxed">
         {HOTEL.identity.name} is a leading hotel in {HOTEL.location.city}, Kenya,
         offering premium accommodation, modern conference facilities,
         and exceptional hospitality near the Mt Kenya region.
       </p>
 
+      {/* ACCOMMODATION */}
       <h3 className="text-lg font-semibold text-yellow-400 mt-4">
         Accommodation Experience
       </h3>
@@ -38,6 +51,18 @@ export default function About() {
         in {HOTEL.location.city}.
       </p>
 
+      {/* FACILITIES VISUAL PROOF */}
+      <div className="relative h-56 mt-4 rounded-lg overflow-hidden">
+        <Image
+          src={IMAGES.hotel.garden}
+          alt="Hotel Gardens"
+          fill
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+      </div>
+
+      {/* FACILITIES TEXT */}
       <h3 className="text-lg font-semibold text-yellow-400 mt-4">
         Facilities & Services
       </h3>
@@ -47,7 +72,7 @@ export default function About() {
         ample parking, and premium hospitality services for both short and long stays.
       </p>
 
-      {/* INTERNAL NAVIGATION */}
+      {/* NAVIGATION */}
       <div className="mt-6 flex gap-4 flex-wrap">
 
         <Link
