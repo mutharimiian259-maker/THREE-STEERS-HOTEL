@@ -1,6 +1,16 @@
 const LEAD_CACHE_KEY = "lead_last_sent";
 
-function canSendLead(source: string): boolean {
+// improved classification types
+type LeadType =
+  | "room_view"
+  | "whatsapp_click"
+  | "call_click"
+  | "booking_intent"
+  | "conference_intent"
+  | "blog_click"
+  | "navigation";
+
+function canSendLead(type: LeadType): boolean {
   if (typeof window === "undefined") return false;
 
   try {
@@ -8,23 +18,20 @@ function canSendLead(source: string): boolean {
     const now = Date.now();
 
     if (last) {
-      try {
-        const parsed = JSON.parse(last);
+      const parsed = JSON.parse(last);
 
-        if (
-          parsed?.source === source &&
-          now - parsed?.time < 15000
-        ) {
-          return false;
-        }
-      } catch {
-        localStorage.removeItem(LEAD_CACHE_KEY);
+      // stronger deduplication: type + time window
+      if (
+        parsed?.type === type &&
+        now - parsed?.time < 10000 // 10s window
+      ) {
+        return false;
       }
     }
 
     localStorage.setItem(
       LEAD_CACHE_KEY,
-      JSON.stringify({ source, time: now })
+      JSON.stringify({ type, time: now })
     );
 
     return true;
@@ -33,17 +40,21 @@ function canSendLead(source: string): boolean {
   }
 }
 
-export async function trackLead(source: string) {
+export async function trackLead(type: LeadType) {
   if (typeof window === "undefined") return;
-  if (!source || typeof source !== "string") return;
+  if (!type) return;
 
-  if (!canSendLead(source)) return;
+  if (!canSendLead(type)) return;
 
   try {
     const payload = {
-      source: source.trim(),
+      type,
       time: new Date().toISOString(),
       url: window.location.href,
+
+      // NEW: revenue context (VERY IMPORTANT)
+      referrer: document.referrer || null,
+      device: navigator.userAgent,
     };
 
     const controller = new AbortController();
@@ -62,7 +73,6 @@ export async function trackLead(source: string) {
 
     if (!res.ok) {
       console.error("[LEAD ERROR]", res.status);
-      return;
     }
   } catch (error) {
     console.error("[LEAD FAILED]", error);
