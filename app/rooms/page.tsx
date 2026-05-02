@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import rooms from "@/data/rooms";
 import { HOTEL } from "@/lib/config";
+import { trackLead } from "@/lib/analytics/trackLead";
 
 export default function RoomsPage() {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
@@ -34,7 +35,8 @@ export default function RoomsPage() {
       <section className="grid md:grid-cols-2 gap-6 mt-6">
 
         {safeRooms.map((room: any) => {
-          const imageSrc = room.image || "/images/placeholder.jpg";
+          const imageSrc =
+            room.image || "/images/hotel/rooms/default-room.jpg";
 
           const price =
             typeof room.price === "number"
@@ -46,6 +48,7 @@ export default function RoomsPage() {
               key={room.id}
               href={`/rooms/${room.slug}`}
               className="card block overflow-hidden hover:scale-[1.01] transition"
+              onClick={() => trackLead("room_view")}
             >
 
               {/* IMAGE */}
@@ -69,8 +72,14 @@ export default function RoomsPage() {
                   {room.desc}
                 </p>
 
+                {/* PRICE */}
                 <p className="mt-2 font-semibold text-white">
                   {price}
+                </p>
+
+                {/* SOCIAL PROOF / URGENCY */}
+                <p className="text-xs text-red-500 mt-1">
+                  Limited availability — popular among business travelers
                 </p>
 
                 <p className="text-xs text-gray-400 mt-2">
@@ -95,6 +104,7 @@ export default function RoomsPage() {
         <a
           href={`https://wa.me/${HOTEL.contact.phone.whatsapp}`}
           className="inline-block mt-4 bg-green-500 text-white px-6 py-3 rounded"
+          onClick={() => trackLead("booking_intent")}
         >
           Talk to Reception
         </a>
