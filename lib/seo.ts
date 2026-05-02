@@ -1,10 +1,16 @@
 import { HOTEL } from "@/lib/config";
 
+type SeoIntent = "home" | "room" | "blog" | "conference" | "dining";
+
 type SeoProps = {
   title?: string;
   description?: string;
   path?: string;
   image?: string;
+
+  // NEW: SEO intelligence layer
+  intent?: SeoIntent;
+  keywords?: string[];
 };
 
 function joinUrl(base: string, path: string): string {
@@ -12,11 +18,48 @@ function joinUrl(base: string, path: string): string {
   return `${base.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+function getIntentKeywords(intent?: SeoIntent): string[] {
+  switch (intent) {
+    case "room":
+      return [
+        "hotel rooms in Meru",
+        "luxury accommodation Kenya",
+        "book hotel room Meru",
+      ];
+
+    case "conference":
+      return [
+        "conference venues Meru",
+        "meeting rooms Kenya hotel",
+        "corporate events Meru",
+      ];
+
+    case "dining":
+      return [
+        "restaurants in Meru hotel",
+        "fine dining Meru Kenya",
+        "hotel food Meru",
+      ];
+
+    case "blog":
+      return [
+        "travel Meru Kenya",
+        "hotels near Mt Kenya",
+        "Meru tourism guide",
+      ];
+
+    default:
+      return HOTEL.seo.keywords || [];
+  }
+}
+
 export function generateSEO({
   title,
   description,
   path = "",
-  image = "/images/hotel.jpg",
+  image = "/images/hotel/og/default.jpg",
+  intent = "home",
+  keywords,
 }: SeoProps = {}) {
   const fullTitle = title
     ? `${title} | ${HOTEL.identity.name}`
@@ -32,19 +75,22 @@ export function generateSEO({
   const safeImage =
     typeof image === "string" && image.length > 0
       ? image
-      : "/images/hotel.jpg";
+      : "/images/hotel/og/default.jpg";
 
   const absoluteImage = safeImage.startsWith("http")
     ? safeImage
     : joinUrl(baseUrl, safeImage);
 
+  const finalKeywords = [
+    ...(keywords || []),
+    ...getIntentKeywords(intent),
+  ];
+
   return {
     title: fullTitle,
     description: fullDescription,
 
-    keywords: Array.isArray(HOTEL.seo.keywords)
-      ? [...HOTEL.seo.keywords]
-      : [],
+    keywords: finalKeywords,
 
     openGraph: {
       title: fullTitle,
