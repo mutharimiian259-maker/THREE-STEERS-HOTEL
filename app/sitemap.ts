@@ -2,7 +2,10 @@ import { MetadataRoute } from "next";
 import { HOTEL } from "@/lib/config";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = HOTEL.domain.primary;
+  const baseUrl =
+    typeof HOTEL.domain.primary === "string"
+      ? HOTEL.domain.primary.replace(/\/$/, "")
+      : "http://localhost:3000";
 
   const now = new Date();
 
@@ -26,6 +29,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.9,
+    },
+
+    // future-safe dynamic blog structure (no new files added, safe fallback)
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.8,
     },
   ];
 }
