@@ -4,13 +4,26 @@ import Link from "next/link";
 import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnel";
+import { IMAGES } from "@/lib/images";
+import Image from "next/image";
 
 export default function Hero() {
   return (
     <section className="min-h-[85vh] flex items-center justify-center text-center px-4 relative">
 
+      {/* BACKGROUND IMAGE */}
+      <Image
+        src={IMAGES.hotel.exteriorHero}
+        alt="Three Steers Hotel exterior view"
+        fill
+        priority
+        className="object-cover"
+      />
+
+      {/* OVERLAY */}
       <div className="absolute inset-0 bg-black/70" />
 
+      {/* CONTENT */}
       <div className="max-w-3xl relative z-10">
 
         <h1 className="text-4xl md:text-5xl font-bold text-yellow-500 leading-tight">
@@ -39,8 +52,6 @@ export default function Hero() {
             className="btn btn-green"
             onClick={() => {
               trackEvent("whatsapp_click", { source: "hero" });
-
-              // HERO = highest intent signal
               setFunnelStep("CONTACT");
             }}
           >
@@ -52,8 +63,6 @@ export default function Hero() {
             className="btn btn-gold"
             onClick={() => {
               trackEvent("call_click", { source: "hero" });
-
-              // keep funnel consistent with contact action
               setFunnelStep("CONTACT");
             }}
           >
