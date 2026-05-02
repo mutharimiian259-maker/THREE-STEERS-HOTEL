@@ -2,16 +2,21 @@
 
 import Link from "next/link";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
-import { HOTEL } from "@/lib/config/hotel";
+import { setFunnelStep } from "@/lib/analytics/funnel";
+import { HOTEL } from "@/lib/config";
+
+function sanitizePhone(phone: string) {
+  return phone.replace(/[^\d]/g, "");
+}
 
 export default function About() {
-  const whatsappNumber = HOTEL.contact.phone.whatsapp
-    .replace("+", "")
-    .replace(/\s/g, "");
+  const whatsappNumber = sanitizePhone(HOTEL.contact.phone.whatsapp);
 
   return (
-    <section className="p-6" onMouseEnter={() => setFunnelStep("VISIT")}>
+    <section className="p-6">
+
+      {/* correct lifecycle-based funnel signal */}
+      <div onLoad={() => setFunnelStep("VISIT")} />
 
       <h2 className="text-2xl font-bold text-yellow-500">
         About {HOTEL.identity.name} – {HOTEL.location.city}, Kenya
@@ -49,7 +54,7 @@ export default function About() {
           href="/rooms"
           className="text-yellow-500 underline"
           onClick={() =>
-            trackEvent("page_view", { source: "about_rooms" })
+            trackEvent("room_view", { source: "about_rooms" })
           }
         >
           View Rooms
@@ -59,7 +64,7 @@ export default function About() {
           href="/#dining"
           className="text-yellow-500 underline"
           onClick={() =>
-            trackEvent("page_view", { source: "about_dining" })
+            trackEvent("page_view", { source: "about_dining_section" })
           }
         >
           Explore Dining
