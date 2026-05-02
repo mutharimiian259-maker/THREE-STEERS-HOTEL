@@ -11,6 +11,13 @@ export type BlogPost = {
   image?: string;
   category?: string;
   readingTime?: number;
+
+  // NEW: conversion + SEO intelligence layer
+  intent?: "informational" | "commercial" | "high_intent";
+  cta?: {
+    label: string;
+    action: "whatsapp" | "rooms" | "conference";
+  };
 };
 
 export const blogPosts: BlogPost[] = [
@@ -31,22 +38,34 @@ export const blogPosts: BlogPost[] = [
       "luxury hotel Meru Kenya",
     ],
 
-    content:
-      `Best Hotel in Meru Kenya
+    content: `
+# Best Hotel in Meru Kenya
 
 Three Steers Hotel offers premium accommodation in Meru Kenya with modern rooms, fine dining, and conference facilities.
 
-Why choose us:
+## Why choose us:
 - 11 room categories
 - Conference halls
 - Fine dining restaurants
-- Gardens & leisure spaces`,
+- Gardens & leisure spaces
+
+Looking for a stay in Meru? Book directly for the best rates and availability.
+    `,
 
     author: "Three Steers Hotel",
     publishedAt: "2026-04-30",
-    image: "/images/blog/hotel-meru.jpg",
+
+    image: "/images/blog/accommodation/best-hotel-meru/hero.jpg",
+
     category: "Accommodation",
     readingTime: 3,
+
+    intent: "commercial",
+
+    cta: {
+      label: "Book Your Stay via WhatsApp",
+      action: "whatsapp",
+    },
   },
 
   {
@@ -65,21 +84,33 @@ Why choose us:
       "corporate events Meru Kenya",
     ],
 
-    content:
-      `Conference Venues in Meru
+    content: `
+# Conference Venues in Meru
 
 Three Steers Hotel provides fully equipped conference halls in Meru suitable for seminars, workshops, and corporate meetings.
 
-Facilities include:
+## Facilities include:
 - High-speed WiFi
 - Audio-visual equipment
 - Catering services
-- Flexible seating capacity`,
+- Flexible seating capacity
+
+Planning a corporate event? Contact us for tailored packages.
+    `,
 
     author: "Three Steers Hotel",
     publishedAt: "2026-04-30",
-    image: "/images/blog/conference-meru.jpg",
+
+    image: "/images/blog/conference/conference-venues-meru/hero.jpg",
+
     category: "Events",
     readingTime: 4,
+
+    intent: "high_intent",
+
+    cta: {
+      label: "Make Conference Enquiry",
+      action: "conference",
+    },
   },
 ];
