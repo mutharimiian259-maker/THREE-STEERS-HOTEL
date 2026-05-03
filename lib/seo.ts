@@ -14,7 +14,11 @@ type SeoProps = {
 
 function joinUrl(base: string, path: string): string {
   if (!path) return base;
-  return `${base.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+
+  const cleanBase = base.replace(/\/$/, "");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+
+  return `${cleanBase}${cleanPath}`;
 }
 
 function getIntentKeywords(intent?: SeoIntent): string[] {
@@ -48,17 +52,16 @@ function getIntentKeywords(intent?: SeoIntent): string[] {
       ];
 
     default:
-      return HOTEL.seo?.keywords || [];
+      return HOTEL.seo?.keywords ?? [];
   }
 }
 
 function dedupe(arr: string[]): string[] {
-  return [...new Set(arr)];
+  return Array.from(new Set(arr));
 }
 
 function validateImage(image?: string): string {
   if (!image) return "/images/hotel/og/default.jpg";
-  if (image.startsWith("http")) return image;
   return image;
 }
 
@@ -75,18 +78,19 @@ export function generateSEO({
     : HOTEL.seo.defaultTitle;
 
   const fullDescription =
-    description || HOTEL.seo.defaultDescription;
+    description ?? HOTEL.seo.defaultDescription;
 
   const baseUrl = HOTEL.domain.primary;
   const url = joinUrl(baseUrl, path);
 
   const safeImage = validateImage(image);
+
   const absoluteImage = safeImage.startsWith("http")
     ? safeImage
     : joinUrl(baseUrl, safeImage);
 
   const finalKeywords = dedupe([
-    ...(keywords || []),
+    ...(keywords ?? []),
     ...getIntentKeywords(intent),
   ]);
 
