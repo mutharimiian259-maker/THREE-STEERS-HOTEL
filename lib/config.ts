@@ -13,7 +13,7 @@ export const HOTEL = {
     phone: {
       primary: "+254728588005",
       secondary: "+254735497772",
-      whatsapp: "254728588005",
+      whatsapp: "+254728588005",
     },
     email: "reservation@threesteershotel.com",
   },
@@ -56,4 +56,4 @@ export const HOTEL = {
     checkOut: "10:00",
     starRating: 4,
   },
-};
+} as const;
