@@ -1,34 +1,40 @@
-import { HOTEL } from "@/lib/config";
-import { trackLead } from "@/lib/analytics/trackLead";
+export type Intent =
+  | "navigation"
+  | "engagement"
+  | "revenue"
+  | "conversion";
+
+export const INTENT = {
+  NAVIGATION: "navigation",
+  ENGAGEMENT: "engagement",
+  REVENUE: "revenue",
+  CONVERSION: "conversion",
+} as const;
+
+export type FunnelStep = "VISIT" | "INTENT" | "CONTACT" | "BOOKED";
+
+export const FUNNEL = {
+  VISIT: "VISIT",
+  INTENT: "INTENT",
+  CONTACT: "CONTACT",
+  BOOKED: "BOOKED",
+} as const;
 
 /**
- * Phone link (PURE)
+ * SINGLE SOURCE OF TRUTH FOR ALL TRACKED EVENTS
  */
-export function getPhoneLink() {
-  return `tel:${HOTEL.contact.phone.primary}`;
-}
+export const EVENTS = {
+  PAGE_VIEW: "page_view",
 
-/**
- * Email link (PURE)
- */
-export function getEmailLink() {
-  return `mailto:${HOTEL.contact.email}`;
-}
+  WHATSAPP_CLICK: "whatsapp_click",
+  CALL_CLICK: "call_click",
+  EMAIL_CLICK: "email_click",
 
-/**
- * Tracking layer (explicit side effects)
- */
-export function trackPhoneClick() {
-  if (typeof window === "undefined") return;
+  BOOKING_INTENT: "booking_intent",
+  ROOM_VIEW: "room_view",
+  BLOG_CLICK: "blog_click",
 
-  trackLead("call_click");
-}
+  NAVIGATION: "navigation",
+} as const;
 
-/**
- * FIXED: more accurate analytics meaning
- */
-export function trackEmailClick() {
-  if (typeof window === "undefined") return;
-
-  trackLead("email_click");
-}
+export type EventType = typeof EVENTS[keyof typeof EVENTS];
