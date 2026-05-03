@@ -1,20 +1,17 @@
-export type FunnelStep =
-  | "VISIT"
-  | "ROOM_VIEW"
-  | "INTENT"
-  | "CONTACT"
-  | "BOOKED";
-
 const STORAGE_KEY = "hotel_funnel_step";
 
+export const FUNNEL_STEPS = {
+  VISIT: "VISIT",
+  ROOM_VIEW: "ROOM_VIEW",
+  INTENT: "INTENT",
+  CONTACT: "CONTACT",
+  BOOKED: "BOOKED",
+} as const;
+
+export type FunnelStep = typeof FUNNEL_STEPS[keyof typeof FUNNEL_STEPS];
+
 function isValidStep(value: unknown): value is FunnelStep {
-  return (
-    value === "VISIT" ||
-    value === "ROOM_VIEW" ||
-    value === "INTENT" ||
-    value === "CONTACT" ||
-    value === "BOOKED"
-  );
+  return Object.values(FUNNEL_STEPS).includes(value as FunnelStep);
 }
 
 function safeGetItem(key: string): string | null {
@@ -31,7 +28,7 @@ function safeSetItem(key: string, value: string): void {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(key, value);
   } catch {
-    // ignore storage failures
+    // silent fail (production-safe)
   }
 }
 
@@ -43,18 +40,18 @@ export function setFunnelStep(step: FunnelStep): void {
 
   safeSetItem(STORAGE_KEY, step);
 
+  if (typeof window === "undefined") return;
+
   try {
-    if (typeof window === "undefined") return;
-
-    const event = new CustomEvent("funnel_step", {
-      detail: {
-        step,
-        previous: previous ?? "UNKNOWN",
-        source: "funnel_engine",
-      },
-    });
-
-    window.dispatchEvent(event);
+    window.dispatchEvent(
+      new CustomEvent("funnel_step", {
+        detail: {
+          step,
+          previous: previous ?? "UNKNOWN",
+          source: "funnel_engine",
+        },
+      })
+    );
   } catch {
     // silent fail
   }
