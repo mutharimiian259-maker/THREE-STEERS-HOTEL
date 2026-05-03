@@ -1,6 +1,7 @@
 "use client";
 
-import { useAnalytics } from "@/lib/analytics/useAnalytics";
+import { useEffect } from "react";
+import { track } from "@/lib/core/analytics";
 
 export default function AnalyticsProvider({
   pageName,
@@ -9,7 +10,13 @@ export default function AnalyticsProvider({
   pageName: string;
   children: React.ReactNode;
 }) {
-  useAnalytics(pageName);
+  useEffect(() => {
+    if (!pageName) return;
+
+    track("page_view", {
+      page_name: pageName,
+    });
+  }, [pageName]);
 
   return <>{children}</>;
 }
