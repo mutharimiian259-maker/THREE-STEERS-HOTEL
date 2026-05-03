@@ -9,8 +9,6 @@ export default function AnalyticsProvider({
   pageName: string;
   children: React.ReactNode;
 }) {
-  if (!pageName) return <>{children}</>;
-
   useAnalytics(pageName);
 
   return <>{children}</>;
