@@ -48,12 +48,18 @@ function getIntentKeywords(intent?: SeoIntent): string[] {
       ];
 
     default:
-      return HOTEL.seo.keywords || [];
+      return HOTEL.seo?.keywords || [];
   }
 }
 
 function dedupe(arr: string[]): string[] {
   return [...new Set(arr)];
+}
+
+function validateImage(image?: string): string {
+  if (!image) return "/images/hotel/og/default.jpg";
+  if (image.startsWith("http")) return image;
+  return image;
 }
 
 export function generateSEO({
@@ -72,13 +78,9 @@ export function generateSEO({
     description || HOTEL.seo.defaultDescription;
 
   const baseUrl = HOTEL.domain.primary;
-
   const url = joinUrl(baseUrl, path);
 
-  const defaultImage = "/images/hotel/og/default.jpg";
-
-  const safeImage = image?.length ? image : defaultImage;
-
+  const safeImage = validateImage(image);
   const absoluteImage = safeImage.startsWith("http")
     ? safeImage
     : joinUrl(baseUrl, safeImage);
@@ -91,7 +93,6 @@ export function generateSEO({
   return {
     title: fullTitle,
     description: fullDescription,
-
     keywords: finalKeywords,
 
     openGraph: {
