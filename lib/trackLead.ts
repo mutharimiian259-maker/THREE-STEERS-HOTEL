@@ -1,41 +1,46 @@
 const LEAD_CACHE_KEY = "lead_last_sent";
 
-// improved classification types
 type LeadType =
   | "room_view"
   | "whatsapp_click"
   | "call_click"
-  | "booking_intent"
-  | "conference_intent"
+  | "email_click"
   | "blog_click"
   | "navigation";
+
+type LeadCache = {
+  type: LeadType;
+  time: number;
+};
 
 function canSendLead(type: LeadType): boolean {
   if (typeof window === "undefined") return false;
 
   try {
-    const last = localStorage.getItem(LEAD_CACHE_KEY);
+    const raw = localStorage.getItem(LEAD_CACHE_KEY);
     const now = Date.now();
 
-    if (last) {
-      const parsed = JSON.parse(last);
+    if (raw) {
+      const parsed: LeadCache = JSON.parse(raw);
 
-      // stronger deduplication: type + time window
       if (
         parsed?.type === type &&
-        now - parsed?.time < 10000 // 10s window
+        now - parsed?.time < 10000
       ) {
         return false;
       }
     }
 
+    const nextCache: LeadCache = { type, time: now };
+
     localStorage.setItem(
       LEAD_CACHE_KEY,
-      JSON.stringify({ type, time: now })
+      JSON.stringify(nextCache)
     );
 
     return true;
   } catch {
+    // fail-safe: do NOT block lead tracking on storage errors
     return true;
   }
 }
@@ -51,8 +56,6 @@ export async function trackLead(type: LeadType) {
       type,
       time: new Date().toISOString(),
       url: window.location.href,
-
-      // NEW: revenue context (VERY IMPORTANT)
       referrer: document.referrer || null,
       device: navigator.userAgent,
     };
