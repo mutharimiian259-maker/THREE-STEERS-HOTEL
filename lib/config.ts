@@ -51,10 +51,6 @@ export const HOTEL = {
     },
   },
 
-  analytics: {
-    gaId: null,
-  },
-
   business: {
     checkIn: "12:00",
     checkOut: "10:00",
