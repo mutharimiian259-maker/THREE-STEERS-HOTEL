@@ -17,38 +17,36 @@ function canSendLead(type: LeadType): boolean {
   if (typeof window === "undefined") return false;
 
   try {
-    const raw = localStorage.getItem(LEAD_CACHE_KEY);
+    const last = localStorage.getItem(LEAD_CACHE_KEY);
     const now = Date.now();
 
-    if (raw) {
-      const parsed: LeadCache = JSON.parse(raw);
+    if (last) {
+      const parsed: LeadCache | null = JSON.parse(last);
 
       if (
-        parsed?.type === type &&
-        now - parsed?.time < 10000
+        parsed &&
+        typeof parsed.time === "number" &&
+        parsed.type === type &&
+        now - parsed.time < 10000
       ) {
         return false;
       }
     }
 
-    const nextCache: LeadCache = { type, time: now };
-
     localStorage.setItem(
       LEAD_CACHE_KEY,
-      JSON.stringify(nextCache)
+      JSON.stringify({ type, time: now })
     );
 
     return true;
   } catch {
-    // fail-safe: do NOT block lead tracking on storage errors
-    return true;
+    return false;
   }
 }
 
 export async function trackLead(type: LeadType) {
   if (typeof window === "undefined") return;
   if (!type) return;
-
   if (!canSendLead(type)) return;
 
   try {
@@ -65,9 +63,7 @@ export async function trackLead(type: LeadType) {
 
     const res = await fetch("/api/leads", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       signal: controller.signal,
       body: JSON.stringify(payload),
     });
