@@ -1,9 +1,3 @@
-export type Intent =
-  | "navigation"
-  | "engagement"
-  | "revenue"
-  | "conversion";
-
 export const INTENT = {
   NAVIGATION: "navigation",
   ENGAGEMENT: "engagement",
@@ -11,7 +5,7 @@ export const INTENT = {
   CONVERSION: "conversion",
 } as const;
 
-export type FunnelStep = "VISIT" | "INTENT" | "CONTACT" | "BOOKED";
+export type Intent = typeof INTENT[keyof typeof INTENT];
 
 export const FUNNEL = {
   VISIT: "VISIT",
@@ -20,18 +14,23 @@ export const FUNNEL = {
   BOOKED: "BOOKED",
 } as const;
 
+export type FunnelStep = typeof FUNNEL[keyof typeof FUNNEL];
+
 /**
- * SINGLE SOURCE OF TRUTH FOR ALL TRACKED EVENTS
+ * EVENT ACTIONS (what the user DOES)
+ * NOT funnel states
+ * NOT intent labels
  */
 export const EVENTS = {
   PAGE_VIEW: "page_view",
+
+  ROOM_VIEW: "room_view",
 
   WHATSAPP_CLICK: "whatsapp_click",
   CALL_CLICK: "call_click",
   EMAIL_CLICK: "email_click",
 
   BOOKING_INTENT: "booking_intent",
-  ROOM_VIEW: "room_view",
   BLOG_CLICK: "blog_click",
 
   NAVIGATION: "navigation",
