@@ -2,10 +2,10 @@ export type Route = {
   name: string;
   path: string;
 
-  // structural routing
+  // routing classification
   type: "page" | "section";
 
-  // NEW: conversion intelligence layer
+  // conversion layer (kept for analytics + future personalization)
   intent: "navigation" | "engagement" | "revenue" | "conversion";
 };
 
@@ -45,7 +45,6 @@ export const routes: Route[] = [
     intent: "engagement",
   },
 
-  // IMPORTANT: renamed mentally as booking, not contact
   {
     name: "Book Stay",
     path: "/#booking",
