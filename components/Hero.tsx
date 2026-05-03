@@ -8,8 +8,21 @@ import { IMAGES } from "@/lib/images";
 import Image from "next/image";
 
 export default function Hero() {
-  const heroImage =
-    IMAGES.hotel.exteriorHero || "/images/hotel/exterior-hero.jpg";
+  const heroImage = IMAGES.hotel.exteriorHero;
+
+  const handleWhatsApp = () => {
+    trackEvent("whatsapp_click", { source: "hero" });
+    setFunnelStep("INTENT");
+  };
+
+  const handleCall = () => {
+    trackEvent("call_click", { source: "hero" });
+    setFunnelStep("CONTACT");
+  };
+
+  const handleRooms = () => {
+    setFunnelStep("INTENT");
+  };
 
   return (
     <section className="relative min-h-[85vh] flex items-center justify-center text-center px-4 overflow-hidden">
@@ -43,7 +56,6 @@ export default function Hero() {
           ⭐ Rated among top business & travel hotels in {HOTEL.location.city}
         </p>
 
-        {/* TRUST + URGENCY */}
         <p className="text-gray-300 mt-2 text-sm">
           Trusted by business travelers & tourists visiting Mt Kenya region
         </p>
@@ -61,10 +73,7 @@ export default function Hero() {
               "Hello, I would like to book a room at Three Steers Hotel Meru. Please assist with availability, dates, and pricing."
             )}`}
             className="btn btn-green"
-            onClick={() => {
-              trackEvent("whatsapp_click", { source: "hero" });
-              setFunnelStep("CONTACT");
-            }}
+            onClick={handleWhatsApp}
           >
             💬 Book via WhatsApp
           </a>
@@ -73,10 +82,7 @@ export default function Hero() {
           <a
             href={`tel:${HOTEL.contact.phone.primary}`}
             className="btn btn-gold"
-            onClick={() => {
-              trackEvent("call_click", { source: "hero" });
-              setFunnelStep("CONTACT");
-            }}
+            onClick={handleCall}
           >
             📞 Call Reception
           </a>
@@ -85,7 +91,7 @@ export default function Hero() {
           <Link
             href="/rooms"
             className="btn"
-            onClick={() => setFunnelStep("ROOM_VIEW")}
+            onClick={handleRooms}
           >
             View Rooms & Rates
           </Link>
