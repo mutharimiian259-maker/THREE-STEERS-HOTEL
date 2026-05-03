@@ -17,25 +17,29 @@ import { setFunnelStep } from "@/lib/analytics/funnel";
 export default function Home() {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
 
-  // INITIAL VISIT TRACKING
+  /* ---------------- INITIAL VISIT (SAFE) ---------------- */
   useEffect(() => {
     setFunnelStep("VISIT");
   }, []);
 
+  /* ---------------- ROOM VIEW THROTTLE ---------------- */
+  let roomViewTracked = false;
+
+  const handleRoomView = () => {
+    if (roomViewTracked) return;
+    roomViewTracked = true;
+    setFunnelStep("ROOM_VIEW");
+  };
+
   return (
     <main>
-
       {/* HERO */}
       <section id="home">
         <Hero />
       </section>
 
       {/* ROOMS */}
-      <section
-        id="rooms"
-        className="p-6"
-        onMouseEnter={() => setFunnelStep("ROOM_VIEW")}
-      >
+      <section id="rooms" className="p-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-yellow-500">
             Rooms & Accommodation in {HOTEL.location.city}
@@ -50,12 +54,12 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mt-4">
+        <div
+          className="grid md:grid-cols-3 gap-4 mt-4"
+          onMouseEnter={handleRoomView}
+        >
           {safeRooms.slice(0, 3).map((room: any, index: number) => (
-            <RoomCard
-              key={room?.id ?? index}
-              room={room}
-            />
+            <RoomCard key={room?.id ?? index} room={room} />
           ))}
         </div>
       </section>
@@ -107,10 +111,7 @@ export default function Home() {
       </section>
 
       {/* BOOKING CTA */}
-      <section
-        id="booking"
-        className="text-center p-10 bg-zinc-900"
-      >
+      <section id="booking" className="text-center p-10 bg-zinc-900">
         <h2 className="text-3xl font-bold text-yellow-500">
           Book Your Stay at {HOTEL.identity.name}
         </h2>
@@ -141,7 +142,6 @@ export default function Home() {
 
         </div>
       </section>
-
     </main>
   );
 }
