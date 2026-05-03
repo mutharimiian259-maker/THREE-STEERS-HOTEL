@@ -1,3 +1,5 @@
+"use client";
+
 import "@/styles/globals.css";
 import type { Metadata } from "next";
 import Navbar from "@/components/global/Navbar";
@@ -103,11 +105,14 @@ export default function RootLayout({
             <Script id="ga-script" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
+
                 function gtag(){dataLayer.push(arguments);}
                 window.gtag = gtag;
 
                 gtag('js', new Date());
-                gtag('config', '${safeGaId}');
+                gtag('config', '${safeGaId}', {
+                  send_page_view: true
+                });
               `}
             </Script>
           </>
