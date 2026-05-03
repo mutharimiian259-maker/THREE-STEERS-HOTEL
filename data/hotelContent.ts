@@ -29,7 +29,11 @@ export const hotelContent = {
       type: "revenue",
     },
 
-    { name: "Fun Experiences", path: "/#experiences", type: "engagement" },
+    {
+      name: "Fun Experiences",
+      path: "/#experiences",
+      type: "engagement",
+    },
 
     {
       name: "Blogs",
@@ -102,4 +106,4 @@ export const hotelContent = {
       { name: "Twitter", url: "#" },
     ],
   },
-};
+} as const;
