@@ -8,13 +8,13 @@ export const IMAGES = {
   },
 
   rooms: {
-    batian: {
+    batianWing: {
       honeymoon: "/images/rooms/batian-wing/honeymoon/hero.jpg",
       deluxeTwin: "/images/rooms/batian-wing/deluxe-twin/hero.jpg",
       executiveSuite: "/images/rooms/batian-wing/executive-suite/hero.jpg",
     },
 
-    lenana: {
+    lenanaWing: {
       standardSingle: "/images/rooms/lenana-wing/standard-single/hero.jpg",
       standardDouble: "/images/rooms/lenana-wing/standard-double/hero.jpg",
       familyRoom: "/images/rooms/lenana-wing/family-room/hero.jpg",
