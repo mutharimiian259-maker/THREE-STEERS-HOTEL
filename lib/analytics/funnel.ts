@@ -1,63 +1,60 @@
-const STORAGE_KEY = "hotel_funnel_step";
+// /lib/core/funnel.ts
 
-export const FUNNEL_STEPS = {
-  VISIT: "VISIT",
-  ROOM_VIEW: "ROOM_VIEW",
-  INTENT: "INTENT",
-  CONTACT: "CONTACT",
-  BOOKED: "BOOKED",
-} as const;
+import { FunnelStep } from "./types";
 
-export type FunnelStep = typeof FUNNEL_STEPS[keyof typeof FUNNEL_STEPS];
+const STORAGE_KEY = "hotel_funnel";
 
-function isValidStep(value: unknown): value is FunnelStep {
-  return Object.values(FUNNEL_STEPS).includes(value as FunnelStep);
-}
+const ORDER: FunnelStep[] = [
+  "VISIT",
+  "ENGAGEMENT",
+  "INTENT",
+  "CONTACT",
+];
 
-function safeGetItem(key: string): string | null {
+function safeGet(): FunnelStep | null {
+  if (typeof window === "undefined") return null;
+
   try {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(key);
+    const value = localStorage.getItem(STORAGE_KEY);
+    return value as FunnelStep | null;
   } catch {
     return null;
   }
 }
 
-function safeSetItem(key: string, value: string): void {
-  try {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(key, value);
-  } catch {
-    // silent fail (production-safe)
-  }
-}
-
-export function setFunnelStep(step: FunnelStep): void {
-  const previousRaw = safeGetItem(STORAGE_KEY);
-  const previous = isValidStep(previousRaw) ? previousRaw : null;
-
-  if (previous === step) return;
-
-  safeSetItem(STORAGE_KEY, step);
-
+function safeSet(step: FunnelStep): void {
   if (typeof window === "undefined") return;
 
   try {
-    window.dispatchEvent(
-      new CustomEvent("funnel_step", {
-        detail: {
-          step,
-          previous: previous ?? "UNKNOWN",
-          source: "funnel_engine",
-        },
-      })
-    );
+    localStorage.setItem(STORAGE_KEY, step);
   } catch {
-    // silent fail
+    // ignore
   }
 }
 
-export function getFunnelStep(): FunnelStep | null {
-  const value = safeGetItem(STORAGE_KEY);
-  return isValidStep(value) ? value : null;
-}
+/**
+ * SINGLE CONTROLLER
+ */
+export const funnel = {
+  /**
+   * Always returns a valid step
+   */
+  get(): FunnelStep {
+    return safeGet() ?? "VISIT";
+  },
+
+  /**
+   * STRICT forward-only movement
+   */
+  set(next: FunnelStep): void {
+    const current = this.get();
+
+    const currentIndex = ORDER.indexOf(current);
+    const nextIndex = ORDER.indexOf(next);
+
+    // ❌ block backward or same step
+    if (nextIndex <= currentIndex) return;
+
+    safeSet(next);
+  },
+};
