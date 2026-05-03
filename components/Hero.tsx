@@ -1,109 +1,92 @@
 "use client";
 
-import Link from "next/link";
 import { HOTEL } from "@/lib/config";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
 import { IMAGES } from "@/lib/images";
 import Image from "next/image";
 
-export default function Hero() {
-  const heroImage = IMAGES.hotel.exteriorHero;
-
-  const handleWhatsApp = () => {
-    trackEvent("whatsapp_click", { source: "hero" });
-    setFunnelStep("INTENT");
-  };
-
-  const handleCall = () => {
-    trackEvent("call_click", { source: "hero" });
-    setFunnelStep("CONTACT");
-  };
-
-  const handleRooms = () => {
-    setFunnelStep("INTENT");
-  };
-
+export default function Facilities() {
   return (
-    <section className="relative min-h-[85vh] flex items-center justify-center text-center px-4 overflow-hidden">
+    <section className="p-6 bg-zinc-900">
 
-      {/* BACKGROUND IMAGE */}
-      <Image
-        src={heroImage}
-        alt="Three Steers Hotel exterior view"
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover z-0"
-      />
+      {/* TITLE */}
+      <h2 className="text-2xl font-bold text-yellow-500 text-center">
+        Premium Facilities at {HOTEL.identity.name}
+      </h2>
 
-      {/* DARK OVERLAY */}
-      <div className="absolute inset-0 bg-black/70 z-10" />
+      <p className="text-gray-400 text-center mt-2 max-w-xl mx-auto">
+        Enjoy premium comfort and convenience with modern facilities
+        designed for both business and leisure guests in {HOTEL.location.city}.
+      </p>
 
-      {/* CONTENT */}
-      <div className="max-w-3xl relative z-20">
+      {/* IMAGE TRUST STRIP */}
+      <div className="grid md:grid-cols-3 gap-4 mt-8">
 
-        <h1 className="text-4xl md:text-5xl font-bold text-yellow-500 leading-tight">
-          Luxury Hotel in {HOTEL.location.city}, Kenya – Book Direct & Save More
-        </h1>
-
-        <p className="text-gray-300 mt-4 text-lg">
-          Premium accommodation near Mount Kenya with elegant rooms, fine dining,
-          conferences, and professional hospitality at {HOTEL.identity.name}.
-        </p>
-
-        <p className="text-yellow-400 mt-3 text-sm font-medium">
-          ⭐ Rated among top business & travel hotels in {HOTEL.location.city}
-        </p>
-
-        <p className="text-gray-300 mt-2 text-sm">
-          Trusted by business travelers & tourists visiting Mt Kenya region
-        </p>
-
-        <p className="text-red-400 mt-1 text-sm">
-          Limited rooms available — secure your stay today
-        </p>
-
-        {/* CTA */}
-        <div className="mt-6 flex flex-col md:flex-row gap-4 justify-center">
-
-          {/* PRIMARY CTA */}
-          <a
-            href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
-              "Hello, I would like to book a room at Three Steers Hotel Meru. Please assist with availability, dates, and pricing."
-            )}`}
-            className="btn btn-green"
-            onClick={handleWhatsApp}
-          >
-            💬 Book via WhatsApp
-          </a>
-
-          {/* SECONDARY CTA */}
-          <a
-            href={`tel:${HOTEL.contact.phone.primary}`}
-            className="btn btn-gold"
-            onClick={handleCall}
-          >
-            📞 Call Reception
-          </a>
-
-          {/* EXPLORATION CTA */}
-          <Link
-            href="/rooms"
-            className="btn"
-            onClick={handleRooms}
-          >
-            View Rooms & Rates
-          </Link>
-
+        <div className="relative h-56 rounded-lg overflow-hidden">
+          <Image
+            src={IMAGES.hotel.lobby}
+            alt="Hotel lobby interior"
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40 flex items-end p-3">
+            <p className="text-white text-sm font-medium">
+              Elegant Lobby Experience
+            </p>
+          </div>
         </div>
 
-        <p className="text-gray-500 text-xs mt-6">
-          Explore why travelers choose {HOTEL.identity.name} for business stays,
-          conferences, and luxury accommodation in {HOTEL.location.region}.
-        </p>
+        <div className="relative h-56 rounded-lg overflow-hidden">
+          <Image
+            src={IMAGES.hotel.garden}
+            alt="Hotel garden relaxation area"
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40 flex items-end p-3">
+            <p className="text-white text-sm font-medium">
+              Relaxing Garden Spaces
+            </p>
+          </div>
+        </div>
+
+        <div className="relative h-56 rounded-lg overflow-hidden">
+          <Image
+            src={IMAGES.hotel.reception}
+            alt="Hotel reception area"
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40 flex items-end p-3">
+            <p className="text-white text-sm font-medium">
+              24/7 Professional Reception
+            </p>
+          </div>
+        </div>
 
       </div>
+
+      {/* FACILITIES LIST */}
+      <ul className="grid md:grid-cols-4 gap-4 mt-10 list-none">
+
+        {[
+          "Free High-Speed WiFi",
+          "Secure Parking",
+          "Conference & Meeting Rooms",
+          "On-site Restaurant & Bar",
+          "24/7 Front Desk",
+          "Room Service",
+          "Airport Transfers",
+          "Laundry Services",
+        ].map((item) => (
+          <li
+            key={item}
+            className="bg-black border border-zinc-800 p-4 rounded-lg text-center hover:border-yellow-500 transition"
+          >
+            <p className="text-white text-sm">{item}</p>
+          </li>
+        ))}
+
+      </ul>
 
     </section>
   );
