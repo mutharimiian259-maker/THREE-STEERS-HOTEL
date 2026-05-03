@@ -4,7 +4,7 @@ import { trackLead } from "@/lib/analytics/trackLead";
 /**
  * Cleans phone number for WhatsApp API compatibility
  */
-function sanitizePhone(phone: string) {
+function sanitizePhone(phone: string): string {
   return phone.replace(/[^\d]/g, "");
 }
 
@@ -20,7 +20,7 @@ type WhatsAppOptions = {
 export function buildWhatsAppLink(
   message: string,
   options?: WhatsAppOptions
-) {
+): string {
   const phone = sanitizePhone(HOTEL.contact.phone.whatsapp);
 
   if (!phone) {
@@ -28,7 +28,6 @@ export function buildWhatsAppLink(
   }
 
   const enrichedMessage = formatMessage(message, options);
-
   const encoded = encodeURIComponent(enrichedMessage);
 
   return `https://wa.me/${phone}?text=${encoded}`;
@@ -37,7 +36,7 @@ export function buildWhatsAppLink(
 /**
  * SEPARATE: analytics trigger (must be called explicitly)
  */
-export function trackWhatsAppClick() {
+export function trackWhatsAppClick(): void {
   if (typeof window === "undefined") return;
 
   trackLead("whatsapp_click");
@@ -49,16 +48,18 @@ export function trackWhatsAppClick() {
 function formatMessage(
   message: string,
   options?: WhatsAppOptions
-) {
-  return `
-🏨 ${HOTEL.identity.name} Booking Request
+): string {
+  const lines = [
+    `🏨 ${HOTEL.identity.name} Booking Request`,
+    "",
+    message,
+    "",
+    "---",
+    `Source: ${options?.source ?? "direct"}`,
+    `Intent: ${options?.intent ?? "general"}`,
+    options?.room ? `Room: ${options.room}` : null,
+    `Time: ${new Date().toISOString()}`,
+  ];
 
-${message}
-
----
-Source: ${options?.source ?? "direct"}
-Intent: ${options?.intent ?? "general"}
-${options?.room ? `Room: ${options.room}` : ""}
-Time: ${new Date().toISOString()}
-`.trim();
+  return lines.filter(Boolean).join("\n").trim();
 }
