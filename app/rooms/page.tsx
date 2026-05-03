@@ -3,14 +3,22 @@ import Image from "next/image";
 import rooms from "@/data/rooms";
 import { HOTEL } from "@/lib/config";
 import { trackLead } from "@/lib/analytics/trackLead";
+import { useCallback } from "react";
 
 export default function RoomsPage() {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
 
+  const handleRoomClick = useCallback(() => {
+    trackLead("room_view");
+  }, []);
+
+  const handleBookingIntent = useCallback(() => {
+    trackLead("booking_intent");
+  }, []);
+
   return (
     <main className="p-6 max-w-6xl mx-auto">
 
-      {/* HEADER */}
       <header className="text-center">
 
         <h1 className="text-3xl font-bold text-yellow-500">
@@ -24,14 +32,12 @@ export default function RoomsPage() {
 
       </header>
 
-      {/* GUIDANCE */}
       <div className="text-center mt-4 mb-8">
         <p className="text-sm text-yellow-600 font-medium">
           ⭐ Recommended: Deluxe & Executive suites for best experience
         </p>
       </div>
 
-      {/* ROOMS GRID */}
       <section className="grid md:grid-cols-2 gap-6 mt-6">
 
         {safeRooms.map((room: any) => {
@@ -48,10 +54,9 @@ export default function RoomsPage() {
               key={room.id}
               href={`/rooms/${room.slug}`}
               className="card block overflow-hidden hover:scale-[1.01] transition"
-              onClick={() => trackLead("room_view")}
+              onClick={handleRoomClick}
             >
 
-              {/* IMAGE */}
               <div className="relative w-full h-52">
                 <Image
                   src={imageSrc}
@@ -61,7 +66,6 @@ export default function RoomsPage() {
                 />
               </div>
 
-              {/* CONTENT */}
               <div className="p-3">
 
                 <h2 className="text-xl text-yellow-500 font-bold mt-2">
@@ -72,12 +76,10 @@ export default function RoomsPage() {
                   {room.desc}
                 </p>
 
-                {/* PRICE */}
                 <p className="mt-2 font-semibold text-white">
                   {price}
                 </p>
 
-                {/* SOCIAL PROOF / URGENCY */}
                 <p className="text-xs text-red-500 mt-1">
                   Limited availability — popular among business travelers
                 </p>
@@ -94,7 +96,6 @@ export default function RoomsPage() {
 
       </section>
 
-      {/* FINAL CTA */}
       <section className="text-center mt-12">
 
         <p className="text-gray-600">
@@ -104,7 +105,7 @@ export default function RoomsPage() {
         <a
           href={`https://wa.me/${HOTEL.contact.phone.whatsapp}`}
           className="inline-block mt-4 bg-green-500 text-white px-6 py-3 rounded"
-          onClick={() => trackLead("booking_intent")}
+          onClick={handleBookingIntent}
         >
           Talk to Reception
         </a>
