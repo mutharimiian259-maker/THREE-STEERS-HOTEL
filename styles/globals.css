@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 /* =========================
+   GLOBAL SAFETY RESET
+========================= */
+* {
+  box-sizing: border-box;
+}
+
+/* =========================
    DESIGN TOKENS
 ========================= */
 :root {
@@ -43,6 +50,7 @@
 
 .btn-gold:active {
   transform: scale(0.98);
+  will-change: transform;
 }
 
 /* GREEN BUTTON */
@@ -57,6 +65,7 @@
 
 .btn-green:active {
   transform: scale(0.98);
+  will-change: transform;
 }
 
 /* =========================
@@ -84,7 +93,14 @@ p, h1, h2, h3, h4 {
 }
 
 /* =========================
-   OPTIONAL: GLOBAL CONTAINER
+   GLOBAL TRANSITION BASELINE (SAFE ADDITION)
+========================= */
+a, button, div {
+  @apply transition-colors duration-200;
+}
+
+/* =========================
+   CONTAINER SYSTEM
 ========================= */
 .container {
   @apply max-w-6xl mx-auto px-4;
