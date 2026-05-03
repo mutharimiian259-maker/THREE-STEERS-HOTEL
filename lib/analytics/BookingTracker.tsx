@@ -1,34 +1,43 @@
-"use client";
+import { trackEvent } from "./trackEvent";
 
-import { useEffect } from "react";
-import { FunnelEvents } from "@/lib/analytics/conversionEvents";
-
-export default function BookingTracker() {
-  useEffect(() => {
-    const handleClick = (e: Event) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-
-      const link = target.closest("a") as HTMLAnchorElement | null;
-      if (!link) return;
-
-      const href = link.getAttribute("href") || "";
-
-      if (href.includes("wa.me")) {
-        FunnelEvents.whatsappClick(window.location.pathname);
-      }
-
-      if (href.startsWith("tel:")) {
-        FunnelEvents.callClick(window.location.pathname);
-      }
-    };
-
-    document.addEventListener("click", handleClick);
-
-    return () => {
-      document.removeEventListener("click", handleClick);
-    };
-  }, []);
-
-  return null;
+function isValid(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
 }
+
+/**
+ * Semantic funnel event layer
+ * NOTE: should be the ONLY way UI triggers analytics
+ */
+export const FunnelEvents = {
+  viewRoom(room: string) {
+    if (!isValid(room)) return;
+
+    trackEvent("room_view", {
+      room: room.trim(),
+    });
+  },
+
+  startIntent(source: string) {
+    if (!isValid(source)) return;
+
+    trackEvent("booking_intent", {
+      source: source.trim(),
+    });
+  },
+
+  whatsappClick(source: string) {
+    if (!isValid(source)) return;
+
+    trackEvent("whatsapp_click", {
+      source: source.trim(),
+    });
+  },
+
+  callClick(source: string) {
+    if (!isValid(source)) return;
+
+    trackEvent("call_click", {
+      source: source.trim(),
+    });
+  },
+} as const;
