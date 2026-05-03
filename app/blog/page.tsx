@@ -7,6 +7,12 @@ import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnel";
 
 export default function BlogPage() {
+  
+  const handleClick = (slug: string) => {
+    trackEvent("BLOG_CLICK", { blog: slug });
+    setFunnelStep("ENGAGEMENT");
+  };
+
   return (
     <main className="p-6 max-w-6xl mx-auto">
 
@@ -28,17 +34,12 @@ export default function BlogPage() {
           const imageSrc =
             post.image || "/images/blog/default-blog.jpg";
 
-          const handleClick = () => {
-            trackEvent("navigation", { blog: post.slug });
-            setFunnelStep("ENGAGEMENT");
-          };
-
           return (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
               className="card overflow-hidden hover:scale-[1.01] transition block"
-              onClick={handleClick}
+              onClick={() => handleClick(post.slug)}
             >
 
               <div className="relative w-full h-52">
