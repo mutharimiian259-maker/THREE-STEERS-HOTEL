@@ -4,6 +4,7 @@ import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 import Image from "next/image";
 import { trackEvent } from "@/lib/analytics/trackEvent";
+import { setFunnelStep } from "@/lib/analytics/funnel";
 
 const experiences = [
   {
@@ -24,6 +25,20 @@ const experiences = [
 ];
 
 export default function Experience() {
+  const handleExperienceClick = (experience: string) => {
+    trackEvent("experience_view", {
+      experience,
+    });
+  };
+
+  const handleCTA = () => {
+    trackEvent("booking_intent", {
+      source: "experience_cta",
+    });
+
+    setFunnelStep("INTENT");
+  };
+
   return (
     <section className="p-6">
 
@@ -37,21 +52,16 @@ export default function Experience() {
         including Mt Kenya hiking, wildlife safaris, and cultural experiences in {HOTEL.location.region}.
       </p>
 
-      {/* VISUAL EXPERIENCE GRID */}
+      {/* GRID */}
       <ul className="grid md:grid-cols-3 gap-4 mt-6">
 
         {experiences.map((item) => (
           <li
             key={item.id}
             className="relative rounded-lg overflow-hidden h-56 cursor-pointer"
-            onClick={() =>
-              trackEvent("experience_view", {
-                experience: item.name,
-              })
-            }
+            onClick={() => handleExperienceClick(item.name)}
           >
 
-            {/* IMAGE */}
             <Image
               src={item.image}
               alt={item.name}
@@ -59,7 +69,6 @@ export default function Experience() {
               className="object-cover"
             />
 
-            {/* OVERLAY */}
             <div className="absolute inset-0 bg-black/40 flex items-end p-3">
               <p className="text-white font-medium text-sm">
                 {item.name}
@@ -82,11 +91,7 @@ export default function Experience() {
               HOTEL.location.city
           )}`}
           className="btn btn-green inline-block"
-          onClick={() => {
-            trackEvent("booking_intent", {
-              source: "experience_cta",
-            });
-          }}
+          onClick={handleCTA}
         >
           Book Stay + Experiences
         </a>
