@@ -3,6 +3,7 @@
 import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 import Image from "next/image";
+import { trackEvent } from "@/lib/analytics/trackEvent";
 
 export default function Facilities() {
   return (
@@ -65,7 +66,7 @@ export default function Facilities() {
 
       </div>
 
-      {/* FACILITIES LIST (KEPT BUT IMPROVED) */}
+      {/* FACILITIES LIST */}
       <ul className="grid md:grid-cols-4 gap-4 mt-10 list-none">
 
         {[
