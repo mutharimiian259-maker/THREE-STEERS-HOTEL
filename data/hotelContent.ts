@@ -26,12 +26,16 @@ export const hotelContent = {
     {
       name: "Conferencing & Banqueting",
       path: "/#conference",
-      type: "high_value",
+      type: "revenue",
     },
 
     { name: "Fun Experiences", path: "/#experiences", type: "engagement" },
 
-    { name: "Blogs", path: "/blog", type: "seo" },
+    {
+      name: "Blogs",
+      path: "/blog",
+      type: "engagement",
+    },
 
     {
       name: "Contact Us",
