@@ -4,27 +4,35 @@ import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnel";
 
+const reviews = [
+  {
+    id: 1,
+    text: "Best hotel in Meru with excellent service and clean rooms.",
+    author: "Google Guest",
+    type: "Traveler",
+  },
+  {
+    id: 2,
+    text: "Very comfortable stay. Perfect for business and leisure.",
+    author: "Verified Guest",
+    type: "Business Traveler",
+  },
+  {
+    id: 3,
+    text: "Great conference facilities near Mt Kenya region.",
+    author: "Corporate Client",
+    type: "Corporate Booking",
+  },
+];
+
 export default function Reviews() {
-  const reviews = [
-    {
-      id: 1,
-      text: "Best hotel in Meru with excellent service and clean rooms.",
-      author: "Google Guest",
-      type: "Traveler",
-    },
-    {
-      id: 2,
-      text: "Very comfortable stay. Perfect for business and leisure.",
-      author: "Verified Guest",
-      type: "Business Traveler",
-    },
-    {
-      id: 3,
-      text: "Great conference facilities near Mt Kenya region.",
-      author: "Corporate Client",
-      type: "Corporate Booking",
-    },
-  ];
+  const handleCTA = () => {
+    trackEvent("whatsapp_click", {
+      source: "reviews",
+    });
+
+    setFunnelStep("INTENT");
+  };
 
   return (
     <section className="p-6">
@@ -46,22 +54,23 @@ export default function Reviews() {
           <div
             key={review.id}
             className="card relative bg-white p-4 border border-zinc-200"
+            onClick={() =>
+              trackEvent("review_view", {
+                type: review.type,
+              })
+            }
           >
 
-            {/* QUOTE MARK (VISUAL EMPHASIS) */}
             <span className="text-yellow-500 text-2xl font-bold">“</span>
 
-            {/* REVIEW TEXT */}
             <p className="text-gray-700 mt-2 leading-relaxed">
               {review.text}
             </p>
 
-            {/* AUTHOR */}
             <p className="text-sm text-gray-500 mt-3">
               — {review.author}
             </p>
 
-            {/* TYPE BADGE */}
             <span className="inline-block mt-2 text-xs px-2 py-1 bg-zinc-100 text-zinc-600 rounded">
               {review.type}
             </span>
@@ -81,13 +90,7 @@ export default function Reviews() {
               ". Please assist me with availability and pricing."
           )}`}
           className="px-6 py-3 bg-green-600 text-white rounded-lg inline-block font-semibold"
-          onClick={() => {
-            trackEvent("whatsapp_click", {
-              source: "reviews",
-            });
-
-            setFunnelStep("INTENT");
-          }}
+          onClick={handleCTA}
         >
           Book Your Stay Now
         </a>
