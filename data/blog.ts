@@ -12,7 +12,7 @@ export type BlogPost = {
   category?: string;
   readingTime?: number;
 
-  // SEO + conversion layer (aligned with system intent model)
+  // SEO + conversion layer
   intent?: "engagement" | "revenue" | "conversion";
 
   cta?: {
