@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { trackEvent } from "@/lib/analytics/trackEvent";
+import { track } from "@/lib/core/analytics";
 
 export default function BookingTracker() {
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    trackEvent("page_view", {
-      page: window.location.pathname || "/",
-    });
+    track("page_view");
   }, []);
 
   return null;
