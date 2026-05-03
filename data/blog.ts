@@ -12,8 +12,9 @@ export type BlogPost = {
   category?: string;
   readingTime?: number;
 
-  // NEW: conversion + SEO intelligence layer
-  intent?: "informational" | "commercial" | "high_intent";
+  // SEO + conversion layer (aligned with system intent model)
+  intent?: "engagement" | "revenue" | "conversion";
+
   cta?: {
     label: string;
     action: "whatsapp" | "rooms" | "conference";
@@ -60,7 +61,7 @@ Looking for a stay in Meru? Book directly for the best rates and availability.
     category: "Accommodation",
     readingTime: 3,
 
-    intent: "commercial",
+    intent: "revenue",
 
     cta: {
       label: "Book Your Stay via WhatsApp",
@@ -106,7 +107,7 @@ Planning a corporate event? Contact us for tailored packages.
     category: "Events",
     readingTime: 4,
 
-    intent: "high_intent",
+    intent: "conversion",
 
     cta: {
       label: "Make Conference Enquiry",
