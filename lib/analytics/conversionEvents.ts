@@ -1,18 +1,19 @@
-import { trackEvent } from "./trackEvent";
+import { track, EventType } from "@/lib/core/analytics";
 
 function isValid(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
 /**
- * Semantic funnel event layer (thin wrapper only)
- * Keeps business meaning but avoids duplication
+ * 🔥 PURE DOMAIN EVENT LAYER
+ * Only expresses business intent
+ * NO analytics logic duplication
  */
 export const FunnelEvents = {
   viewRoom(room: string) {
     if (!isValid(room)) return;
 
-    trackEvent("room_view", {
+    track("room_view", {
       room: room.trim(),
     });
   },
@@ -20,15 +21,21 @@ export const FunnelEvents = {
   startIntent(source: string) {
     if (!isValid(source)) return;
 
-    trackEvent("booking_intent", {
+    /**
+     * NOTE:
+     * booking_intent is NOT a tracked event type yet.
+     * We map it to existing system-safe event.
+     */
+    track("page_view", {
       source: source.trim(),
+      intent: "booking",
     });
   },
 
   whatsappClick(source: string) {
     if (!isValid(source)) return;
 
-    trackEvent("whatsapp_click", {
+    track("whatsapp_click", {
       source: source.trim(),
     });
   },
@@ -36,7 +43,7 @@ export const FunnelEvents = {
   callClick(source: string) {
     if (!isValid(source)) return;
 
-    trackEvent("call_click", {
+    track("call_click", {
       source: source.trim(),
     });
   },
