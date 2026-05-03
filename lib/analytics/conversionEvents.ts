@@ -4,44 +4,40 @@ function isValid(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+/**
+ * Semantic funnel event layer (thin wrapper only)
+ * Keeps business meaning but avoids duplication
+ */
 export const FunnelEvents = {
-  viewRoom: (room: string) => {
+  viewRoom(room: string) {
     if (!isValid(room)) return;
 
-    try {
-      trackEvent("room_view", { room: room.trim() });
-    } catch {
-      // silent fail
-    }
+    trackEvent("room_view", {
+      room: room.trim(),
+    });
   },
 
-  startIntent: (source: string) => {
+  startIntent(source: string) {
     if (!isValid(source)) return;
 
-    try {
-      trackEvent("booking_intent", { source: source.trim() });
-    } catch {
-      // silent fail
-    }
+    trackEvent("booking_intent", {
+      source: source.trim(),
+    });
   },
 
-  whatsappClick: (source: string) => {
+  whatsappClick(source: string) {
     if (!isValid(source)) return;
 
-    try {
-      trackEvent("whatsapp_click", { source: source.trim() });
-    } catch {
-      // silent fail
-    }
+    trackEvent("whatsapp_click", {
+      source: source.trim(),
+    });
   },
 
-  callClick: (source: string) => {
+  callClick(source: string) {
     if (!isValid(source)) return;
 
-    try {
-      trackEvent("call_click", { source: source.trim() });
-    } catch {
-      // silent fail
-    }
+    trackEvent("call_click", {
+      source: source.trim(),
+    });
   },
 };
