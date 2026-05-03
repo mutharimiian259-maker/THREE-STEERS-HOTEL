@@ -10,7 +10,6 @@ export default function BlogPage() {
   return (
     <main className="p-6 max-w-6xl mx-auto">
 
-      {/* HEADER */}
       <header className="text-center">
 
         <h1 className="text-3xl text-yellow-500 font-bold">
@@ -23,25 +22,25 @@ export default function BlogPage() {
 
       </header>
 
-      {/* BLOG GRID */}
       <section className="grid md:grid-cols-2 gap-6 mt-8">
 
         {blogPosts.map((post) => {
           const imageSrc =
             post.image || "/images/blog/default-blog.jpg";
 
+          const handleClick = () => {
+            trackEvent("navigation", { blog: post.slug });
+            setFunnelStep("ENGAGEMENT");
+          };
+
           return (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
               className="card overflow-hidden hover:scale-[1.01] transition block"
-              onClick={() => {
-                trackEvent("page_view", { blog: post.slug });
-                setFunnelStep("VISIT");
-              }}
+              onClick={handleClick}
             >
 
-              {/* IMAGE */}
               <div className="relative w-full h-52">
                 <Image
                   src={imageSrc}
@@ -51,7 +50,6 @@ export default function BlogPage() {
                 />
               </div>
 
-              {/* CONTENT */}
               <div className="p-4">
 
                 <h2 className="text-xl font-bold text-white">
