@@ -15,14 +15,13 @@ export default function ContactInfo() {
         Contact {HOTEL.identity.name}
       </h2>
 
-      {/* EMAIL (LOW INTENT LEAD) */}
+      {/* EMAIL */}
       <a
         href={`mailto:${HOTEL.contact.email}`}
         className="block mt-2 text-gray-400 hover:text-white"
         onClick={() => {
           trackEvent("email_click", {
             source: "contact_section",
-            intent_level: "low",
           });
 
           setFunnelStep("VISIT");
@@ -39,7 +38,7 @@ export default function ContactInfo() {
       {/* CTA BLOCK */}
       <div className="mt-6 flex flex-col md:flex-row justify-center gap-4">
 
-        {/* CALL CTA */}
+        {/* CALL CTA → HIGH INTENT CONTACT */}
         <a
           href={`tel:${phone}`}
           className="px-6 py-3 bg-yellow-500 text-black rounded-lg"
@@ -48,13 +47,13 @@ export default function ContactInfo() {
               source: "contact_section",
             });
 
-            setFunnelStep("INTENT");
+            setFunnelStep("CONTACT");
           }}
         >
           Call Now
         </a>
 
-        {/* WHATSAPP CTA (PRIMARY CONVERSION ACTION) */}
+        {/* WHATSAPP CTA → STRONG CONVERSION ACTION */}
         <a
           href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
             "Hello, I would like to book a stay at " +
@@ -67,7 +66,7 @@ export default function ContactInfo() {
               source: "contact_section",
             });
 
-            setFunnelStep("INTENT");
+            setFunnelStep("CONTACT");
           }}
         >
           WhatsApp Booking
