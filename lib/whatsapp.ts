@@ -15,8 +15,7 @@ type WhatsAppOptions = {
 };
 
 /**
- * Builds a tracked WhatsApp booking link
- * + automatically logs lead event for attribution
+ * PURE: builds WhatsApp link only (NO SIDE EFFECTS)
  */
 export function buildWhatsAppLink(
   message: string,
@@ -28,12 +27,30 @@ export function buildWhatsAppLink(
     throw new Error("WhatsApp number is missing in HOTEL config");
   }
 
-  // NEW: automatic lead tracking BEFORE redirect
-  if (typeof window !== "undefined") {
-    trackLead("whatsapp_click");
-  }
+  const enrichedMessage = formatMessage(message, options);
 
-  const enrichedMessage = `
+  const encoded = encodeURIComponent(enrichedMessage);
+
+  return `https://wa.me/${phone}?text=${encoded}`;
+}
+
+/**
+ * SEPARATE: analytics trigger (must be called explicitly)
+ */
+export function trackWhatsAppClick() {
+  if (typeof window === "undefined") return;
+
+  trackLead("whatsapp_click");
+}
+
+/**
+ * PURE message builder (reusable + testable)
+ */
+function formatMessage(
+  message: string,
+  options?: WhatsAppOptions
+) {
+  return `
 🏨 ${HOTEL.identity.name} Booking Request
 
 ${message}
@@ -42,10 +59,6 @@ ${message}
 Source: ${options?.source ?? "direct"}
 Intent: ${options?.intent ?? "general"}
 ${options?.room ? `Room: ${options.room}` : ""}
-Time: ${new Date().toLocaleString()}
+Time: ${new Date().toISOString()}
 `.trim();
-
-  const encoded = encodeURIComponent(enrichedMessage);
-
-  return `https://wa.me/${phone}?text=${encoded}`;
 }
