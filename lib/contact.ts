@@ -2,21 +2,21 @@ import { HOTEL } from "@/lib/config";
 import { trackLead } from "@/lib/analytics/trackLead";
 
 /**
- * Phone link (NO side effects)
+ * Phone link (PURE)
  */
 export function getPhoneLink() {
   return `tel:${HOTEL.contact.phone.primary}`;
 }
 
 /**
- * Email link (NO side effects)
+ * Email link (PURE)
  */
 export function getEmailLink() {
   return `mailto:${HOTEL.contact.email}`;
 }
 
 /**
- * Explicit tracking functions (SEPARATED RESPONSIBILITY)
+ * Tracking layer (explicit side effects)
  */
 export function trackPhoneClick() {
   if (typeof window === "undefined") return;
@@ -24,8 +24,11 @@ export function trackPhoneClick() {
   trackLead("call_click");
 }
 
+/**
+ * FIXED: more accurate analytics meaning
+ */
 export function trackEmailClick() {
   if (typeof window === "undefined") return;
 
-  trackLead("booking_intent");
+  trackLead("email_click");
 }
