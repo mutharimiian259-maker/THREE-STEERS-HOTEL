@@ -7,15 +7,14 @@ import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnel";
 import { IMAGES } from "@/lib/images";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   const handleNavClick = (routeName: string) => {
-    setFunnelStep("VISIT");
-
-    trackEvent("page_view", {
+    // ONLY analytics — no funnel overwrite
+    trackEvent("navigation", {
       page: routeName,
       source: "navbar",
     });
@@ -23,11 +22,13 @@ export default function Navbar() {
     setOpen(false);
   };
 
-  const whatsappMessage = encodeURIComponent(
-    `Hello, I would like to book a room at ${HOTEL.identity.name} in Meru. Please assist me with availability and pricing.`
-  );
+  const whatsappLink = useMemo(() => {
+    const message = encodeURIComponent(
+      `Hello, I would like to book a room at ${HOTEL.identity.name} in Meru. Please assist me with availability and pricing.`
+    );
 
-  const whatsappLink = `https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${whatsappMessage}`;
+    return `https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${message}`;
+  }, []);
 
   return (
     <nav className="flex items-center justify-between p-4 bg-black border-b border-zinc-800 sticky top-0 z-50">
@@ -36,7 +37,6 @@ export default function Navbar() {
       <Link
         href="/"
         className="flex items-center gap-2"
-        onClick={() => setFunnelStep("VISIT")}
       >
         <Image
           src={IMAGES.hotel.logo}
@@ -76,7 +76,7 @@ export default function Navbar() {
       {/* MOBILE MENU */}
       {open && (
         <div className="fixed inset-0 bg-black z-50 p-6 flex flex-col gap-6 md:hidden">
-          
+
           <button
             className="text-white text-right text-xl"
             onClick={() => setOpen(false)}
