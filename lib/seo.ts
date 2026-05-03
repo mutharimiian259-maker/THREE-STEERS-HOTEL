@@ -8,7 +8,6 @@ type SeoProps = {
   path?: string;
   image?: string;
 
-  // NEW: SEO intelligence layer
   intent?: SeoIntent;
   keywords?: string[];
 };
@@ -53,11 +52,15 @@ function getIntentKeywords(intent?: SeoIntent): string[] {
   }
 }
 
+function dedupe(arr: string[]): string[] {
+  return [...new Set(arr)];
+}
+
 export function generateSEO({
   title,
   description,
   path = "",
-  image = "/images/hotel/og/default.jpg",
+  image,
   intent = "home",
   keywords,
 }: SeoProps = {}) {
@@ -72,19 +75,18 @@ export function generateSEO({
 
   const url = joinUrl(baseUrl, path);
 
-  const safeImage =
-    typeof image === "string" && image.length > 0
-      ? image
-      : "/images/hotel/og/default.jpg";
+  const defaultImage = "/images/hotel/og/default.jpg";
+
+  const safeImage = image?.length ? image : defaultImage;
 
   const absoluteImage = safeImage.startsWith("http")
     ? safeImage
     : joinUrl(baseUrl, safeImage);
 
-  const finalKeywords = [
+  const finalKeywords = dedupe([
     ...(keywords || []),
     ...getIntentKeywords(intent),
-  ];
+  ]);
 
   return {
     title: fullTitle,
