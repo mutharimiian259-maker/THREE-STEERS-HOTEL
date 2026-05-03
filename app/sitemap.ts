@@ -3,7 +3,7 @@ import { HOTEL } from "@/lib/config";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl =
-    typeof HOTEL.domain.primary === "string"
+    typeof HOTEL.domain.primary === "string" && HOTEL.domain.primary.length > 0
       ? HOTEL.domain.primary.replace(/\/$/, "")
       : "http://localhost:3000";
 
@@ -29,14 +29,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.9,
-    },
-
-    // future-safe dynamic blog structure (no new files added, safe fallback)
-    {
-      url: `${baseUrl}/blog`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.8,
     },
   ];
 }
