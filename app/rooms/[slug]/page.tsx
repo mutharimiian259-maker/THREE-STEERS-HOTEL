@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useMemo } from "react";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import rooms from "@/data/rooms";
@@ -15,32 +18,6 @@ function getRoom(slug: string) {
     : null;
 }
 
-/* ---------------- SEO ---------------- */
-export async function generateMetadata({ params }: Props) {
-  const room = getRoom(params.slug);
-
-  if (!room) {
-    return generateSEO({
-      title: "Room Not Found | Three Steers Hotel",
-      description: "The requested room does not exist.",
-      path: "/rooms",
-      intent: "room",
-    });
-  }
-
-  return generateSEO({
-    title: `${room.name} | Three Steers Hotel Meru`,
-    description: room.desc,
-    path: `/rooms/${room.slug}`,
-    intent: "room",
-    keywords: [
-      `${room.name} Meru`,
-      "hotel rooms in Meru Kenya",
-      "book hotel room Meru",
-    ],
-  });
-}
-
 /* ---------------- PAGE ---------------- */
 export default function RoomPage({ params }: Props) {
   const room = getRoom(params.slug);
@@ -49,14 +26,16 @@ export default function RoomPage({ params }: Props) {
 
   const whatsappNumber = HOTEL.contact.phone.whatsapp;
 
-  const message = encodeURIComponent(
-    `Hello, I want to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, pricing, and check-in details.`
-  );
+  const message = useMemo(() => {
+    return encodeURIComponent(
+      `Hello, I want to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, pricing, and check-in details.`
+    );
+  }, [room.name]);
 
-  // TRACK ROOM VIEW (IMPORTANT FOR REVENUE ANALYTICS)
-  if (typeof window !== "undefined") {
+  /* ---------------- ANALYTICS (SAFE HARDENING FIX) ---------------- */
+  useEffect(() => {
     trackLead("room_view");
-  }
+  }, [params.slug]);
 
   const imageSrc =
     room.image || "/images/hotel/rooms/default-room.jpg";
@@ -69,7 +48,6 @@ export default function RoomPage({ params }: Props) {
   return (
     <main className="max-w-4xl mx-auto p-6">
 
-      {/* IMAGE */}
       <div className="relative w-full h-72">
         <Image
           src={imageSrc}
@@ -81,23 +59,19 @@ export default function RoomPage({ params }: Props) {
         />
       </div>
 
-      {/* TITLE */}
       <h1 className="text-3xl font-bold text-yellow-500 mt-4">
         {room.name}
       </h1>
 
-      {/* DESCRIPTION */}
       <p className="text-gray-500 mt-2">
         Experience comfort, privacy, and premium hospitality at {HOTEL.identity.name}.
         Designed for business travelers and leisure guests.
       </p>
 
-      {/* PRICE */}
       <p className="text-white mt-3 text-lg font-semibold">
         {price} / night
       </p>
 
-      {/* FEATURES */}
       <div className="mt-6 bg-gray-900 text-gray-300 p-4 rounded-lg text-sm">
         <p>✔ Luxury bedding & comfort-focused design</p>
         <p>✔ High-speed WiFi for business travelers</p>
@@ -105,12 +79,10 @@ export default function RoomPage({ params }: Props) {
         <p>✔ Secure parking & premium guest experience</p>
       </div>
 
-      {/* SOCIAL PROOF */}
       <p className="text-sm text-gray-400 mt-4">
         Most guests book this room for its balance of comfort and value.
       </p>
 
-      {/* PRIMARY CTA (WHATSAPP = REVENUE CORE) */}
       <div className="mt-6">
         <a
           href={`https://wa.me/${whatsappNumber}?text=${message}`}
@@ -121,7 +93,6 @@ export default function RoomPage({ params }: Props) {
         </a>
       </div>
 
-      {/* SECONDARY CTA */}
       <div className="mt-4">
         <a
           href={`tel:${HOTEL.contact.phone.primary}`}
