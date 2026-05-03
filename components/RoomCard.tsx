@@ -5,7 +5,7 @@ import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
 import { setFunnelStep } from "@/lib/analytics/funnel";
 import { IMAGES } from "@/lib/images";
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 
 type Room = {
   id: string | number;
@@ -29,9 +29,11 @@ export default function RoomCard({ room }: { room: Room }) {
     HOTEL.contact.phone.whatsapp
   );
 
-  const message = encodeURIComponent(
-    `Hello, I would like to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, prices, and dates.`
-  );
+  const message = useMemo(() => {
+    return encodeURIComponent(
+      `Hello, I would like to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, prices, and dates.`
+    );
+  }, [room.name]);
 
   const price =
     typeof room.price === "number" && room.currency
@@ -45,21 +47,21 @@ export default function RoomCard({ room }: { room: Room }) {
       ? "Popular choice — limited premium availability"
       : "High demand — book early to secure this room";
 
-  const handleRoomView = () => {
+  /* ---------------- HANDLERS (STABLE) ---------------- */
+
+  const handleRoomView = useCallback(() => {
     trackEvent("room_view", { room: room.name });
     setFunnelStep("ROOM_VIEW");
-  };
+  }, [room.name]);
 
-  const handleWhatsAppClick = () => {
+  const handleWhatsAppClick = useCallback(() => {
     trackEvent("whatsapp_click", { room: room.name });
     setFunnelStep("INTENT");
-  };
+  }, [room.name]);
 
   return (
-    <div
-      className="card relative overflow-hidden bg-white"
-      onClick={handleRoomView}
-    >
+    <div className="card relative overflow-hidden bg-white">
+
       {/* TAG */}
       {room.tag && (
         <span className="absolute top-3 right-3 bg-yellow-500 text-black text-xs px-2 py-1 rounded z-10">
@@ -68,7 +70,7 @@ export default function RoomCard({ room }: { room: Room }) {
       )}
 
       {/* IMAGE */}
-      <div className="relative w-full h-48">
+      <div className="relative w-full h-48" onClick={handleRoomView}>
         <Image
           src={roomImage}
           alt={`${room.name} at ${HOTEL.identity.name}`}
@@ -114,7 +116,7 @@ export default function RoomCard({ room }: { room: Room }) {
 }
 
 /**
- * PURE mapping function (no side effects, no hooks needed)
+ * PURE mapping function (unchanged but safe)
  */
 function getRoomImage(slug?: string) {
   switch (slug) {
