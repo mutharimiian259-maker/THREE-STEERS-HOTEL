@@ -33,3 +33,11 @@ export const IMAGES = {
     natureWalk: "/images/experiences/nature-walk.jpg",
   },
 } as const;
+
+/**
+ * 🔥 SAFE IMAGE ACCESS HELPER
+ */
+export function getImage(path: string, fallback = "/images/hotel/exterior-hero.jpg") {
+  if (!path) return fallback;
+  return path;
+}
