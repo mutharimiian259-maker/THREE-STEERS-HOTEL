@@ -2,10 +2,11 @@ export type Route = {
   name: string;
   path: string;
 
-  // routing classification
   type: "page" | "section";
 
-  // conversion layer (kept for analytics + future personalization)
+  /**
+   * Semantic intent (used for analytics + personalization)
+   */
   intent: "navigation" | "engagement" | "revenue" | "conversion";
 };
 
@@ -52,3 +53,10 @@ export const routes: Route[] = [
     intent: "conversion",
   },
 ];
+
+/**
+ * 🔥 Helper: get route by path
+ */
+export function getRoute(path: string): Route | undefined {
+  return routes.find((r) => r.path === path);
+}
