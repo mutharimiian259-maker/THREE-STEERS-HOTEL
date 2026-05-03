@@ -1,79 +1,140 @@
+// /lib/core/analytics.ts
+
+import { funnel } from "./funnel";
+
 export type EventType =
   | "page_view"
   | "room_view"
   | "whatsapp_click"
-  | "call_click"
-  | "funnel_step"
-  | "booking_intent";
+  | "call_click";
 
-type Payload = {
+type EventPayload = Record<string, unknown>;
+
+type StoredEvent = {
   id: string;
-  event: EventType;
-  data: Record<string, unknown>;
+  type: EventType;
+  payload: EventPayload;
   time: string;
   url: string;
 };
 
-const STORAGE_KEY = "hotel_analytics";
+const STORAGE_KEY = "hotel_events";
 const MAX_EVENTS = 200;
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/**
- * Improved duplicate detection:
- * prevents same event spam within same session context
- */
-function isDuplicate(a: Payload, b: Payload): boolean {
-  if (a.event !== b.event) return false;
-  if (a.url !== b.url) return false;
+function safeGet(): StoredEvent[] {
+  if (typeof window === "undefined") return [];
 
-  return JSON.stringify(a.data) === JSON.stringify(b.data);
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
 }
 
-export function trackEvent(
-  event: EventType,
-  data: Record<string, unknown> = {}
+function safeSet(events: StoredEvent[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(events.slice(-MAX_EVENTS))
+    );
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * STRICT duplicate check:
+ * only compares last event for performance
+ */
+function isDuplicate(last: StoredEvent | undefined, next: StoredEvent) {
+  if (!last) return false;
+
+  return (
+    last.type === next.type &&
+    last.url === next.url &&
+    shallowEqual(last.payload, next.payload)
+  );
+}
+
+function shallowEqual(a: EventPayload, b: EventPayload) {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+
+  if (aKeys.length !== bKeys.length) return false;
+
+  for (const key of aKeys) {
+    if (a[key] !== b[key]) return false;
+  }
+
+  return true;
+}
+
+/**
+ * SINGLE SOURCE OF TRUTH
+ */
+export function track(
+  type: EventType,
+  payload: EventPayload = {}
 ): void {
   if (typeof window === "undefined") return;
 
-  const payload: Payload = {
+  const event: StoredEvent = {
     id: generateId(),
-    event,
-    data,
+    type,
+    payload,
     time: new Date().toISOString(),
     url: window.location.href,
   };
 
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    const events: Payload[] = raw ? JSON.parse(raw) : [];
+  const events = safeGet();
 
-    const last = events.at(-1);
+  const last = events.at(-1);
 
-    if (last && isDuplicate(last, payload)) return;
+  if (isDuplicate(last, event)) return;
 
-    events.push(payload);
+  events.push(event);
+  safeSet(events);
 
-    // simple bounded storage
-    if (events.length > MAX_EVENTS) {
-      events.splice(0, events.length - MAX_EVENTS);
-    }
+  /**
+   * 🔥 Funnel automation (CENTRALIZED)
+   */
+  switch (type) {
+    case "page_view":
+      funnel.set("VISIT");
+      break;
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    case "room_view":
+      funnel.set("ENGAGEMENT");
+      break;
 
-    const w = window as Window & {
-      gtag?: (command: string, event: string, params?: Record<string, unknown>) => void;
-    };
+    case "whatsapp_click":
+    case "call_click":
+      funnel.set("CONTACT");
+      break;
+  }
 
-    if (typeof w.gtag === "function") {
-      w.gtag("event", event, {
-        ...data,
-        page_location: payload.url,
-      });
-    }
-  } catch {
-    // silent fail (safe for production)
+  /**
+   * 🔥 Google Analytics bridge
+   */
+  const w = window as Window & {
+    gtag?: (
+      command: string,
+      event: string,
+      params?: Record<string, unknown>
+    ) => void;
+  };
+
+  if (typeof w.gtag === "function") {
+    w.gtag("event", type, {
+      ...payload,
+      page_location: event.url,
+    });
   }
 }
