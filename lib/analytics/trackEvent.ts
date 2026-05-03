@@ -1,4 +1,4 @@
-
+// /lib/core/analytics.ts
 
 export type EventType =
   | "page_view"
@@ -6,9 +6,9 @@ export type EventType =
   | "whatsapp_click"
   | "call_click";
 
-type EventPayload = Record<string, unknown>;
+export type EventPayload = Record<string, unknown>;
 
-type StoredEvent = {
+export type StoredEvent = {
   id: string;
   type: EventType;
   payload: EventPayload;
@@ -16,8 +16,16 @@ type StoredEvent = {
   url: string;
 };
 
+/**
+ * 🔥 SINGLE SOURCE OF TRUTH FOR INTERNAL EVENTS
+ */
+export const APP_EVENT = "app:event";
+
 const STORAGE_KEY = "hotel_events";
 const MAX_EVENTS = 200;
+
+// in-memory cache (prevents repeated localStorage reads)
+let cache: StoredEvent[] | null = null;
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -26,9 +34,12 @@ function generateId(): string {
 function safeGet(): StoredEvent[] {
   if (typeof window === "undefined") return [];
 
+  if (cache) return cache;
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    cache = raw ? JSON.parse(raw) : [];
+    return cache;
   } catch {
     return [];
   }
@@ -36,6 +47,8 @@ function safeGet(): StoredEvent[] {
 
 function safeSet(events: StoredEvent[]) {
   if (typeof window === "undefined") return;
+
+  cache = events;
 
   try {
     localStorage.setItem(
@@ -96,7 +109,7 @@ export function track(
   safeSet(events);
 
   /**
-   * 🔥 External Analytics Bridge ONLY
+   * 🔥 External Analytics Bridge
    */
   const w = window as Window & {
     gtag?: (
@@ -114,10 +127,10 @@ export function track(
   }
 
   /**
-   * 🔥 Emit Custom Event (for funnel or other listeners)
+   * 🔥 Internal Event Bus (STRICT CONTRACT)
    */
   window.dispatchEvent(
-    new CustomEvent("app:event", {
+    new CustomEvent<StoredEvent>(APP_EVENT, {
       detail: event,
     })
   );
