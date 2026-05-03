@@ -2,9 +2,13 @@
 
 import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+import { setFunnelStep } from "@/lib/analytics/funnel";
 
 export default function Location() {
+  const locationQuery = encodeURIComponent(
+    HOTEL.identity.name + " " + HOTEL.location.city
+  );
+
   return (
     <section className="p-6">
 
@@ -22,22 +26,19 @@ export default function Location() {
         loading="lazy"
         allowFullScreen
         referrerPolicy="no-referrer-when-downgrade"
-        src={`https://www.google.com/maps?q=${encodeURIComponent(
-          HOTEL.identity.name + " " + HOTEL.location.city
-        )}&output=embed`}
+        src={`https://www.google.com/maps?q=${locationQuery}&output=embed`}
       />
 
       <div className="mt-4 flex flex-col md:flex-row gap-3">
 
+        {/* DIRECTIONS */}
         <a
           className="px-6 py-3 bg-yellow-500 text-black rounded-lg inline-block text-center"
-          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-            HOTEL.identity.name + " " + HOTEL.location.city
-          )}`}
+          href={`https://www.google.com/maps/dir/?api=1&destination=${locationQuery}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => {
-            trackEvent("booking_intent", {
+            trackEvent("navigation", {
               source: "directions",
             });
 
@@ -47,6 +48,7 @@ export default function Location() {
           📍 Get Directions
         </a>
 
+        {/* WHATSAPP */}
         <a
           className="px-6 py-3 bg-green-600 text-white rounded-lg inline-block text-center"
           href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
@@ -60,8 +62,7 @@ export default function Location() {
               source: "location",
             });
 
-            // FIX: align funnel consistency
-            setFunnelStep("INTENT");
+            setFunnelStep("CONTACT");
           }}
         >
           💬 Book via WhatsApp
