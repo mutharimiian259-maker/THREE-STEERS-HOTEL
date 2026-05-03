@@ -21,21 +21,15 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/**
+ * Improved duplicate detection:
+ * prevents same event spam within same session context
+ */
 function isDuplicate(a: Payload, b: Payload): boolean {
-  if (!a || !b) return false;
   if (a.event !== b.event) return false;
   if (a.url !== b.url) return false;
 
-  const aKeys = Object.keys(a.data || {});
-  const bKeys = Object.keys(b.data || {});
-
-  if (aKeys.length !== bKeys.length) return false;
-
-  for (const key of aKeys) {
-    if (a.data[key] !== b.data[key]) return false;
-  }
-
-  return true;
+  return JSON.stringify(a.data) === JSON.stringify(b.data);
 }
 
 export function trackEvent(
@@ -53,39 +47,24 @@ export function trackEvent(
   };
 
   try {
-    let events: Payload[] = [];
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const events: Payload[] = raw ? JSON.parse(raw) : [];
 
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          events = parsed;
-        }
-      }
-    } catch {
-      events = [];
-    }
-
-    const last = events[events.length - 1];
+    const last = events.at(-1);
 
     if (last && isDuplicate(last, payload)) return;
 
     events.push(payload);
 
+    // simple bounded storage
     if (events.length > MAX_EVENTS) {
-      events = events.slice(-MAX_EVENTS);
+      events.splice(0, events.length - MAX_EVENTS);
     }
 
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-    } catch {
-      // ignore storage failures
-    }
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
 
     const w = window as Window & {
-      gtag?: (...args: unknown[]) => void;
+      gtag?: (command: string, event: string, params?: Record<string, unknown>) => void;
     };
 
     if (typeof w.gtag === "function") {
@@ -95,6 +74,6 @@ export function trackEvent(
       });
     }
   } catch {
-    // silent fail
+    // silent fail (safe for production)
   }
 }
