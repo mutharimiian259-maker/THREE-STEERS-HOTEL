@@ -8,7 +8,7 @@ export type Room = {
   image: string;
   tag?: string;
 
-  wing: "batian" | "lenana";
+  wing: "batianWing" | "lenanaWing";
 
   maxGuests?: number;
   bedType?: string;
@@ -26,9 +26,9 @@ const rooms: Room[] = [
     price: 8500,
     currency: "KES",
     desc: "Luxury comfort with modern amenities in a calm setting.",
-    image: "/images/rooms/batian/deluxe-room/hero.jpg",
+    image: "/images/rooms/batian-wing/deluxe-room/hero.jpg",
     tag: "Most Booked",
-    wing: "batian",
+    wing: "batianWing",
     maxGuests: 2,
     bedType: "Queen Bed",
     amenities: ["WiFi", "Breakfast", "Room Service", "Hot Shower"],
@@ -42,9 +42,9 @@ const rooms: Room[] = [
     price: 12000,
     currency: "KES",
     desc: "Premium suite offering Mt Kenya views and executive comfort.",
-    image: "/images/rooms/batian/executive-suite/hero.jpg",
+    image: "/images/rooms/batian-wing/executive-suite/hero.jpg",
     tag: "Best Value",
-    wing: "batian",
+    wing: "batianWing",
     maxGuests: 3,
     bedType: "King Bed",
     amenities: ["WiFi", "Breakfast", "Lounge Access", "Mini Bar"],
@@ -59,7 +59,7 @@ const rooms: Room[] = [
     currency: "KES",
     desc: "Comfortable and affordable room for solo travelers.",
     image: "/images/rooms/lenana-wing/standard-single/hero.jpg",
-    wing: "lenana",
+    wing: "lenanaWing",
     maxGuests: 1,
     bedType: "Single Bed",
     amenities: ["WiFi", "Breakfast", "Hot Shower"],
@@ -75,7 +75,7 @@ const rooms: Room[] = [
     desc: "Spacious room designed for families and group stays.",
     image: "/images/rooms/lenana-wing/family-room/hero.jpg",
     tag: "Family Choice",
-    wing: "lenana",
+    wing: "lenanaWing",
     maxGuests: 4,
     bedType: "Multiple Beds",
     amenities: ["WiFi", "Breakfast", "Extra Space", "Living Area"],
