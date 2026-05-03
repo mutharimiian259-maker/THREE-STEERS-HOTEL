@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
-import { trackEvent } from "@/lib/analytics/trackEvent";
+import { track } from "@/lib/core/analytics";
 
+/**
+ * 🔥 Lightweight semantic hook
+ * ONLY triggers unified analytics pipeline
+ */
 export function useAnalytics(pageName: string) {
   useEffect(() => {
     if (!pageName) return;
 
-    trackEvent("page_view", {
-      page: pageName,
+    track("page_view", {
+      page_name: pageName,
     });
   }, [pageName]);
 }
