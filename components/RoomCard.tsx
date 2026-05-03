@@ -18,10 +18,16 @@ type Room = {
   slug?: string;
 };
 
+function sanitizePhone(phone: string) {
+  return phone.replace(/[^\d]/g, "");
+}
+
 export default function RoomCard({ room }: { room: Room }) {
   if (!room) return null;
 
-  const whatsappNumber = HOTEL.contact.phone.whatsapp;
+  const whatsappNumber = sanitizePhone(
+    HOTEL.contact.phone.whatsapp
+  );
 
   const message = encodeURIComponent(
     `Hello, I would like to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, prices, and dates.`
@@ -32,46 +38,27 @@ export default function RoomCard({ room }: { room: Room }) {
       ? `${room.currency} ${room.price.toLocaleString()}`
       : "Price on request";
 
-  // ✅ FIXED: STRICT SLUG MATCHING (BASED ON DATA)
-  const roomImage = useMemo(() => {
-    switch (room.slug) {
-      case "deluxe-room":
-        return IMAGES.rooms.batian.deluxeTwin;
+  const roomImage = getRoomImage(room.slug);
 
-      case "executive-suite":
-        return IMAGES.rooms.batian.executiveSuite;
-
-      // future-ready (when you add them)
-      case "honeymoon":
-        return IMAGES.rooms.batian.honeymoon;
-
-      case "standard-single":
-        return IMAGES.rooms.lenana.standardSingle;
-
-      case "standard-double":
-        return IMAGES.rooms.lenana.standardDouble;
-
-      case "family-room":
-        return IMAGES.rooms.lenana.familyRoom;
-
-      default:
-        return IMAGES.hotel.exteriorHero; // fallback must feel premium
-    }
-  }, [room.slug]);
-
-  // ✅ IMPROVED URGENCY (MORE NATURAL)
   const urgencyText =
     room.price && room.price >= 12000
       ? "Popular choice — limited premium availability"
       : "High demand — book early to secure this room";
 
+  const handleRoomView = () => {
+    trackEvent("room_view", { room: room.name });
+    setFunnelStep("ROOM_VIEW");
+  };
+
+  const handleWhatsAppClick = () => {
+    trackEvent("whatsapp_click", { room: room.name });
+    setFunnelStep("INTENT");
+  };
+
   return (
     <div
       className="card relative overflow-hidden bg-white"
-      onClick={() => {
-        trackEvent("room_view", { room: room.name });
-        setFunnelStep("ROOM_VIEW");
-      }}
+      onClick={handleRoomView}
     >
       {/* TAG */}
       {room.tag && (
@@ -116,10 +103,7 @@ export default function RoomCard({ room }: { room: Room }) {
         <a
           href={`https://wa.me/${whatsappNumber}?text=${message}`}
           className="btn btn-green block mt-4 text-center font-semibold"
-          onClick={() => {
-            trackEvent("whatsapp_click", { room: room.name });
-            setFunnelStep("INTENT");
-          }}
+          onClick={handleWhatsAppClick}
         >
           Book This Room via WhatsApp
         </a>
@@ -127,4 +111,32 @@ export default function RoomCard({ room }: { room: Room }) {
       </div>
     </div>
   );
+}
+
+/**
+ * PURE mapping function (no side effects, no hooks needed)
+ */
+function getRoomImage(slug?: string) {
+  switch (slug) {
+    case "deluxe-room":
+      return IMAGES.rooms.batian.deluxeTwin;
+
+    case "executive-suite":
+      return IMAGES.rooms.batian.executiveSuite;
+
+    case "honeymoon":
+      return IMAGES.rooms.batian.honeymoon;
+
+    case "standard-single":
+      return IMAGES.rooms.lenana.standardSingle;
+
+    case "standard-double":
+      return IMAGES.rooms.lenana.standardDouble;
+
+    case "family-room":
+      return IMAGES.rooms.lenana.familyRoom;
+
+    default:
+      return IMAGES.hotel.exteriorHero;
+  }
 }
