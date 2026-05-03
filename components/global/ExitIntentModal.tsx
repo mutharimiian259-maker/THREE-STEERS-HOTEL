@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { HOTEL } from "@/lib/config/hotel";
+import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnelEvents";
+import { setFunnelStep } from "@/lib/analytics/funnel";
 
 export default function ExitIntentModal() {
   const [show, setShow] = useState(false);
@@ -12,17 +12,32 @@ export default function ExitIntentModal() {
     .replace("+", "")
     .replace(/\s/g, "");
 
+  const whatsappMessage = encodeURIComponent(
+    `Hello, I saw your website and would like to book a room at ${HOTEL.identity.name} in ${HOTEL.location.city}.`
+  );
+
+  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+
+  const handleWhatsAppClick = () => {
+    trackEvent("whatsapp_click", {
+      source: "exit_intent",
+    });
+
+    setFunnelStep("INTENT");
+  };
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if (sessionStorage.getItem("exit_intent_shown")) return;
+    const alreadyShown = sessionStorage.getItem("exit_intent_shown");
+    if (alreadyShown) return;
 
     if (window.innerWidth < 768) return;
 
     let triggered = false;
 
     const handler = (e: MouseEvent) => {
-      if (e.clientY < 10 && !triggered) {
+      if (e.clientY <= 5 && !triggered) {
         triggered = true;
 
         sessionStorage.setItem("exit_intent_shown", "true");
@@ -37,12 +52,12 @@ export default function ExitIntentModal() {
       }
     };
 
-    const timer = setTimeout(() => {
+    const enableListener = setTimeout(() => {
       window.addEventListener("mousemove", handler);
-    }, 5000);
+    }, 4000);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(enableListener);
       window.removeEventListener("mousemove", handler);
     };
   }, []);
@@ -51,6 +66,7 @@ export default function ExitIntentModal() {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
       <div className="bg-white p-6 rounded max-w-md text-center shadow-lg">
 
         <h2 className="text-xl font-bold">
@@ -62,16 +78,9 @@ export default function ExitIntentModal() {
         </p>
 
         <a
-          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-            "Hello, I saw your website and would like to book a room at Three Steers Hotel Meru."
-          )}`}
+          href={whatsappLink}
           className="mt-4 inline-block bg-green-500 text-white px-5 py-2 rounded"
-          onClick={() => {
-            trackEvent("whatsapp_click", {
-              source: "exit_intent",
-            });
-            setFunnelStep("CONTACT");
-          }}
+          onClick={handleWhatsAppClick}
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -86,6 +95,7 @@ export default function ExitIntentModal() {
         </button>
 
       </div>
+
     </div>
   );
 }
