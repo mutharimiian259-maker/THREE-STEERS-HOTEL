@@ -17,20 +17,16 @@ export const FUNNEL = {
 export type FunnelStep = typeof FUNNEL[keyof typeof FUNNEL];
 
 /**
- * EVENT ACTIONS (what the user DOES)
- * NOT funnel states
- * NOT intent labels
+ * EVENT ACTIONS (SINGLE SOURCE OF TRUTH)
+ * All analytics must depend on this ONLY
  */
 export const EVENTS = {
   PAGE_VIEW: "page_view",
-
   ROOM_VIEW: "room_view",
-
   WHATSAPP_CLICK: "whatsapp_click",
   CALL_CLICK: "call_click",
   EMAIL_CLICK: "email_click",
 
-  BOOKING_INTENT: "booking_intent",
   BLOG_CLICK: "blog_click",
 
   NAVIGATION: "navigation",
