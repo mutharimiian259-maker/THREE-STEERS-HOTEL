@@ -85,3 +85,15 @@ const rooms: Room[] = [
 ];
 
 export default rooms;
+
+/**
+ * 🔥 SAFE HELPERS (NO BEHAVIOR CHANGE, ONLY UTILITY LAYER)
+ */
+
+export function getRoomBySlug(slug: string): Room | undefined {
+  return rooms.find((r) => r.slug === slug);
+}
+
+export function getRoomById(id: string): Room | undefined {
+  return rooms.find((r) => r.id === id);
+}
