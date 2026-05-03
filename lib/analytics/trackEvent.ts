@@ -17,32 +17,34 @@ export type StoredEvent = {
 };
 
 /**
- * 🔥 SINGLE SOURCE OF TRUTH FOR INTERNAL EVENTS
+ * 🔥 SINGLE EVENT BUS CONTRACT
  */
 export const APP_EVENT = "app:event";
 
 const STORAGE_KEY = "hotel_events";
 const MAX_EVENTS = 200;
 
-// in-memory cache (prevents repeated localStorage reads)
+// in-memory cache
 let cache: StoredEvent[] | null = null;
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function safeGet(): StoredEvent[] {
-  if (typeof window === "undefined") return [];
-
-  if (cache) return cache;
-
+function syncCache() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     cache = raw ? JSON.parse(raw) : [];
-    return cache;
   } catch {
-    return [];
+    cache = [];
   }
+}
+
+function safeGet(): StoredEvent[] {
+  if (typeof window === "undefined") return [];
+
+  if (!cache) syncCache();
+  return cache!;
 }
 
 function safeSet(events: StoredEvent[]) {
@@ -84,7 +86,7 @@ function isDuplicate(last: StoredEvent | undefined, next: StoredEvent) {
 }
 
 /**
- * SINGLE SOURCE OF TRUTH (PURE)
+ * SINGLE SOURCE OF TRUTH
  */
 export function track(
   type: EventType,
@@ -127,11 +129,18 @@ export function track(
   }
 
   /**
-   * 🔥 Internal Event Bus (STRICT CONTRACT)
+   * 🔥 Event Bus
    */
   window.dispatchEvent(
     new CustomEvent<StoredEvent>(APP_EVENT, {
       detail: event,
     })
   );
+
+  /**
+   * 🔥 DEV DEBUG (optional safety hook)
+   */
+  if (process.env.NODE_ENV === "development") {
+    console.log("[TRACK]", event);
+  }
 }
