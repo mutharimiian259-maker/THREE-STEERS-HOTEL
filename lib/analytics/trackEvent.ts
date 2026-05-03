@@ -1,6 +1,4 @@
-// /lib/core/analytics.ts
 
-import { funnel } from "./funnel";
 
 export type EventType =
   | "page_view"
@@ -49,20 +47,6 @@ function safeSet(events: StoredEvent[]) {
   }
 }
 
-/**
- * STRICT duplicate check:
- * only compares last event for performance
- */
-function isDuplicate(last: StoredEvent | undefined, next: StoredEvent) {
-  if (!last) return false;
-
-  return (
-    last.type === next.type &&
-    last.url === next.url &&
-    shallowEqual(last.payload, next.payload)
-  );
-}
-
 function shallowEqual(a: EventPayload, b: EventPayload) {
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
@@ -76,8 +60,18 @@ function shallowEqual(a: EventPayload, b: EventPayload) {
   return true;
 }
 
+function isDuplicate(last: StoredEvent | undefined, next: StoredEvent) {
+  if (!last) return false;
+
+  return (
+    last.type === next.type &&
+    last.url === next.url &&
+    shallowEqual(last.payload, next.payload)
+  );
+}
+
 /**
- * SINGLE SOURCE OF TRUTH
+ * SINGLE SOURCE OF TRUTH (PURE)
  */
 export function track(
   type: EventType,
@@ -94,7 +88,6 @@ export function track(
   };
 
   const events = safeGet();
-
   const last = events.at(-1);
 
   if (isDuplicate(last, event)) return;
@@ -103,25 +96,7 @@ export function track(
   safeSet(events);
 
   /**
-   * 🔥 Funnel automation (CENTRALIZED)
-   */
-  switch (type) {
-    case "page_view":
-      funnel.set("VISIT");
-      break;
-
-    case "room_view":
-      funnel.set("ENGAGEMENT");
-      break;
-
-    case "whatsapp_click":
-    case "call_click":
-      funnel.set("CONTACT");
-      break;
-  }
-
-  /**
-   * 🔥 Google Analytics bridge
+   * 🔥 External Analytics Bridge ONLY
    */
   const w = window as Window & {
     gtag?: (
@@ -137,4 +112,13 @@ export function track(
       page_location: event.url,
     });
   }
+
+  /**
+   * 🔥 Emit Custom Event (for funnel or other listeners)
+   */
+  window.dispatchEvent(
+    new CustomEvent("app:event", {
+      detail: event,
+    })
+  );
 }
