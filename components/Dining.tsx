@@ -4,6 +4,7 @@ import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 import Image from "next/image";
 import { trackEvent } from "@/lib/analytics/trackEvent";
+import { setFunnelStep } from "@/lib/analytics/funnel";
 
 export default function Dining() {
   return (
@@ -19,14 +20,17 @@ export default function Dining() {
         dishes, premium service, and relaxing dining environments in {HOTEL.location.full}.
       </p>
 
-      {/* VISUAL DINING GRID */}
+      {/* GRID */}
       <div className="grid md:grid-cols-3 gap-4 mt-6">
 
         {/* Aberdares Restaurant */}
         <div
           className="relative h-56 rounded-lg overflow-hidden cursor-pointer"
           onClick={() =>
-            trackEvent("dining_view", { restaurant: "Aberdares Restaurant" })
+            trackEvent("blog_click", {
+              source: "dining",
+              restaurant: "Aberdares Restaurant",
+            })
           }
         >
           <Image
@@ -50,7 +54,10 @@ export default function Dining() {
         <div
           className="relative h-56 rounded-lg overflow-hidden cursor-pointer"
           onClick={() =>
-            trackEvent("dining_view", { restaurant: "Nyambene Restaurant" })
+            trackEvent("blog_click", {
+              source: "dining",
+              restaurant: "Nyambene Restaurant",
+            })
           }
         >
           <Image
@@ -74,11 +81,14 @@ export default function Dining() {
         <div
           className="relative h-56 rounded-lg overflow-hidden cursor-pointer"
           onClick={() =>
-            trackEvent("dining_view", { restaurant: "Master’s Lounge" })
+            trackEvent("blog_click", {
+              source: "dining",
+              restaurant: "Master’s Lounge",
+            })
           }
         >
           <Image
-            src={IMAGES.food.drinks}
+            src={IMAGES.food.chefSpecial}
             alt="Master’s Lounge"
             fill
             className="object-cover"
@@ -108,9 +118,11 @@ export default function Dining() {
           )}`}
           className="px-6 py-3 bg-green-600 text-white rounded-lg inline-block"
           onClick={() => {
-            trackEvent("booking_intent", {
+            trackEvent("whatsapp_click", {
               source: "dining_cta",
             });
+
+            setFunnelStep("INTENT");
           }}
         >
           Reserve a Table
