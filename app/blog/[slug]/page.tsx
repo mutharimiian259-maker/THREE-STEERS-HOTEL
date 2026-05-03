@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import { blogPosts } from "@/data/blog";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -9,7 +12,6 @@ type Props = {
   params: { slug: string };
 };
 
-/* ---------------- BLOG LOOKUP ---------------- */
 function getPost(slug: string) {
   return blogPosts.find((p) => p.slug === slug);
 }
@@ -43,15 +45,14 @@ export default function BlogPost({ params }: Props) {
 
   const whatsappNumber = HOTEL.contact.phone.whatsapp;
 
-  // TRACK BLOG VIEW
-  if (typeof window !== "undefined") {
-    trackLead("blog_view");
-  }
+  /* ---------------- SAFE ANALYTICS FIX ---------------- */
+  useEffect(() => {
+    trackLead("blog_click");
+  }, [params.slug]);
 
   return (
     <main className="p-6 max-w-3xl mx-auto">
 
-      {/* HERO IMAGE */}
       {post.image && (
         <div className="relative w-full h-64 mb-6">
           <Image
@@ -64,22 +65,18 @@ export default function BlogPost({ params }: Props) {
         </div>
       )}
 
-      {/* TITLE */}
       <h1 className="text-3xl text-yellow-500 font-bold">
         {post.title}
       </h1>
 
-      {/* EXCERPT */}
       <p className="text-gray-400 mt-2">
         {post.excerpt}
       </p>
 
-      {/* CONTENT */}
       <article className="mt-6 text-gray-300 leading-relaxed whitespace-pre-line">
         {post.content}
       </article>
 
-      {/* CONTEXTUAL CTA */}
       <div className="mt-10 p-6 bg-zinc-900 rounded-lg text-center">
 
         <h3 className="text-yellow-500 text-xl font-bold">
