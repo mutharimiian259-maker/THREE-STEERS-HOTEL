@@ -1,13 +1,14 @@
 "use client";
 
 import { trackEvent } from "@/lib/analytics/trackEvent";
+import { trackLead } from "@/lib/analytics/trackLead";
 import { HOTEL } from "@/lib/config";
-import { setFunnelStep } from "@/lib/analytics/funnel";
 
 export default function WhatsAppFloat() {
-  const whatsappNumber = HOTEL.contact.phone.whatsapp
-    .replace("+", "")
-    .replace(/\s/g, "");
+  const whatsappNumber = HOTEL.contact.phone.whatsapp.replace(
+    /[^\d]/g,
+    ""
+  );
 
   const whatsappMessage = encodeURIComponent(
     `Hello, I would like to book a room at ${HOTEL.identity.name} in ${HOTEL.location.city}.`
@@ -20,19 +21,21 @@ export default function WhatsAppFloat() {
       source: "float_button",
     });
 
-    setFunnelStep("INTENT");
+    trackLead("whatsapp_click");
+
+    // ensure event is not lost on fast navigation
+    setTimeout(() => {
+      window.open(whatsappLink, "_blank", "noopener,noreferrer");
+    }, 120);
   };
 
   return (
-    <a
-      href={whatsappLink}
+    <button
       onClick={handleClick}
       className="fixed bottom-20 right-5 bg-green-500 text-white p-4 rounded-full shadow-lg z-50"
       aria-label="Chat on WhatsApp"
-      target="_blank"
-      rel="noopener noreferrer"
     >
       💬
-    </a>
+    </button>
   );
 }
