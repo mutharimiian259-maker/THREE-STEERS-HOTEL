@@ -1,5 +1,3 @@
-"use client";
-
 import "@/styles/globals.css";
 import type { Metadata } from "next";
 import Navbar from "@/components/global/Navbar";
@@ -14,6 +12,9 @@ const siteUrl =
     ? HOTEL.domain.primary
     : "http://localhost:3000";
 
+/**
+ * ✅ SERVER-SAFE METADATA (RESTORED CORRECT NEXT.JS BEHAVIOR)
+ */
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
@@ -48,6 +49,31 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * STATIC SCHEMA (defined once per request, server-render safe)
+ */
+const schemaData = {
+  "@context": "https://schema.org",
+  "@type": "Hotel",
+  name: HOTEL.identity.name ?? "",
+  url: siteUrl,
+  telephone: HOTEL.contact.phone.primary ?? "",
+  priceRange: HOTEL.pricing.range.display ?? "",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: HOTEL.location.city ?? "",
+    addressRegion: HOTEL.location.region ?? "",
+    addressCountry: HOTEL.location.country ?? "",
+  },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: HOTEL.location.coordinates?.lat ?? 0,
+    longitude: HOTEL.location.coordinates?.lng ?? 0,
+  },
+  image: `${siteUrl}/images/hotel/exterior-hero.jpg`,
+  description: HOTEL.seo.defaultDescription ?? "",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -58,32 +84,11 @@ export default function RootLayout({
   const safeGaId =
     typeof gaId === "string" && gaId.trim().length > 0 ? gaId : null;
 
-  const schemaData = {
-    "@context": "https://schema.org",
-    "@type": "Hotel",
-    name: HOTEL.identity.name ?? "",
-    url: siteUrl,
-    telephone: HOTEL.contact.phone.primary ?? "",
-    priceRange: HOTEL.pricing.range.display ?? "",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: HOTEL.location.city ?? "",
-      addressRegion: HOTEL.location.region ?? "",
-      addressCountry: HOTEL.location.country ?? "",
-    },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: HOTEL.location.coordinates?.lat ?? 0,
-      longitude: HOTEL.location.coordinates?.lng ?? 0,
-    },
-    image: `${siteUrl}/images/hotel/exterior-hero.jpg`,
-    description: HOTEL.seo.defaultDescription ?? "",
-  };
-
   return (
     <html lang="en" dir="ltr">
       <body className="bg-black text-white antialiased">
 
+        {/* UI SHELL (UNCHANGED ARCHITECTURE) */}
         <Navbar />
 
         <main className="min-h-screen">
