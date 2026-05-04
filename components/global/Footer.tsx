@@ -2,12 +2,16 @@
 
 import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { trackLead } from "@/lib/analytics/trackLead";
+
+function sanitizePhone(phone: string) {
+  return phone.replace(/[^\d]/g, "");
+}
 
 export default function Footer() {
-  const whatsappNumber = HOTEL.contact.phone.whatsapp
-    .replace("+", "")
-    .replace(/\s/g, "");
+  const whatsappNumber = sanitizePhone(
+    HOTEL.contact.phone.whatsapp
+  );
 
   const whatsappMessage = encodeURIComponent(
     `Hello, I would like to book a room at ${HOTEL.identity.name} in ${HOTEL.location.city}. Please assist me with availability and pricing.`
@@ -16,8 +20,24 @@ export default function Footer() {
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   const handleWhatsAppClick = (source: string) => {
-    trackEvent("whatsapp_click", { source });
-    setFunnelStep("INTENT");
+    trackEvent("whatsapp_click", {
+      source,
+      context: "footer",
+    });
+
+    trackLead("whatsapp_click");
+
+    // small delay ensures tracking is not dropped
+    setTimeout(() => {
+      window.open(whatsappLink, "_blank", "noopener,noreferrer");
+    }, 120);
+  };
+
+  const handleContactClick = (type: string) => {
+    trackEvent("navigation", {
+      source: "footer",
+      type,
+    });
   };
 
   return (
@@ -39,15 +59,24 @@ export default function Footer() {
         <div>
           <h3 className="font-semibold mb-3">Contact</h3>
 
-          <p className="text-sm text-zinc-400">
+          <p
+            className="text-sm text-zinc-400 cursor-pointer"
+            onClick={() => handleContactClick("location")}
+          >
             {HOTEL.location.full}
           </p>
 
-          <p className="text-sm text-zinc-400">
+          <p
+            className="text-sm text-zinc-400 cursor-pointer"
+            onClick={() => handleContactClick("phone")}
+          >
             {HOTEL.contact.phone.primary}
           </p>
 
-          <p className="text-sm text-zinc-400">
+          <p
+            className="text-sm text-zinc-400 cursor-pointer"
+            onClick={() => handleContactClick("email")}
+          >
             {HOTEL.contact.email}
           </p>
         </div>
@@ -56,15 +85,12 @@ export default function Footer() {
         <div>
           <h3 className="font-semibold mb-3">Book Now</h3>
 
-          <a
-            href={whatsappLink}
-            className="inline-block bg-green-500 text-white px-4 py-2 rounded-md text-sm"
+          <button
             onClick={() => handleWhatsAppClick("footer")}
-            target="_blank"
-            rel="noopener noreferrer"
+            className="inline-block bg-green-500 text-white px-4 py-2 rounded-md text-sm"
           >
             WhatsApp Booking
-          </a>
+          </button>
 
         </div>
 
