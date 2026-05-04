@@ -5,7 +5,7 @@ import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { trackLead } from "@/lib/analytics/trackLead";
 import { IMAGES } from "@/lib/images";
 import { useState, useMemo } from "react";
 
@@ -13,10 +13,10 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   const handleNavClick = (routeName: string) => {
-    // ONLY analytics — no funnel overwrite
     trackEvent("navigation", {
       page: routeName,
       source: "navbar",
+      context: "navigation",
     });
 
     setOpen(false);
@@ -28,7 +28,16 @@ export default function Navbar() {
     );
 
     return `https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${message}`;
-  }, []);
+  }, [HOTEL.identity.name]);
+
+  const handleWhatsAppClick = (source: string) => {
+    trackEvent("whatsapp_click", {
+      source,
+      context: "navbar",
+    });
+
+    trackLead("whatsapp_click");
+  };
 
   return (
     <nav className="flex items-center justify-between p-4 bg-black border-b border-zinc-800 sticky top-0 z-50">
@@ -37,6 +46,7 @@ export default function Navbar() {
       <Link
         href="/"
         className="flex items-center gap-2"
+        onClick={() => handleNavClick("home")}
       >
         <Image
           src={IMAGES.hotel.logo}
@@ -98,10 +108,7 @@ export default function Navbar() {
           <a
             href={whatsappLink}
             className="mt-6 bg-green-600 text-white text-center py-3 rounded-lg font-semibold"
-            onClick={() => {
-              trackEvent("whatsapp_click", { source: "navbar_mobile" });
-              setFunnelStep("INTENT");
-            }}
+            onClick={() => handleWhatsAppClick("navbar_mobile")}
           >
             Book Now
           </a>
@@ -112,10 +119,7 @@ export default function Navbar() {
       <a
         href={whatsappLink}
         className="hidden md:inline-block btn btn-green font-semibold px-5 py-2"
-        onClick={() => {
-          trackEvent("whatsapp_click", { source: "navbar" });
-          setFunnelStep("INTENT");
-        }}
+        onClick={() => handleWhatsAppClick("navbar")}
       >
         Book Now
       </a>
