@@ -1,5 +1,6 @@
 import { HOTEL } from "@/lib/config";
-import { trackLead } from "@/lib/analytics/trackLead";
+import { trackLead } from "@/lib/core/trackLead";
+import { track } from "@/lib/core/analytics";
 
 /**
  * Cleans phone number for WhatsApp API compatibility
@@ -21,10 +22,11 @@ export function buildWhatsAppLink(
   message: string,
   options?: WhatsAppOptions
 ): string {
-  const phone = sanitizePhone(HOTEL.contact.phone.whatsapp);
+  const phone = sanitizePhone(HOTEL.contact.phone.whatsapp || "");
 
   if (!phone) {
-    throw new Error("WhatsApp number is missing in HOTEL config");
+    // fail-safe instead of crashing production
+    return "https://wa.me/";
   }
 
   const enrichedMessage = formatMessage(message, options);
@@ -34,12 +36,24 @@ export function buildWhatsAppLink(
 }
 
 /**
- * SEPARATE: analytics trigger (must be called explicitly)
+ * SINGLE SOURCE OF TRUTH CONVERSION TRIGGER
  */
-export function trackWhatsAppClick(): void {
+export function trackWhatsAppClick(options?: WhatsAppOptions): void {
   if (typeof window === "undefined") return;
 
-  trackLead("whatsapp_click");
+  // 1. Funnel + analytics system (event-driven)
+  track("whatsapp_click", {
+    source: options?.source ?? "unknown",
+    room: options?.room ?? null,
+    intent: options?.intent ?? "general",
+  });
+
+  // 2. Lead system (CRM/backend ingestion)
+  trackLead("whatsapp_click", {
+    source: options?.source,
+    room: options?.room,
+    intent: options?.intent,
+  });
 }
 
 /**
@@ -58,7 +72,6 @@ function formatMessage(
     `Source: ${options?.source ?? "direct"}`,
     `Intent: ${options?.intent ?? "general"}`,
     options?.room ? `Room: ${options.room}` : null,
-    `Time: ${new Date().toISOString()}`,
   ];
 
   return lines.filter(Boolean).join("\n").trim();
