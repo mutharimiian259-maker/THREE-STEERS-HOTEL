@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Hero from "@/components/Hero";
 import RoomCard from "@/components/RoomCard";
 import Facilities from "@/components/Facilities";
@@ -12,23 +12,31 @@ import Experience from "@/components/Experience";
 import Link from "next/link";
 import rooms from "@/data/rooms";
 import { HOTEL } from "@/lib/config";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { track } from "@/lib/core/analytics";
+import { trackLead } from "@/lib/core/trackLead";
 
 export default function Home() {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
 
-  /* ---------------- INITIAL VISIT (SAFE) ---------------- */
+  const roomViewTrackedRef = useRef(false);
+
+  /* ---------------- INITIAL VISIT ---------------- */
   useEffect(() => {
-    setFunnelStep("VISIT");
+    track("page_view", {
+      page_name: "home",
+      context: "navigation",
+      intent: "navigation",
+    });
   }, []);
 
-  /* ---------------- ROOM VIEW THROTTLE ---------------- */
-  let roomViewTracked = false;
-
+  /* ---------------- ROOM VIEW (SAFE SINGLE FIRE) ---------------- */
   const handleRoomView = () => {
-    if (roomViewTracked) return;
-    roomViewTracked = true;
-    setFunnelStep("ROOM_VIEW");
+    if (roomViewTrackedRef.current) return;
+    roomViewTrackedRef.current = true;
+
+    track("room_view", {
+      source: "homepage_rooms_section",
+    });
   };
 
   return (
@@ -48,7 +56,13 @@ export default function Home() {
           <Link
             href="/rooms"
             className="text-sm text-yellow-500 underline"
-            onClick={() => setFunnelStep("INTENT")}
+            onClick={() =>
+              track("page_view", {
+                page_name: "rooms",
+                context: "navigation",
+                intent: "revenue",
+              })
+            }
           >
             View All →
           </Link>
@@ -127,7 +141,10 @@ export default function Home() {
               "Hello, I want to book a room at " + HOTEL.identity.name
             )}`}
             className="px-6 py-3 bg-green-600 text-white rounded-lg"
-            onClick={() => setFunnelStep("CONTACT")}
+            onClick={() => {
+              track("whatsapp_click", { source: "homepage_cta" });
+              trackLead("whatsapp_click");
+            }}
           >
             💬 WhatsApp Booking
           </a>
@@ -135,7 +152,10 @@ export default function Home() {
           <a
             href={`tel:${HOTEL.contact.phone.primary}`}
             className="px-6 py-3 bg-yellow-500 text-black rounded-lg"
-            onClick={() => setFunnelStep("CONTACT")}
+            onClick={() => {
+              track("call_click", { source: "homepage_cta" });
+              trackLead("call_click");
+            }}
           >
             📞 Call Now
           </a>
