@@ -4,7 +4,6 @@ import { useEffect, useMemo } from "react";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import rooms from "@/data/rooms";
-import { generateSEO } from "@/lib/seo";
 import { HOTEL } from "@/lib/config";
 import { trackLead } from "@/lib/analytics/trackLead";
 
@@ -18,7 +17,6 @@ function getRoom(slug: string) {
     : null;
 }
 
-/* ---------------- PAGE ---------------- */
 export default function RoomPage({ params }: Props) {
   const room = getRoom(params.slug);
 
@@ -32,10 +30,10 @@ export default function RoomPage({ params }: Props) {
     );
   }, [room.name]);
 
-  /* ---------------- ANALYTICS (SAFE HARDENING FIX) ---------------- */
+  /* ---------------- ANALYTICS ---------------- */
   useEffect(() => {
     trackLead("room_view");
-  }, [params.slug]);
+  }, [room?.slug]);
 
   const imageSrc =
     room.image || "/images/hotel/rooms/default-room.jpg";
@@ -44,6 +42,22 @@ export default function RoomPage({ params }: Props) {
     typeof room.price === "number"
       ? `${room.currency ?? "KES"} ${room.price.toLocaleString()}`
       : "Price on request";
+
+  const handleWhatsAppClick = async (e: React.MouseEvent) => {
+    // ensure lead is captured BEFORE navigation
+    try {
+      await trackLead("whatsapp_click");
+    } catch {}
+
+    // allow slight delay for request flush
+    setTimeout(() => {
+      window.location.href = `https://wa.me/${whatsappNumber}?text=${message}`;
+    }, 150);
+  };
+
+  const handleCallClick = () => {
+    trackLead("call_click");
+  };
 
   return (
     <main className="max-w-4xl mx-auto p-6">
@@ -83,21 +97,22 @@ export default function RoomPage({ params }: Props) {
         Most guests book this room for its balance of comfort and value.
       </p>
 
+      {/* WhatsApp CTA */}
       <div className="mt-6">
-        <a
-          href={`https://wa.me/${whatsappNumber}?text=${message}`}
-          className="btn btn-green block text-center"
-          onClick={() => trackLead("booking_intent")}
+        <button
+          onClick={handleWhatsAppClick}
+          className="btn btn-green block text-center w-full"
         >
           💬 Check Availability & Book Now
-        </a>
+        </button>
       </div>
 
+      {/* Call CTA */}
       <div className="mt-4">
         <a
           href={`tel:${HOTEL.contact.phone.primary}`}
           className="btn btn-gold block text-center"
-          onClick={() => trackLead("call_click")}
+          onClick={handleCallClick}
         >
           📞 Call Reception for Instant Booking
         </a>
