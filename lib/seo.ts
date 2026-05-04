@@ -1,31 +1,45 @@
 import { HOTEL } from "@/lib/config";
 
-type SeoIntent = "home" | "room" | "blog" | "conference" | "dining";
+type SeoIntent =
+  | "home"
+  | "room"
+  | "blog"
+  | "conference"
+  | "dining";
 
 type SeoProps = {
   title?: string;
   description?: string;
   path?: string;
   image?: string;
-
   intent?: SeoIntent;
   keywords?: string[];
 };
 
+function safeBaseUrl(): string {
+  try {
+    const url = new URL(HOTEL.domain.primary);
+    return url.origin;
+  } catch {
+    return "";
+  }
+}
+
 function joinUrl(base: string, path: string): string {
-  if (!path) return base;
+  if (!base) return path || "";
 
-  const cleanBase = base.replace(/\/+$/, "");
-  const cleanPath = path.trim().replace(/^\/+/, "");
-
-  return `${cleanBase}/${cleanPath}`;
+  try {
+    const url = new URL(path || "/", base);
+    return url.toString().replace(/\/+$/, "");
+  } catch {
+    return base;
+  }
 }
 
 function getIntentKeywords(intent?: SeoIntent): string[] {
   switch (intent) {
     case "room":
       return [
-        // high intent first
         "book hotel room Meru Kenya",
         "hotel booking WhatsApp Meru",
         "hotel rooms in Meru",
@@ -60,8 +74,17 @@ function getIntentKeywords(intent?: SeoIntent): string[] {
   }
 }
 
-function dedupe(arr: string[]): string[] {
-  return Array.from(new Set(arr.filter(Boolean)));
+function dedupeKeywords(arr: string[]): string[] {
+  const seen = new Set<string>();
+
+  for (const item of arr) {
+    const normalized = item.trim().toLowerCase();
+    if (normalized) {
+      seen.add(normalized);
+    }
+  }
+
+  return Array.from(seen);
 }
 
 function validateImage(image?: string): string {
@@ -69,31 +92,58 @@ function validateImage(image?: string): string {
 
   if (!image) return fallback;
 
-  const trimmed = image.trim();
+  try {
+    if (image.startsWith("http")) {
+      new URL(image);
+      return image;
+    }
 
-  if (!trimmed.startsWith("/") && !trimmed.startsWith("http")) {
+    if (image.startsWith("/")) {
+      return image;
+    }
+
+    return fallback;
+  } catch {
     return fallback;
   }
+}
 
-  return trimmed;
+function clamp(text: string, max: number): string {
+  if (text.length <= max) return text;
+  return text.slice(0, max - 1).trim() + "…";
 }
 
 export function generateSEO({
   title,
   description,
-  path = "",
+  path = "/",
   image,
   intent = "home",
   keywords,
 }: SeoProps = {}) {
-  const fullTitle = title
-    ? `${title} | ${HOTEL.identity.name}`
-    : HOTEL.seo.defaultTitle;
+  const baseUrl = safeBaseUrl();
 
-  const fullDescription =
-    description ?? HOTEL.seo.defaultDescription;
+  const siteName = HOTEL.identity?.name ?? "Hotel";
 
-  const baseUrl = HOTEL.domain.primary;
+  const defaultTitle =
+    HOTEL.seo?.defaultTitle ?? siteName;
+
+  const defaultDescription =
+    HOTEL.seo?.defaultDescription ??
+    "Best hotel experience in Kenya";
+
+  const fullTitle = clamp(
+    title
+      ? `${title} | ${siteName}`
+      : defaultTitle,
+    60
+  );
+
+  const fullDescription = clamp(
+    description ?? defaultDescription,
+    160
+  );
+
   const url = joinUrl(baseUrl, path);
 
   const safeImage = validateImage(image);
@@ -102,8 +152,7 @@ export function generateSEO({
     ? safeImage
     : joinUrl(baseUrl, safeImage);
 
-  // prioritize intent keywords first
-  const finalKeywords = dedupe([
+  const finalKeywords = dedupeKeywords([
     ...getIntentKeywords(intent),
     ...(keywords ?? []),
   ]);
@@ -117,7 +166,7 @@ export function generateSEO({
       title: fullTitle,
       description: fullDescription,
       url,
-      siteName: HOTEL.identity.name,
+      siteName,
       type: "website",
       locale: "en_KE",
       images: [
