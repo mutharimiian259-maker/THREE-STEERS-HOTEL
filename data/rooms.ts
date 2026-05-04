@@ -1,3 +1,5 @@
+import { HOTEL } from "@/lib/config";
+
 export type Room = {
   id: string;
   slug: string;
@@ -26,7 +28,7 @@ const rooms: Room[] = [
     price: 8500,
     currency: "KES",
     desc: "Luxury comfort with modern amenities in a calm setting.",
-    image: "/images/rooms/batian-wing/deluxe-room/hero.jpg",
+    image: "/images/rooms/batian-wing/deluxe-twin/hero.jpg",
     tag: "Most Booked",
     wing: "batianWing",
     maxGuests: 2,
@@ -86,9 +88,9 @@ const rooms: Room[] = [
 
 export default rooms;
 
-/**
- * 🔥 SAFE HELPERS (NO BEHAVIOR CHANGE, ONLY UTILITY LAYER)
- */
+/* --------------------------------------------------
+   🔥 SAFE HELPERS (STABLE + EXTENSIBLE)
+-------------------------------------------------- */
 
 export function getRoomBySlug(slug: string): Room | undefined {
   return rooms.find((r) => r.slug === slug);
@@ -96,4 +98,25 @@ export function getRoomBySlug(slug: string): Room | undefined {
 
 export function getRoomById(id: string): Room | undefined {
   return rooms.find((r) => r.id === id);
+}
+
+/**
+ * 🔥 FILTER: High revenue priority rooms
+ */
+export function getHighDemandRooms(): Room[] {
+  return rooms.filter((r) => r.demand === "high");
+}
+
+/**
+ * 🔥 FILTER: Rooms by wing (useful for UI segmentation)
+ */
+export function getRoomsByWing(wing: Room["wing"]): Room[] {
+  return rooms.filter((r) => r.wing === wing);
+}
+
+/**
+ * 🔥 SAFE PRICE FORMAT (centralized, avoids duplication elsewhere)
+ */
+export function formatRoomPrice(price: number): string {
+  return `${HOTEL.pricing.currency} ${price.toLocaleString()}`;
 }
