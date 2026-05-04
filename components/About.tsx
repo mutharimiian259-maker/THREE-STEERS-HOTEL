@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { trackLead } from "@/lib/analytics/trackLead";
 import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 
@@ -13,6 +13,28 @@ function sanitizePhone(phone: string) {
 
 export default function About() {
   const whatsappNumber = sanitizePhone(HOTEL.contact.phone.whatsapp);
+
+  const whatsappMessage = encodeURIComponent(
+    "Hello, I would like to know more about Three Steers Hotel and make a booking."
+  );
+
+  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+
+  const handleWhatsAppClick = () => {
+    trackEvent("whatsapp_click", {
+      source: "about_section",
+      context: "about_page",
+    });
+
+    trackLead("whatsapp_click");
+  };
+
+  const handleNavEvent = (eventType: string, source: string) => {
+    trackEvent(eventType, {
+      source,
+      context: "about_page",
+    });
+  };
 
   return (
     <section className="p-6">
@@ -62,7 +84,7 @@ export default function About() {
         <div className="absolute inset-0 bg-black/40" />
       </div>
 
-      {/* FACILITIES TEXT */}
+      {/* FACILITIES */}
       <h3 className="text-lg font-semibold text-yellow-400 mt-4">
         Facilities & Services
       </h3>
@@ -79,7 +101,7 @@ export default function About() {
           href="/rooms"
           className="text-yellow-500 underline"
           onClick={() =>
-            trackEvent("room_view", { source: "about_rooms" })
+            handleNavEvent("navigation", "about_rooms")
           }
         >
           View Rooms
@@ -89,18 +111,10 @@ export default function About() {
           href="/#dining"
           className="text-yellow-500 underline"
           onClick={() =>
-            trackEvent("page_view", { source: "about_dining_section" })
+            handleNavEvent("navigation", "about_dining_section")
           }
         >
           Explore Dining
-        </Link>
-
-        <Link
-          href="/#booking"
-          className="text-yellow-500 underline"
-          onClick={() => setFunnelStep("INTENT")}
-        >
-          Book Now
         </Link>
 
       </div>
@@ -109,14 +123,9 @@ export default function About() {
       <div className="mt-6">
 
         <a
-          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-            "Hello, I would like to know more about Three Steers Hotel and make a booking."
-          )}`}
+          href={whatsappLink}
           className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg"
-          onClick={() => {
-            trackEvent("whatsapp_click", { source: "about_section" });
-            setFunnelStep("CONTACT");
-          }}
+          onClick={handleWhatsAppClick}
         >
           Talk to Reservations
         </a>
