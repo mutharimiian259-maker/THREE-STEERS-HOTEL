@@ -25,17 +25,17 @@ export default function Home() {
     track("page_view", {
       page_name: "home",
       context: "navigation",
-      intent: "navigation",
     });
   }, []);
 
-  /* ---------------- ROOM VIEW (SAFE SINGLE FIRE) ---------------- */
+  /* ---------------- ROOM VIEW (SAFE + CONTEXTUAL) ---------------- */
   const handleRoomView = () => {
     if (roomViewTrackedRef.current) return;
     roomViewTrackedRef.current = true;
 
     track("room_view", {
       source: "homepage_rooms_section",
+      rooms_visible: safeRooms.slice(0, 3).map((r: any) => r?.id),
     });
   };
 
@@ -57,9 +57,9 @@ export default function Home() {
             href="/rooms"
             className="text-sm text-yellow-500 underline"
             onClick={() =>
-              track("page_view", {
-                page_name: "rooms",
-                context: "navigation",
+              track("navigation", {
+                from: "home",
+                to: "rooms",
                 intent: "revenue",
               })
             }
@@ -68,10 +68,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div
-          className="grid md:grid-cols-3 gap-4 mt-4"
-          onMouseEnter={handleRoomView}
-        >
+        <div className="grid md:grid-cols-3 gap-4 mt-4" onFocus={handleRoomView}>
           {safeRooms.slice(0, 3).map((room: any, index: number) => (
             <RoomCard key={room?.id ?? index} room={room} />
           ))}
@@ -142,7 +139,11 @@ export default function Home() {
             )}`}
             className="px-6 py-3 bg-green-600 text-white rounded-lg"
             onClick={() => {
-              track("whatsapp_click", { source: "homepage_cta" });
+              track("whatsapp_click", {
+                source: "homepage_cta",
+                page: "home",
+              });
+
               trackLead("whatsapp_click");
             }}
           >
@@ -153,7 +154,11 @@ export default function Home() {
             href={`tel:${HOTEL.contact.phone.primary}`}
             className="px-6 py-3 bg-yellow-500 text-black rounded-lg"
             onClick={() => {
-              track("call_click", { source: "homepage_cta" });
+              track("call_click", {
+                source: "homepage_cta",
+                page: "home",
+              });
+
               trackLead("call_click");
             }}
           >
