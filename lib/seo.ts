@@ -15,19 +15,22 @@ type SeoProps = {
 function joinUrl(base: string, path: string): string {
   if (!path) return base;
 
-  const cleanBase = base.replace(/\/$/, "");
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const cleanBase = base.replace(/\/+$/, "");
+  const cleanPath = path.trim().replace(/^\/+/, "");
 
-  return `${cleanBase}${cleanPath}`;
+  return `${cleanBase}/${cleanPath}`;
 }
 
 function getIntentKeywords(intent?: SeoIntent): string[] {
   switch (intent) {
     case "room":
       return [
+        // high intent first
+        "book hotel room Meru Kenya",
+        "hotel booking WhatsApp Meru",
         "hotel rooms in Meru",
         "luxury accommodation Kenya",
-        "book hotel room Meru",
+        "affordable hotel rooms Meru",
       ];
 
     case "conference":
@@ -35,6 +38,7 @@ function getIntentKeywords(intent?: SeoIntent): string[] {
         "conference venues Meru",
         "meeting rooms Kenya hotel",
         "corporate events Meru",
+        "book conference hotel Kenya",
       ];
 
     case "dining":
@@ -57,12 +61,21 @@ function getIntentKeywords(intent?: SeoIntent): string[] {
 }
 
 function dedupe(arr: string[]): string[] {
-  return Array.from(new Set(arr));
+  return Array.from(new Set(arr.filter(Boolean)));
 }
 
 function validateImage(image?: string): string {
-  if (!image) return "/images/hotel/og/default.jpg";
-  return image;
+  const fallback = "/images/hotel/og/default.jpg";
+
+  if (!image) return fallback;
+
+  const trimmed = image.trim();
+
+  if (!trimmed.startsWith("/") && !trimmed.startsWith("http")) {
+    return fallback;
+  }
+
+  return trimmed;
 }
 
 export function generateSEO({
@@ -89,9 +102,10 @@ export function generateSEO({
     ? safeImage
     : joinUrl(baseUrl, safeImage);
 
+  // prioritize intent keywords first
   const finalKeywords = dedupe([
-    ...(keywords ?? []),
     ...getIntentKeywords(intent),
+    ...(keywords ?? []),
   ]);
 
   return {
