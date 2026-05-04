@@ -14,32 +14,33 @@ export default function AnalyticsProvider({
   pageName: string;
   children: React.ReactNode;
 }) {
-  const lastTrackedRef = useRef<string | null>(null);
-  const lastTimeRef = useRef<number>(0);
+  const lastKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     if (!isValid(pageName)) return;
 
-    const normalized = pageName.trim();
-    const now = Date.now();
+    const normalizedName = pageName.trim();
+    const url = window.location.pathname + window.location.search + window.location.hash;
 
-    // prevent duplicate tracking of same page
-    if (lastTrackedRef.current === normalized) return;
+    // unique key per page instance
+    const key = `${normalizedName}::${url}`;
 
-    // prevent rapid double fires
-    if (now - lastTimeRef.current < 500) return;
+    // prevent duplicate firing for same exact page state
+    if (lastKeyRef.current === key) return;
 
-    lastTrackedRef.current = normalized;
-    lastTimeRef.current = now;
+    lastKeyRef.current = key;
 
     track("page_view", {
-      page_name: normalized,
+      page_name: normalizedName,
+      path: window.location.pathname,
+      url,
       context: "navigation",
-      intent: "visit",
+      intent: "navigation",
     });
 
     if (process.env.NODE_ENV === "development") {
-      console.log("[PAGE VIEW]", normalized);
+      console.log("[PAGE VIEW]", normalizedName, url);
     }
   }, [pageName]);
 
