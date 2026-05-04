@@ -3,9 +3,9 @@
 import Image from "next/image";
 import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { trackLead } from "@/lib/analytics/trackLead";
 import { IMAGES } from "@/lib/images";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useEffect } from "react";
 
 type Room = {
   id: string | number;
@@ -33,7 +33,7 @@ export default function RoomCard({ room }: { room: Room }) {
     return encodeURIComponent(
       `Hello, I would like to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, prices, and dates.`
     );
-  }, [room.name]);
+  }, [room.name, HOTEL.identity.name]);
 
   const price =
     typeof room.price === "number" && room.currency
@@ -47,17 +47,30 @@ export default function RoomCard({ room }: { room: Room }) {
       ? "Popular choice — limited premium availability"
       : "High demand — book early to secure this room";
 
-  /* ---------------- HANDLERS (STABLE) ---------------- */
+  /* ---------------- TRACKING ---------------- */
 
-  const handleRoomView = useCallback(() => {
-    trackEvent("room_view", { room: room.name });
-    setFunnelStep("ROOM_VIEW");
+  useEffect(() => {
+    trackEvent("room_view", {
+      room: room.name,
+      source: "room_card",
+    });
   }, [room.name]);
+
+  /* ---------------- HANDLERS ---------------- */
 
   const handleWhatsAppClick = useCallback(() => {
-    trackEvent("whatsapp_click", { room: room.name });
-    setFunnelStep("INTENT");
-  }, [room.name]);
+    trackEvent("whatsapp_click", {
+      room: room.name,
+      source: "room_card",
+    });
+
+    trackLead("whatsapp_click");
+
+    // slight delay to avoid navigation loss
+    setTimeout(() => {
+      window.location.href = `https://wa.me/${whatsappNumber}?text=${message}`;
+    }, 120);
+  }, [room.name, whatsappNumber, message]);
 
   return (
     <div className="card relative overflow-hidden bg-white">
@@ -70,7 +83,7 @@ export default function RoomCard({ room }: { room: Room }) {
       )}
 
       {/* IMAGE */}
-      <div className="relative w-full h-48" onClick={handleRoomView}>
+      <div className="relative w-full h-48">
         <Image
           src={roomImage}
           alt={`${room.name} at ${HOTEL.identity.name}`}
@@ -102,13 +115,12 @@ export default function RoomCard({ room }: { room: Room }) {
           {urgencyText}
         </p>
 
-        <a
-          href={`https://wa.me/${whatsappNumber}?text=${message}`}
-          className="btn btn-green block mt-4 text-center font-semibold"
+        <button
           onClick={handleWhatsAppClick}
+          className="btn btn-green block mt-4 text-center font-semibold w-full"
         >
           Book This Room via WhatsApp
-        </a>
+        </button>
 
       </div>
     </div>
@@ -116,7 +128,7 @@ export default function RoomCard({ room }: { room: Room }) {
 }
 
 /**
- * PURE mapping function (unchanged but safe)
+ * PURE mapping function (unchanged)
  */
 function getRoomImage(slug?: string) {
   switch (slug) {
