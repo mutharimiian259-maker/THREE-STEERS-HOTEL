@@ -1,6 +1,19 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
+import { track } from "@/lib/core/analytics";
 
 export default function NotFound() {
+  useEffect(() => {
+    track("page_view", {
+      page_name: "404",
+      context: "error",
+      url: window.location.href,
+      referrer: document.referrer || null,
+    });
+  }, []);
+
   return (
     <main className="min-h-screen flex items-center justify-center text-center px-6">
 
@@ -17,6 +30,13 @@ export default function NotFound() {
         <Link
           href="/"
           className="btn btn-green inline-block mt-6"
+          onClick={() =>
+            track("navigation", {
+              from: "404",
+              to: "home",
+              intent: "recovery",
+            })
+          }
         >
           Go Back Home
         </Link>
