@@ -2,15 +2,16 @@
 
 import { useRef } from "react";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { trackLead } from "@/lib/analytics/trackLead";
 import { HOTEL } from "@/lib/config";
 
 export default function StickyCTA() {
   const clickedRef = useRef(false);
 
-  const whatsappNumber = HOTEL.contact.phone.whatsapp
-    .replace("+", "")
-    .replace(/\s/g, "");
+  const whatsappNumber = HOTEL.contact.phone.whatsapp.replace(
+    /[^\d]/g,
+    ""
+  );
 
   const whatsappMessage = encodeURIComponent(
     `Hello, I would like to book a room at ${HOTEL.identity.name} in ${HOTEL.location.city}.`
@@ -26,7 +27,11 @@ export default function StickyCTA() {
       source: "sticky_cta",
     });
 
-    setFunnelStep("INTENT");
+    trackLead("whatsapp_click");
+
+    setTimeout(() => {
+      window.open(whatsappLink, "_blank", "noopener,noreferrer");
+    }, 120);
   };
 
   const handleCallClick = () => {
@@ -37,10 +42,15 @@ export default function StickyCTA() {
       source: "sticky_cta",
     });
 
-    setFunnelStep("INTENT");
-  };
+    trackLead("call_click");
 
-  const phoneLink = `tel:${HOTEL.contact.phone.primary.replace(/\s/g, "")}`;
+    setTimeout(() => {
+      window.location.href = `tel:${HOTEL.contact.phone.primary.replace(
+        /[^\d]/g,
+        ""
+      )}`;
+    }, 80);
+  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-black text-white flex justify-between items-center p-3 z-50">
@@ -53,23 +63,19 @@ export default function StickyCTA() {
       {/* ACTIONS */}
       <div className="flex gap-3">
 
-        <a
-          href={whatsappLink}
+        <button
           onClick={handleWhatsAppClick}
           className="bg-green-500 px-4 py-2 rounded text-sm"
-          target="_blank"
-          rel="noopener noreferrer"
         >
           WhatsApp
-        </a>
+        </button>
 
-        <a
-          href={phoneLink}
+        <button
           onClick={handleCallClick}
           className="bg-yellow-500 text-black px-4 py-2 rounded text-sm"
         >
           Call
-        </a>
+        </button>
 
       </div>
 
