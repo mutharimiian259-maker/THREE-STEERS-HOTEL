@@ -7,13 +7,19 @@ import ExitIntentModal from "@/components/global/ExitIntentModal";
 import Script from "next/script";
 import { HOTEL } from "@/lib/config";
 
-const siteUrl =
-  typeof HOTEL.domain.primary === "string" && HOTEL.domain.primary.length > 0
-    ? HOTEL.domain.primary
-    : "http://localhost:3000";
+function getSafeUrl(): string {
+  try {
+    const url = new URL(HOTEL.domain.primary);
+    return url.origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
+const siteUrl = getSafeUrl();
 
 /**
- * ✅ SERVER-SAFE METADATA (RESTORED CORRECT NEXT.JS BEHAVIOR)
+ * SERVER-SAFE METADATA
  */
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -50,7 +56,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * STATIC SCHEMA (defined once per request, server-render safe)
+ * STATIC SCHEMA (SAFE)
  */
 const schemaData = {
   "@context": "https://schema.org",
@@ -67,8 +73,8 @@ const schemaData = {
   },
   geo: {
     "@type": "GeoCoordinates",
-    latitude: HOTEL.location.coordinates?.lat ?? 0,
-    longitude: HOTEL.location.coordinates?.lng ?? 0,
+    latitude: HOTEL.location.coordinates?.lat,
+    longitude: HOTEL.location.coordinates?.lng,
   },
   image: `${siteUrl}/images/hotel/exterior-hero.jpg`,
   description: HOTEL.seo.defaultDescription ?? "",
@@ -82,13 +88,15 @@ export default function RootLayout({
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
   const safeGaId =
-    typeof gaId === "string" && gaId.trim().length > 0 ? gaId : null;
+    typeof gaId === "string" &&
+    /^[A-Z0-9-]+$/.test(gaId.trim())
+      ? gaId.trim()
+      : null;
 
   return (
     <html lang="en" dir="ltr">
       <body className="bg-black text-white antialiased">
 
-        {/* UI SHELL (UNCHANGED ARCHITECTURE) */}
         <Navbar />
 
         <main className="min-h-screen">
@@ -110,14 +118,15 @@ export default function RootLayout({
             <Script id="ga-script" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
-
                 function gtag(){dataLayer.push(arguments);}
                 window.gtag = gtag;
 
-                gtag('js', new Date());
-                gtag('config', '${safeGaId}', {
-                  send_page_view: true
-                });
+                try {
+                  gtag('js', new Date());
+                  gtag('config', '${safeGaId}', {
+                    send_page_view: true
+                  });
+                } catch (e) {}
               `}
             </Script>
           </>
