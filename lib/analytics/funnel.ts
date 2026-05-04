@@ -21,6 +21,7 @@ const EVENT_TO_STEP: Partial<Record<StoredEvent["type"], FunnelStep>> = {
 
 let currentCache: FunnelStep | null = null;
 let initialized = false;
+let lastStep: FunnelStep | null = null;
 let lastUpdateTime = 0;
 
 function isValidStep(step: unknown): step is FunnelStep {
@@ -30,14 +31,14 @@ function isValidStep(step: unknown): step is FunnelStep {
 function safeGet(): FunnelStep | null {
   if (typeof window === "undefined") return null;
 
-  if (currentCache) return currentCache;
-
   try {
     const value = localStorage.getItem(STORAGE_KEY);
-    currentCache = isValidStep(value) ? value : null;
-    return currentCache;
+    const parsed = isValidStep(value) ? value : null;
+
+    currentCache = parsed;
+    return parsed;
   } catch {
-    return null;
+    return currentCache;
   }
 }
 
@@ -48,41 +49,58 @@ function safeSet(step: FunnelStep): void {
 
   try {
     localStorage.setItem(STORAGE_KEY, step);
-  } catch {
-    // ignore
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[FUNNEL] storage write failed", err);
+    }
   }
+}
+
+function isValidEvent(e: any): e is StoredEvent {
+  return (
+    e &&
+    typeof e.type === "string" &&
+    typeof e.time === "string"
+  );
 }
 
 function advance(next: FunnelStep): void {
   const now = Date.now();
-
-  // debounce (avoid rapid writes)
-  if (now - lastUpdateTime < 300) return;
-  lastUpdateTime = now;
-
   const current = safeGet() ?? "VISIT";
 
   const currentIndex = ORDER.indexOf(current);
-  const nextIndex = ORDER.indexOf(next);
+  const nextIndexRaw = ORDER.indexOf(next);
 
-  if (currentIndex === -1 || nextIndex === -1) return;
+  if (currentIndex === -1 || nextIndexRaw === -1) return;
 
-  // promote ENGAGEMENT → INTENT if repeated engagement
-  if (
-    current === "ENGAGEMENT" &&
-    next === "ENGAGEMENT"
-  ) {
-    next = "INTENT";
+  let nextStep = next;
+
+  // promotion rule
+  if (current === "ENGAGEMENT" && next === "ENGAGEMENT") {
+    nextStep = "INTENT";
   }
+
+  const nextIndex = ORDER.indexOf(nextStep);
 
   if (nextIndex <= currentIndex) return;
 
-  safeSet(next);
+  // prevent rapid duplicate transitions of SAME step only
+  if (
+    lastStep === nextStep &&
+    now - lastUpdateTime < 300
+  ) {
+    return;
+  }
+
+  lastStep = nextStep;
+  lastUpdateTime = now;
+
+  safeSet(nextStep);
 
   try {
     window.dispatchEvent(
-      new CustomEvent("funnel:change", {
-        detail: next,
+      new CustomEvent<FunnelStep>("funnel:change", {
+        detail: nextStep,
       })
     );
   } catch {
@@ -90,7 +108,7 @@ function advance(next: FunnelStep): void {
   }
 
   if (process.env.NODE_ENV === "development") {
-    console.log("[FUNNEL]", current, "→", next);
+    console.log("[FUNNEL]", current, "→", nextStep);
   }
 }
 
@@ -103,9 +121,11 @@ function initListener() {
   initialized = true;
 
   window.addEventListener(APP_EVENT, (e: Event) => {
-    const event = (e as CustomEvent<StoredEvent>).detail;
+    const detail = (e as CustomEvent).detail;
 
-    const step = EVENT_TO_STEP[event.type];
+    if (!isValidEvent(detail)) return;
+
+    const step = EVENT_TO_STEP[detail.type];
 
     if (!step) return;
 
