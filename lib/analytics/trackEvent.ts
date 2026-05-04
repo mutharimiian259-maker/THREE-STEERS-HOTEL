@@ -16,25 +16,28 @@ export type StoredEvent = {
   url: string;
 };
 
-/**
- * 🔥 SINGLE EVENT BUS CONTRACT
- */
 export const APP_EVENT = "app:event";
 
 const STORAGE_KEY = "hotel_events";
 const MAX_EVENTS = 200;
+const DEDUP_WINDOW_MS = 1500;
 
-// in-memory cache
 let cache: StoredEvent[] | null = null;
+let writeLock = false;
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function isValidEventArray(data: unknown): data is StoredEvent[] {
+  return Array.isArray(data);
+}
+
 function syncCache() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    cache = raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    cache = isValidEventArray(parsed) ? parsed : [];
   } catch {
     cache = [];
   }
@@ -50,97 +53,122 @@ function safeGet(): StoredEvent[] {
 function safeSet(events: StoredEvent[]) {
   if (typeof window === "undefined") return;
 
-  cache = events;
+  const trimmed = events.slice(-MAX_EVENTS);
+  cache = trimmed;
 
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(events.slice(-MAX_EVENTS))
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
   } catch {
-    // ignore
+    // ignore write failure
+  }
+
+  if (
+    process.env.NODE_ENV === "development" &&
+    events.length > MAX_EVENTS
+  ) {
+    console.warn("[TRACK] Event storage truncated");
   }
 }
 
-function shallowEqual(a: EventPayload, b: EventPayload) {
+function safePayloadEqual(a: EventPayload, b: EventPayload) {
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
 
   if (aKeys.length !== bKeys.length) return false;
 
   for (const key of aKeys) {
-    if (a[key] !== b[key]) return false;
+    const av = a[key];
+    const bv = b[key];
+
+    if (
+      typeof av === "object" ||
+      typeof bv === "object"
+    ) {
+      return false;
+    }
+
+    if (av !== bv) return false;
   }
 
   return true;
 }
 
-function isDuplicate(last: StoredEvent | undefined, next: StoredEvent) {
+function isDuplicate(
+  last: StoredEvent | undefined,
+  next: StoredEvent
+) {
   if (!last) return false;
+
+  const timeDiff =
+    new Date(next.time).getTime() -
+    new Date(last.time).getTime();
+
+  if (timeDiff > DEDUP_WINDOW_MS) return false;
 
   return (
     last.type === next.type &&
     last.url === next.url &&
-    shallowEqual(last.payload, next.payload)
+    safePayloadEqual(last.payload, next.payload)
   );
 }
 
-/**
- * SINGLE SOURCE OF TRUTH
- */
 export function track(
   type: EventType,
   payload: EventPayload = {}
 ): void {
   if (typeof window === "undefined") return;
 
-  const event: StoredEvent = {
-    id: generateId(),
-    type,
-    payload,
-    time: new Date().toISOString(),
-    url: window.location.href,
-  };
+  if (writeLock) return;
+  writeLock = true;
 
-  const events = safeGet();
-  const last = events.at(-1);
+  try {
+    const event: StoredEvent = {
+      id: generateId(),
+      type,
+      payload,
+      time: new Date().toISOString(),
+      url: window.location.href,
+    };
 
-  if (isDuplicate(last, event)) return;
+    const events = safeGet();
+    const last = events.at(-1);
 
-  events.push(event);
-  safeSet(events);
+    if (isDuplicate(last, event)) return;
 
-  /**
-   * 🔥 External Analytics Bridge
-   */
-  const w = window as Window & {
-    gtag?: (
-      command: string,
-      event: string,
-      params?: Record<string, unknown>
-    ) => void;
-  };
+    events.push(event);
+    safeSet(events);
 
-  if (typeof w.gtag === "function") {
-    w.gtag("event", type, {
-      ...payload,
-      page_location: event.url,
-    });
-  }
+    const w = window as Window & {
+      gtag?: (
+        command: string,
+        event: string,
+        params?: Record<string, unknown>
+      ) => void;
+    };
 
-  /**
-   * 🔥 Event Bus
-   */
-  window.dispatchEvent(
-    new CustomEvent<StoredEvent>(APP_EVENT, {
-      detail: event,
-    })
-  );
+    if (typeof w.gtag === "function") {
+      w.gtag("event", type, {
+        event_category: "engagement",
+        event_label: type,
+        ...payload,
+        page_location: event.url,
+      });
+    }
 
-  /**
-   * 🔥 DEV DEBUG (optional safety hook)
-   */
-  if (process.env.NODE_ENV === "development") {
-    console.log("[TRACK]", event);
+    try {
+      window.dispatchEvent(
+        new CustomEvent<StoredEvent>(APP_EVENT, {
+          detail: event,
+        })
+      );
+    } catch {
+      // isolate listener failures
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("[TRACK]", event);
+    }
+  } finally {
+    writeLock = false;
   }
 }
