@@ -21,35 +21,30 @@ export const routes: Route[] = [
     type: "page",
     intent: "navigation",
   },
-
   {
     name: "Rooms",
     path: "/rooms",
     type: "page",
     intent: "revenue",
   },
-
   {
     name: "Dining",
     path: "/#dining",
     type: "section",
     intent: "engagement",
   },
-
   {
     name: "Conference",
     path: "/#conference",
     type: "section",
     intent: "revenue",
   },
-
   {
     name: "Experiences",
     path: "/#experiences",
     type: "section",
     intent: "engagement",
   },
-
   {
     name: "Book Stay",
     path: "/#booking",
@@ -59,14 +54,40 @@ export const routes: Route[] = [
 ];
 
 /**
- * 🔥 Helper: get route by path
+ * 🔧 Normalize path for consistent matching
  */
-export function getRoute(path: string): Route | undefined {
-  return routes.find((r) => r.path === path);
+function normalizePath(path: string): string {
+  if (!path) return "/";
+
+  try {
+    const url = new URL(path, window.location.origin);
+
+    let normalized = url.pathname.replace(/\/+$/, "") || "/";
+
+    if (url.hash) {
+      normalized += url.hash;
+    }
+
+    return normalized;
+  } catch {
+    // fallback (SSR or malformed)
+    return path.replace(/\/+$/, "") || "/";
+  }
 }
 
 /**
- * 🔥 SAFE UTILITY: filter by intent (future personalization ready)
+ * 🔥 Helper: get route by path (normalized)
+ */
+export function getRoute(path: string): Route | undefined {
+  const target = normalizePath(path);
+
+  return routes.find(
+    (r) => normalizePath(r.path) === target
+  );
+}
+
+/**
+ * 🔥 SAFE UTILITY: filter by intent
  */
 export function getRoutesByIntent(
   intent: Route["intent"]
@@ -75,23 +96,28 @@ export function getRoutesByIntent(
 }
 
 /**
- * 🔥 SAFE UTILITY: get all section routes (scroll-based UX)
+ * 🔥 SAFE UTILITY: get all section routes
  */
 export function getSectionRoutes(): Route[] {
   return routes.filter((r) => r.type === "section");
 }
 
 /**
- * 🔥 DEV SAFETY CHECK (no runtime cost in production)
- * Prevents duplicate paths accidentally being introduced
+ * 🔥 DEV SAFETY CHECK (normalized duplicate detection)
  */
 if (process.env.NODE_ENV === "development") {
   const seen = new Set<string>();
 
   for (const route of routes) {
-    if (seen.has(route.path)) {
-      console.warn("[ROUTE DUPLICATE DETECTED]", route.path);
+    const normalized = normalizePath(route.path);
+
+    if (seen.has(normalized)) {
+      console.warn(
+        "[ROUTE DUPLICATE DETECTED]",
+        route.path
+      );
     }
-    seen.add(route.path);
+
+    seen.add(normalized);
   }
 }
