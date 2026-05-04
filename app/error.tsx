@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { track } from "@/lib/core/analytics";
 
 export default function Error({
   error,
@@ -10,10 +11,21 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-
   useEffect(() => {
     try {
-      console.error("APP ERROR:", error?.message, error?.digest);
+      console.error("APP ERROR OBJECT:", {
+        message: error?.message,
+        digest: error?.digest,
+        stack: error?.stack,
+        name: error?.name,
+      });
+
+      // Optional analytics hook (safe, non-blocking)
+      track("page_view", {
+        error: true,
+        message: error?.message,
+        digest: error?.digest,
+      });
     } catch {
       // silent fail
     }
@@ -24,14 +36,14 @@ export default function Error({
       reset();
     } catch {
       if (typeof window !== "undefined") {
-        window.location.reload();
+        // safer fallback than full reload
+        window.location.href = "/";
       }
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center text-center px-6">
-
       <div className="max-w-md">
 
         <h2 className="text-3xl font-bold text-red-500">
@@ -44,10 +56,7 @@ export default function Error({
 
         <div className="mt-6 flex flex-col gap-3">
 
-          <button
-            onClick={handleReset}
-            className="btn btn-green"
-          >
+          <button onClick={handleReset} className="btn btn-green">
             Try Again
           </button>
 
@@ -58,7 +67,6 @@ export default function Error({
         </div>
 
       </div>
-
     </div>
   );
 }
