@@ -3,14 +3,13 @@
 import { useEffect, useState } from "react";
 import { HOTEL } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { trackLead } from "@/lib/analytics/trackLead";
 
 export default function ExitIntentModal() {
   const [show, setShow] = useState(false);
 
   const whatsappNumber = HOTEL.contact.phone.whatsapp
-    .replace("+", "")
-    .replace(/\s/g, "");
+    .replace(/[^\d]/g, "");
 
   const whatsappMessage = encodeURIComponent(
     `Hello, I saw your website and would like to book a room at ${HOTEL.identity.name} in ${HOTEL.location.city}.`
@@ -21,9 +20,15 @@ export default function ExitIntentModal() {
   const handleWhatsAppClick = () => {
     trackEvent("whatsapp_click", {
       source: "exit_intent",
+      context: "exit_modal",
     });
 
-    setFunnelStep("INTENT");
+    trackLead("whatsapp_click");
+
+    // ensure tracking is not lost
+    setTimeout(() => {
+      window.open(whatsappLink, "_blank", "noopener,noreferrer");
+    }, 120);
   };
 
   useEffect(() => {
@@ -35,17 +40,22 @@ export default function ExitIntentModal() {
     if (window.innerWidth < 768) return;
 
     let triggered = false;
+    let lastY = 0;
 
     const handler = (e: MouseEvent) => {
-      if (e.clientY <= 5 && !triggered) {
+      // improved intent detection: upward fast exit only
+      const isIntentExit =
+        e.clientY <= 5 && e.clientY < lastY;
+
+      lastY = e.clientY;
+
+      if (isIntentExit && !triggered) {
         triggered = true;
 
         sessionStorage.setItem("exit_intent_shown", "true");
 
-        setFunnelStep("INTENT");
-
-        trackEvent("booking_intent", {
-          source: "exit_intent",
+        trackEvent("whatsapp_click", {
+          source: "exit_intent_trigger",
         });
 
         setShow(true);
@@ -77,15 +87,12 @@ export default function ExitIntentModal() {
           Book directly with {HOTEL.identity.name} for better rates and instant confirmation.
         </p>
 
-        <a
-          href={whatsappLink}
-          className="mt-4 inline-block bg-green-500 text-white px-5 py-2 rounded"
+        <button
           onClick={handleWhatsAppClick}
-          target="_blank"
-          rel="noopener noreferrer"
+          className="mt-4 inline-block bg-green-500 text-white px-5 py-2 rounded"
         >
           Book via WhatsApp
-        </a>
+        </button>
 
         <button
           onClick={() => setShow(false)}
