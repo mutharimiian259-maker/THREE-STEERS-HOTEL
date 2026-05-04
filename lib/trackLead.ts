@@ -1,5 +1,6 @@
 const LEAD_CACHE_PREFIX = "lead_last_sent_";
 const LEAD_QUEUE_KEY = "lead_retry_queue";
+const MAX_QUEUE_SIZE = 50;
 
 type LeadType =
   | "room_view"
@@ -8,6 +9,17 @@ type LeadType =
   | "email_click"
   | "blog_click"
   | "navigation";
+
+type LeadPayload = {
+  type: LeadType;
+  time: string;
+  url: string;
+  referrer: string | null;
+  device: {
+    ua: string;
+    lang: string;
+  };
+};
 
 type LeadCache = {
   type: LeadType;
@@ -32,64 +44,113 @@ function canSendLead(type: LeadType): boolean {
       if (
         parsed &&
         parsed.type === type &&
-        now - parsed.time < 5000 // reduced but safer
+        now - parsed.time < 5000
       ) {
         return false;
       }
     }
 
-    localStorage.setItem(
-      key,
-      JSON.stringify({ type, time: now })
-    );
-
     return true;
   } catch {
-    return true; // fail open (avoid losing leads)
+    return true;
   }
 }
 
-function getRetryQueue(): any[] {
+function markLeadSent(type: LeadType) {
+  try {
+    localStorage.setItem(
+      getCacheKey(type),
+      JSON.stringify({ type, time: Date.now() })
+    );
+  } catch {}
+}
+
+function isValidPayload(p: any): p is LeadPayload {
+  return (
+    p &&
+    typeof p.type === "string" &&
+    typeof p.time === "string" &&
+    typeof p.url === "string"
+  );
+}
+
+function getRetryQueue(): LeadPayload[] {
   try {
     const raw = localStorage.getItem(LEAD_QUEUE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+
+    return Array.isArray(parsed)
+      ? parsed.filter(isValidPayload)
+      : [];
   } catch {
     return [];
   }
 }
 
-function saveRetryQueue(queue: any[]) {
+function saveRetryQueue(queue: LeadPayload[]) {
   try {
+    const trimmed = queue.slice(-MAX_QUEUE_SIZE);
     localStorage.setItem(
       LEAD_QUEUE_KEY,
-      JSON.stringify(queue)
+      JSON.stringify(trimmed)
     );
-  } catch {}
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[LEAD] queue save failed", err);
+    }
+  }
 }
 
-function queueFailedLead(payload: any) {
+function queueFailedLead(payload: LeadPayload) {
   const queue = getRetryQueue();
-  queue.push(payload);
-  saveRetryQueue(queue);
+
+  const exists = queue.some(
+    (q) =>
+      q.type === payload.type &&
+      q.url === payload.url &&
+      q.time === payload.time
+  );
+
+  if (!exists) {
+    queue.push(payload);
+    saveRetryQueue(queue);
+  }
+}
+
+async function sendLead(payload: LeadPayload) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) throw new Error("Bad response");
+
+    return true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function flushQueue() {
   const queue = getRetryQueue();
   if (!queue.length) return;
 
-  const remaining: any[] = [];
+  const remaining: LeadPayload[] = [];
 
-  for (const item of queue) {
-    try {
-      await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(item),
-      });
-    } catch {
-      remaining.push(item);
-    }
-  }
+  await Promise.all(
+    queue.map(async (item) => {
+      const ok = await sendLead(item);
+      if (!ok) remaining.push(item);
+    })
+  );
 
   saveRetryQueue(remaining);
 }
@@ -98,44 +159,29 @@ export async function trackLead(type: LeadType) {
   if (typeof window === "undefined") return;
   if (!type) return;
 
-  await flushQueue();
+  // non-blocking retry
+  flushQueue();
 
   if (!canSendLead(type)) return;
 
-  const payload = {
-    type,
-    time: new Date().toISOString(),
-    url: window.location.href,
-    referrer: document.referrer || null,
-    device: {
-      ua: navigator.userAgent,
-      lang: navigator.language,
-    },
-  };
+  const payload: LeadPayload = JSON.parse(
+    JSON.stringify({
+      type,
+      time: new Date().toISOString(),
+      url: window.location.href,
+      referrer: document.referrer || null,
+      device: {
+        ua: navigator.userAgent,
+        lang: navigator.language,
+      },
+    })
+  );
 
-  try {
-    const controller = new AbortController();
+  const success = await sendLead(payload);
 
-    const timeout = setTimeout(
-      () => controller.abort(),
-      10000
-    );
-
-    const res = await fetch("/api/leads", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
-      body: JSON.stringify(payload),
-    });
-
-    clearTimeout(timeout);
-
-    if (!res.ok) {
-      queueFailedLead(payload);
-      console.error("[LEAD ERROR]", res.status);
-    }
-  } catch (error) {
+  if (success) {
+    markLeadSent(type);
+  } else {
     queueFailedLead(payload);
-    console.error("[LEAD FAILED]", error);
   }
 }
