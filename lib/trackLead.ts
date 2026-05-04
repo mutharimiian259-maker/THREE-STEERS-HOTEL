@@ -1,4 +1,5 @@
-const LEAD_CACHE_KEY = "lead_last_sent";
+const LEAD_CACHE_PREFIX = "lead_last_sent_";
+const LEAD_QUEUE_KEY = "lead_retry_queue";
 
 type LeadType =
   | "room_view"
@@ -13,11 +14,16 @@ type LeadCache = {
   time: number;
 };
 
+function getCacheKey(type: LeadType) {
+  return `${LEAD_CACHE_PREFIX}${type}`;
+}
+
 function canSendLead(type: LeadType): boolean {
   if (typeof window === "undefined") return false;
 
   try {
-    const last = localStorage.getItem(LEAD_CACHE_KEY);
+    const key = getCacheKey(type);
+    const last = localStorage.getItem(key);
     const now = Date.now();
 
     if (last) {
@@ -25,41 +31,95 @@ function canSendLead(type: LeadType): boolean {
 
       if (
         parsed &&
-        typeof parsed.time === "number" &&
         parsed.type === type &&
-        now - parsed.time < 10000
+        now - parsed.time < 5000 // reduced but safer
       ) {
         return false;
       }
     }
 
     localStorage.setItem(
-      LEAD_CACHE_KEY,
+      key,
       JSON.stringify({ type, time: now })
     );
 
     return true;
   } catch {
-    return false;
+    return true; // fail open (avoid losing leads)
   }
+}
+
+function getRetryQueue(): any[] {
+  try {
+    const raw = localStorage.getItem(LEAD_QUEUE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRetryQueue(queue: any[]) {
+  try {
+    localStorage.setItem(
+      LEAD_QUEUE_KEY,
+      JSON.stringify(queue)
+    );
+  } catch {}
+}
+
+function queueFailedLead(payload: any) {
+  const queue = getRetryQueue();
+  queue.push(payload);
+  saveRetryQueue(queue);
+}
+
+async function flushQueue() {
+  const queue = getRetryQueue();
+  if (!queue.length) return;
+
+  const remaining: any[] = [];
+
+  for (const item of queue) {
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item),
+      });
+    } catch {
+      remaining.push(item);
+    }
+  }
+
+  saveRetryQueue(remaining);
 }
 
 export async function trackLead(type: LeadType) {
   if (typeof window === "undefined") return;
   if (!type) return;
+
+  await flushQueue();
+
   if (!canSendLead(type)) return;
 
-  try {
-    const payload = {
-      type,
-      time: new Date().toISOString(),
-      url: window.location.href,
-      referrer: document.referrer || null,
-      device: navigator.userAgent,
-    };
+  const payload = {
+    type,
+    time: new Date().toISOString(),
+    url: window.location.href,
+    referrer: document.referrer || null,
+    device: {
+      ua: navigator.userAgent,
+      lang: navigator.language,
+    },
+  };
 
+  try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const timeout = setTimeout(
+      () => controller.abort(),
+      10000
+    );
 
     const res = await fetch("/api/leads", {
       method: "POST",
@@ -71,9 +131,11 @@ export async function trackLead(type: LeadType) {
     clearTimeout(timeout);
 
     if (!res.ok) {
+      queueFailedLead(payload);
       console.error("[LEAD ERROR]", res.status);
     }
   } catch (error) {
+    queueFailedLead(payload);
     console.error("[LEAD FAILED]", error);
   }
 }
