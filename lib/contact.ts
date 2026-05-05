@@ -1,24 +1,25 @@
+
 export const INTENT = {
   NAVIGATION: "navigation",
   ENGAGEMENT: "engagement",
-  REVENUE: "revenue",
-  CONVERSION: "conversion",
+  ACTION: "action",
 } as const;
 
-export type Intent = typeof INTENT[keyof typeof INTENT];
+export type Intent =
+  typeof INTENT[keyof typeof INTENT];
 
 export const FUNNEL = {
   VISIT: "VISIT",
+  ENGAGEMENT: "ENGAGEMENT",
   INTENT: "INTENT",
   CONTACT: "CONTACT",
-  BOOKED: "BOOKED",
 } as const;
 
-export type FunnelStep = typeof FUNNEL[keyof typeof FUNNEL];
+export type FunnelStep =
+  typeof FUNNEL[keyof typeof FUNNEL];
 
 /**
- * EVENT ACTIONS (SINGLE SOURCE OF TRUTH)
- * Raw user interactions only
+ * EVENT ACTIONS (RAW USER BEHAVIOR ONLY)
  */
 export const EVENTS = {
   PAGE_VIEW: "page_view",
@@ -29,8 +30,7 @@ export const EVENTS = {
   EMAIL_CLICK: "email_click",
 
   BLOG_CLICK: "blog_click",
-
-  NAVIGATION: "navigation",
 } as const;
 
-export type EventType = typeof EVENTS[keyof typeof EVENTS];
+export type EventType =
+  typeof EVENTS[keyof typeof EVENTS];
