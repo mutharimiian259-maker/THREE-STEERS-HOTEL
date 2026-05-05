@@ -4,7 +4,13 @@ export type BlogPost = {
   title: string;
   excerpt: string;
   metaDescription: string;
-  keywords: string[];
+
+  /**
+   * 🔥 FIX: keep keywords as OPTIONAL hints only
+   * DO NOT treat as SEO authority source
+   */
+  keywords?: string[];
+
   content: string;
   author: string;
   publishedAt: string;
@@ -12,9 +18,15 @@ export type BlogPost = {
   category?: string;
   readingTime?: number;
 
-  // SEO + conversion layer
-  intent?: "engagement" | "revenue" | "conversion";
+  /**
+   * 🔥 FIX: content classification only (NOT system intent)
+   */
+  intent?: "content" | "conversion";
 
+  /**
+   * 🔥 FIX: CTA is UI trigger definition only
+   * actual tracking happens in UI layer
+   */
   cta?: {
     label: string;
     action: "whatsapp" | "rooms" | "conference";
@@ -57,11 +69,10 @@ Looking for a stay in Meru? Book directly for the best rates and availability.
     publishedAt: "2026-04-30",
 
     image: "/images/blog/accommodation/best-hotel-meru/hero.jpg",
-
     category: "Accommodation",
     readingTime: 3,
 
-    intent: "revenue",
+    intent: "conversion",
 
     cta: {
       label: "Book Your Stay via WhatsApp",
@@ -103,7 +114,6 @@ Planning a corporate event? Contact us for tailored packages.
     publishedAt: "2026-04-30",
 
     image: "/images/blog/conference/conference-venues-meru/hero.jpg",
-
     category: "Events",
     readingTime: 4,
 
