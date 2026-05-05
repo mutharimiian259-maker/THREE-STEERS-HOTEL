@@ -1,3 +1,5 @@
+"use client";
+
 import "@/styles/globals.css";
 import type { Metadata } from "next";
 import Navbar from "@/components/global/Navbar";
@@ -18,9 +20,6 @@ function getSafeUrl(): string {
 
 const siteUrl = getSafeUrl();
 
-/**
- * SERVER-SAFE METADATA
- */
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
@@ -30,7 +29,6 @@ export const metadata: Metadata = {
   },
 
   description: HOTEL.seo.defaultDescription,
-
   keywords: HOTEL.seo.keywords,
 
   openGraph: {
@@ -55,9 +53,6 @@ export const metadata: Metadata = {
   },
 };
 
-/**
- * STATIC SCHEMA (SAFE)
- */
 const schemaData = {
   "@context": "https://schema.org",
   "@type": "Hotel",
@@ -99,15 +94,13 @@ export default function RootLayout({
 
         <Navbar />
 
-        <main className="min-h-screen">
-          {children}
-        </main>
+        <main className="min-h-screen">{children}</main>
 
         <StickyCTA />
         <ExitIntentModal />
         <Footer />
 
-        {/* GOOGLE ANALYTICS */}
+        {/* GOOGLE ANALYTICS (FIXED) */}
         {safeGaId && (
           <>
             <Script
@@ -123,8 +116,10 @@ export default function RootLayout({
 
                 try {
                   gtag('js', new Date());
+
+                  // IMPORTANT: prevent duplicate page_view tracking
                   gtag('config', '${safeGaId}', {
-                    send_page_view: true
+                    send_page_view: false
                   });
                 } catch (e) {}
               `}
@@ -141,7 +136,6 @@ export default function RootLayout({
             __html: JSON.stringify(schemaData),
           }}
         />
-
       </body>
     </html>
   );
