@@ -1,9 +1,9 @@
+
 "use client";
 
 import Image from "next/image";
 import { HOTEL } from "@/lib/config";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { trackLead } from "@/lib/analytics/trackLead";
+import { track } from "@/lib/core/analytics";
 import { IMAGES } from "@/lib/images";
 import { useMemo, useCallback, useEffect } from "react";
 
@@ -31,9 +31,9 @@ export default function RoomCard({ room }: { room: Room }) {
 
   const message = useMemo(() => {
     return encodeURIComponent(
-      `Hello, I would like to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability, prices, and dates.`
+      `Hello, I would like to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability and pricing.`
     );
-  }, [room.name, HOTEL.identity.name]);
+  }, [room.name]);
 
   const price =
     typeof room.price === "number" && room.currency
@@ -43,46 +43,42 @@ export default function RoomCard({ room }: { room: Room }) {
   const roomImage = getRoomImage(room.slug);
 
   const urgencyText =
-    room.price && room.price >= 12000
-      ? "Popular choice — limited premium availability"
-      : "High demand — book early to secure this room";
+    room.price
+      ? "High demand — book early to secure this room"
+      : "Limited availability";
 
   /* ---------------- TRACKING ---------------- */
 
   useEffect(() => {
-    trackEvent("room_view", {
+    track("room_view", {
       room: room.name,
       source: "room_card",
     });
   }, [room.name]);
 
-  /* ---------------- HANDLERS ---------------- */
+  /* ---------------- HANDLER ---------------- */
 
   const handleWhatsAppClick = useCallback(() => {
-    trackEvent("whatsapp_click", {
+    track("whatsapp_click", {
       room: room.name,
       source: "room_card",
     });
 
-    trackLead("whatsapp_click");
+    const url = `https://wa.me/${whatsappNumber}?text=${message}`;
 
-    // slight delay to avoid navigation loss
-    setTimeout(() => {
-      window.location.href = `https://wa.me/${whatsappNumber}?text=${message}`;
-    }, 120);
+    // ensure tracking is flushed before navigation
+    window.location.href = url;
   }, [room.name, whatsappNumber, message]);
 
   return (
     <div className="card relative overflow-hidden bg-white">
 
-      {/* TAG */}
       {room.tag && (
         <span className="absolute top-3 right-3 bg-yellow-500 text-black text-xs px-2 py-1 rounded z-10">
           {room.tag}
         </span>
       )}
 
-      {/* IMAGE */}
       <div className="relative w-full h-48">
         <Image
           src={roomImage}
@@ -92,7 +88,6 @@ export default function RoomCard({ room }: { room: Room }) {
         />
       </div>
 
-      {/* CONTENT */}
       <div className="p-4">
 
         <h3 className="text-lg font-bold text-gray-900">
@@ -107,17 +102,13 @@ export default function RoomCard({ room }: { room: Room }) {
           {price} / night
         </p>
 
-        <p className="text-xs text-gray-400 mt-1">
-          Includes comfort, privacy & premium hotel service
-        </p>
-
         <p className="text-xs text-red-500 mt-1">
           {urgencyText}
         </p>
 
         <button
           onClick={handleWhatsAppClick}
-          className="btn btn-green block mt-4 text-center font-semibold w-full"
+          className="btn btn-green block mt-4 w-full font-semibold"
         >
           Book This Room via WhatsApp
         </button>
@@ -128,27 +119,27 @@ export default function RoomCard({ room }: { room: Room }) {
 }
 
 /**
- * PURE mapping function (unchanged)
+ * PURE mapping function
  */
 function getRoomImage(slug?: string) {
   switch (slug) {
     case "deluxe-room":
-      return IMAGES.rooms.batian.deluxeTwin;
+      return IMAGES.rooms.batianWing.deluxeTwin;
 
     case "executive-suite":
-      return IMAGES.rooms.batian.executiveSuite;
+      return IMAGES.rooms.batianWing.executiveSuite;
 
     case "honeymoon":
-      return IMAGES.rooms.batian.honeymoon;
+      return IMAGES.rooms.batianWing.honeymoon;
 
     case "standard-single":
-      return IMAGES.rooms.lenana.standardSingle;
+      return IMAGES.rooms.lenanaWing.standardSingle;
 
     case "standard-double":
-      return IMAGES.rooms.lenana.standardDouble;
+      return IMAGES.rooms.lenanaWing.standardDouble;
 
     case "family-room":
-      return IMAGES.rooms.lenana.familyRoom;
+      return IMAGES.rooms.lenanaWing.familyRoom;
 
     default:
       return IMAGES.hotel.exteriorHero;
