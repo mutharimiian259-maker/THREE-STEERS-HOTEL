@@ -1,4 +1,3 @@
-
 export const INTENT = {
   NAVIGATION: "navigation",
   ENGAGEMENT: "engagement",
@@ -19,7 +18,7 @@ export type FunnelStep =
   typeof FUNNEL[keyof typeof FUNNEL];
 
 /**
- * EVENT ACTIONS (RAW USER BEHAVIOR ONLY)
+ * RAW USER BEHAVIOR EVENTS (analytics input layer)
  */
 export const EVENTS = {
   PAGE_VIEW: "page_view",
@@ -30,6 +29,17 @@ export const EVENTS = {
   EMAIL_CLICK: "email_click",
 
   BLOG_CLICK: "blog_click",
+
+  /**
+   * 🔥 FIX: missing conversion trigger event
+   * This is what connects UI → INTENT funnel stage
+   */
+  BOOKING_INTENT: "booking_intent",
+
+  /**
+   * 🔥 FIX: structural navigation tracking (used in routes)
+   */
+  NAVIGATION_CLICK: "navigation_click",
 } as const;
 
 export type EventType =
