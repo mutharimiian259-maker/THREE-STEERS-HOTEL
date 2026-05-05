@@ -1,3 +1,4 @@
+
 export const IMAGES = {
   hotel: {
     exteriorHero: "/images/hotel/exterior-hero.jpg",
@@ -37,7 +38,20 @@ export const IMAGES = {
 /**
  * 🔥 SAFE IMAGE ACCESS HELPER
  */
-export function getImage(path: string, fallback = "/images/hotel/exterior-hero.jpg") {
+export function getImage(
+  path: string,
+  fallback = "/images/hotel/exterior-hero.jpg"
+) {
   if (!path) return fallback;
+
+  // basic safety check (dev visibility only)
+  if (
+    process.env.NODE_ENV === "development" &&
+    typeof path === "string" &&
+    !path.startsWith("/")
+  ) {
+    console.warn("[IMAGE] Unexpected path format:", path);
+  }
+
   return path;
 }
