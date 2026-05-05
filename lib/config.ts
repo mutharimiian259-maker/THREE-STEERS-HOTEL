@@ -1,4 +1,3 @@
-
 export const HOTEL = {
   identity: {
     name: "Three Steers Hotel Meru",
@@ -23,6 +22,7 @@ export const HOTEL = {
     region: "Meru County",
     country: "Kenya",
     full: "Meru, Kenya",
+    timezone: "Africa/Nairobi", // 🔥 FIX: important for analytics + booking flows
     coordinates: {
       lat: -0.046,
       lng: 37.65,
@@ -33,6 +33,11 @@ export const HOTEL = {
     defaultTitle: "Three Steers Hotel Meru | Luxury Hotel in Kenya",
     defaultDescription:
       "Luxury hotel in Meru, Kenya offering accommodation, dining, conferences, and events near Mount Kenya. Book direct for best rates.",
+
+    /**
+     * GLOBAL SEO KEYWORDS ONLY (STATIC BRAND LAYER)
+     * Do NOT use for page-level ranking logic
+     */
     keywords: [
       "hotel in Meru Kenya",
       "Three Steers Hotel",
@@ -55,11 +60,17 @@ export const HOTEL = {
     checkIn: "12:00",
     checkOut: "10:00",
     starRating: 4,
+
+    // 🔥 FIX: future extensibility hook (important for booking engine later)
+    policies: {
+      cancellation: "24h flexible",
+      lateCheckout: "subject to availability",
+    },
   },
 } as const;
 
 /* --------------------------------------------------
-   🔥 PURE SAFE HELPERS (NO BUSINESS LOGIC INSIDE CONFIG)
+   PURE HELPERS (NO BUSINESS LOGIC SIDE EFFECTS)
 -------------------------------------------------- */
 
 export function getCleanPhone(phone: string): string {
