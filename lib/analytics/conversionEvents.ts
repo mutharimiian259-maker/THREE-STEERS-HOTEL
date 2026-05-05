@@ -11,8 +11,8 @@ function warn(message: string) {
 }
 
 /**
- * 🔥 PURE DOMAIN EVENT LAYER
- * Expresses business intent clearly
+ * PURE DOMAIN ACTION LAYER
+ * Only describes what user DID — NOT what it means
  */
 export const FunnelEvents = {
   viewRoom(room: string, source = "unknown") {
@@ -24,7 +24,6 @@ export const FunnelEvents = {
     track("room_view", {
       room: room.trim(),
       source,
-      context: "room_interest",
     });
   },
 
@@ -35,17 +34,16 @@ export const FunnelEvents = {
     }
 
     /**
-     * We reuse page_view but make intent explicit and structured
-     * so downstream systems can interpret it correctly
+     * FIX:
+     * DO NOT encode funnel meaning in payload
+     * Core funnel engine determines intent state
      */
     track("page_view", {
       source: source.trim(),
-      context: "booking_intent",
-      intent: "high",
     });
   },
 
-  whatsappClick(source: string, context = "unknown") {
+  whatsappClick(source: string) {
     if (!isValid(source)) {
       warn("Invalid source in whatsappClick()");
       return;
@@ -53,12 +51,10 @@ export const FunnelEvents = {
 
     track("whatsapp_click", {
       source: source.trim(),
-      context,
-      intent: "conversion",
     });
   },
 
-  callClick(source: string, context = "unknown") {
+  callClick(source: string) {
     if (!isValid(source)) {
       warn("Invalid source in callClick()");
       return;
@@ -66,8 +62,6 @@ export const FunnelEvents = {
 
     track("call_click", {
       source: source.trim(),
-      context,
-      intent: "conversion",
     });
   },
-};
+} as const;
