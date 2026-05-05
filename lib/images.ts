@@ -1,4 +1,3 @@
-
 export const IMAGES = {
   hotel: {
     exteriorHero: "/images/hotel/exterior-hero.jpg",
@@ -16,9 +15,12 @@ export const IMAGES = {
     },
 
     lenanaWing: {
-      standardSingle: "/images/rooms/lenana-wing/standard-single/hero.jpg",
-      standardDouble: "/images/rooms/lenana-wing/standard-double/hero.jpg",
-      familyRoom: "/images/rooms/lenana-wing/family-room/hero.jpg",
+      standardSingle:
+        "/images/rooms/lenana-wing/standard-single/hero.jpg",
+      standardDouble:
+        "/images/rooms/lenana-wing/standard-double/hero.jpg",
+      familyRoom:
+        "/images/rooms/lenana-wing/family-room/hero.jpg",
     },
   },
 
@@ -35,23 +37,33 @@ export const IMAGES = {
   },
 } as const;
 
-/**
- * 🔥 SAFE IMAGE ACCESS HELPER
- */
+/* --------------------------------------------------
+   🔥 SAFE IMAGE RESOLVER (HARDENED)
+-------------------------------------------------- */
+
 export function getImage(
-  path: string,
+  path?: string,
   fallback = "/images/hotel/exterior-hero.jpg"
-) {
+): string {
   if (!path) return fallback;
 
-  // basic safety check (dev visibility only)
-  if (
-    process.env.NODE_ENV === "development" &&
-    typeof path === "string" &&
-    !path.startsWith("/")
-  ) {
-    console.warn("[IMAGE] Unexpected path format:", path);
-  }
+  try {
+    // absolute URL
+    if (path.startsWith("http")) {
+      return new URL(path).toString();
+    }
 
-  return path;
+    // valid internal path
+    if (path.startsWith("/")) {
+      return path;
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[IMAGE] Invalid image path:", path);
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
 }
