@@ -1,16 +1,15 @@
-
 export type Route = {
   name: string;
   path: string;
 
   /**
-   * page = full route (/rooms)
-   * section = hash scroll section (#dining)
+   * page = full page navigation (/rooms)
+   * section = in-page anchor scroll (#dining)
    */
   type: "page" | "section";
 
   /**
-   * UI classification ONLY (NOT funnel state)
+   * UI hint ONLY (DOES NOT affect funnel or analytics)
    */
   intent: "navigation" | "engagement" | "action";
 };
@@ -30,53 +29,55 @@ export const routes: Route[] = [
   },
   {
     name: "Dining",
-    path: "/#dining",
+    path: "#dining",
     type: "section",
     intent: "engagement",
   },
   {
     name: "Conference",
-    path: "/#conference",
+    path: "#conference",
     type: "section",
     intent: "action",
   },
   {
     name: "Experiences",
-    path: "/#experiences",
+    path: "#experiences",
     type: "section",
     intent: "engagement",
   },
   {
     name: "Book Stay",
-    path: "/#booking",
+    path: "#booking",
     type: "section",
     intent: "action",
   },
 ];
 
+/**
+ * Normalize ONLY pathname (no URL parsing)
+ */
 function normalizePath(path: string): string {
-  if (typeof window === "undefined") return path || "/";
+  return path.replace(/\/+$/, "") || "/";
+}
 
-  try {
-    const url = new URL(path, window.location.origin);
-
-    const normalizedPath =
-      url.pathname.replace(/\/+$/, "") || "/";
-
-    return url.hash
-      ? `${normalizedPath}${url.hash}`
-      : normalizedPath;
-  } catch {
-    return path.replace(/\/+$/, "") || "/";
-  }
+/**
+ * Extract base + hash separately (safe + deterministic)
+ */
+function splitPath(path: string): { base: string; hash?: string } {
+  const [base, hash] = path.split("#");
+  return {
+    base: normalizePath(base || "/"),
+    hash: hash ? `#${hash}` : undefined,
+  };
 }
 
 export function getRoute(path: string): Route | undefined {
-  const target = normalizePath(path);
+  const { base, hash } = splitPath(path);
 
   return routes.find((r) => {
-    const normalized = normalizePath(r.path);
-    return normalized === target;
+    const { base: rBase, hash: rHash } = splitPath(r.path);
+
+    return rBase === base && rHash === hash;
   });
 }
 
@@ -97,12 +98,12 @@ if (process.env.NODE_ENV === "development") {
   const seen = new Set<string>();
 
   for (const route of routes) {
-    const normalized = route.path;
+    const key = route.path;
 
-    if (seen.has(normalized)) {
+    if (seen.has(key)) {
       console.warn("[ROUTE DUPLICATE DETECTED]", route.path);
     }
 
-    seen.add(normalized);
+    seen.add(key);
   }
 }
