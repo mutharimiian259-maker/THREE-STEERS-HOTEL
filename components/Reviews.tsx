@@ -1,6 +1,12 @@
+
 import { HOTEL } from "@/lib/config";
 
-type SeoIntent = "home" | "room" | "blog" | "conference" | "dining";
+type SeoIntent =
+  | "home"
+  | "room"
+  | "blog"
+  | "conference"
+  | "dining";
 
 type SeoProps = {
   title?: string;
@@ -13,7 +19,11 @@ type SeoProps = {
 
 function joinUrl(base: string, path: string = ""): string {
   const cleanBase = base.replace(/\/$/, "");
-  const cleanPath = path ? (path.startsWith("/") ? path : `/${path}`) : "";
+  const cleanPath = path
+    ? path.startsWith("/")
+      ? path
+      : `/${path}`
+    : "";
   return `${cleanBase}${cleanPath}`;
 }
 
@@ -48,7 +58,7 @@ function getIntentKeywords(intent?: SeoIntent): string[] {
       ];
 
     default:
-      return HOTEL.seo.keywords;
+      return [];
   }
 }
 
@@ -57,10 +67,15 @@ function dedupe(arr: string[]) {
 }
 
 function validateImage(image?: string): string {
-  if (typeof image !== "string" || image.trim().length === 0) {
-    return "/images/hotel/og/default.jpg";
+  const fallback = "/images/hotel/og/default.jpg";
+
+  if (typeof image !== "string" || !image.trim()) {
+    return fallback;
   }
-  return image;
+
+  return image.startsWith("/") || image.startsWith("http")
+    ? image
+    : fallback;
 }
 
 export function generateSEO({
@@ -88,8 +103,9 @@ export function generateSEO({
     : joinUrl(baseUrl, safeImage);
 
   const finalKeywords = dedupe([
-    ...getIntentKeywords(intent),
-    ...keywords,
+    ...HOTEL.seo.keywords, // brand keywords
+    ...getIntentKeywords(intent), // intent keywords
+    ...keywords, // page-specific keywords
   ]);
 
   return {
