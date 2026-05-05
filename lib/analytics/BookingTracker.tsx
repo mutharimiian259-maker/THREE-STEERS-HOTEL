@@ -11,8 +11,8 @@ function warn(message: string) {
 }
 
 /**
- * 🔥 PURE SEMANTIC DOMAIN LAYER
- * ONLY expresses intent → NEVER handles analytics logic
+ * PURE UI EVENT LAYER
+ * ONLY sends raw user actions (NO funnel meaning)
  */
 export const FunnelEvents = {
   viewRoom(room: string, source = "unknown") {
@@ -24,28 +24,25 @@ export const FunnelEvents = {
     track("room_view", {
       room: room.trim(),
       source,
-      context: "room_interest",
     });
   },
 
-  startIntent(source: string, context = "unknown") {
+  startIntent(source: string) {
     if (!isValid(source)) {
       warn("Invalid source in startIntent()");
       return;
     }
 
     /**
-     * Maintain system constraint (no new event types)
-     * but structure intent clearly for downstream interpretation
+     * FIX: keep event semantically pure
+     * INTENT is derived in CORE funnel engine, not UI
      */
     track("page_view", {
       source: source.trim(),
-      context,
-      intent: "booking",
     });
   },
 
-  whatsappClick(source: string, context = "unknown") {
+  whatsappClick(source: string) {
     if (!isValid(source)) {
       warn("Invalid source in whatsappClick()");
       return;
@@ -53,12 +50,10 @@ export const FunnelEvents = {
 
     track("whatsapp_click", {
       source: source.trim(),
-      context,
-      intent: "conversion",
     });
   },
 
-  callClick(source: string, context = "unknown") {
+  callClick(source: string) {
     if (!isValid(source)) {
       warn("Invalid source in callClick()");
       return;
@@ -66,8 +61,6 @@ export const FunnelEvents = {
 
     track("call_click", {
       source: source.trim(),
-      context,
-      intent: "conversion",
     });
   },
 } as const;
