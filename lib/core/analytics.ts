@@ -1,5 +1,3 @@
-// /lib/core/analytics.ts
-
 export type EventType =
   | "page_view"
   | "room_view"
@@ -15,7 +13,7 @@ export type StoredEvent = {
   time: string;
   ts: number;
   url: string;
-  source?: "core" | "ui";
+  source?: "core";
 };
 
 export const APP_EVENT = "app:event";
@@ -27,12 +25,12 @@ const MAX_PAYLOAD_SIZE = 2000;
 
 let cache: StoredEvent[] | null = null;
 
-const VALID_TYPES: EventType[] = [
+const VALID_TYPES = new Set<EventType>([
   "page_view",
   "room_view",
   "whatsapp_click",
   "call_click",
-];
+]);
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -41,7 +39,7 @@ function generateId(): string {
 function isValidEvent(e: any): e is StoredEvent {
   return (
     e &&
-    VALID_TYPES.includes(e.type) &&
+    VALID_TYPES.has(e.type) &&
     typeof e.id === "string" &&
     typeof e.time === "string" &&
     typeof e.ts === "number" &&
@@ -66,15 +64,12 @@ function syncCache() {
 
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (e) => {
-    if (e.key === STORAGE_KEY) {
-      syncCache();
-    }
+    if (e.key === STORAGE_KEY) syncCache();
   });
 }
 
 function safeGet(): StoredEvent[] {
   if (typeof window === "undefined") return [];
-
   if (!cache) syncCache();
   return cache!;
 }
@@ -82,24 +77,18 @@ function safeGet(): StoredEvent[] {
 function safeSet(events: StoredEvent[]) {
   if (typeof window === "undefined") return;
 
-  const trimmed = events.slice(-MAX_EVENTS);
-  cache = trimmed;
+  cache = events.slice(-MAX_EVENTS);
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
   } catch (err) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[TRACK] localStorage write failed", err);
-    }
+    console.error("[TRACK] localStorage write failed", err);
   }
 }
 
 function isDuplicate(events: StoredEvent[], next: StoredEvent) {
-  const recent = events.slice(-10).reverse();
-
-  return recent.some((e) => {
-    const timeDiff = next.ts - e.ts;
-    if (timeDiff > DEDUP_WINDOW_MS) return false;
+  return events.slice(-10).reverse().some((e) => {
+    if (next.ts - e.ts > DEDUP_WINDOW_MS) return false;
 
     return (
       e.type === next.type &&
@@ -111,12 +100,9 @@ function isDuplicate(events: StoredEvent[], next: StoredEvent) {
 
 function sanitizePayload(payload: EventPayload): EventPayload {
   try {
-    const json = JSON.stringify(payload);
-
-    if (json.length > MAX_PAYLOAD_SIZE) {
+    if (JSON.stringify(payload).length > MAX_PAYLOAD_SIZE) {
       return { ...payload, __truncated: true };
     }
-
     return payload;
   } catch {
     return {};
@@ -124,18 +110,15 @@ function sanitizePayload(payload: EventPayload): EventPayload {
 }
 
 /**
- * Optional hook for funnel engine validation
+ * Funnel hook (safe extension point)
  */
 export let onEventIntercept:
   | ((event: StoredEvent) => void)
   | undefined;
 
-export function track(
-  type: EventType,
-  payload: EventPayload = {}
-): void {
+export function track(type: EventType, payload: EventPayload = {}): void {
   if (typeof window === "undefined") return;
-  if (!VALID_TYPES.includes(type)) return;
+  if (!VALID_TYPES.has(type)) return;
 
   const now = Date.now();
 
@@ -153,7 +136,6 @@ export function track(
 
   if (isDuplicate(events, event)) return;
 
-  // funnel hook (non-blocking)
   try {
     onEventIntercept?.(event);
   } catch {}
@@ -161,32 +143,26 @@ export function track(
   events.push(event);
   safeSet(events);
 
-  const w = window as Window & {
-    gtag?: (
-      command: string,
-      event: string,
-      params?: Record<string, unknown>
-    ) => void;
+  // GA isolation layer (prevents payload pollution)
+  const gtagPayload: Record<string, unknown> = {
+    event_category: "engagement",
+    event_label: type,
+    page_location: event.url,
+    ...event.payload,
   };
-
-  if (typeof w.gtag === "function") {
-    try {
-      w.gtag("event", type, {
-        event_category: "engagement",
-        event_label: type,
-        ...event.payload,
-        page_location: event.url,
-      });
-    } catch {}
-  }
 
   try {
     window.dispatchEvent(
-      new CustomEvent<StoredEvent>(APP_EVENT, {
-        detail: event,
-      })
+      new CustomEvent(APP_EVENT, { detail: event })
     );
   } catch {}
+
+  const w = window as any;
+  if (typeof w.gtag === "function") {
+    try {
+      w.gtag("event", type, gtagPayload);
+    } catch {}
+  }
 
   if (process.env.NODE_ENV === "development") {
     console.log("[TRACK]", event);
