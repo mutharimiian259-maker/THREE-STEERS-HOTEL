@@ -15,28 +15,35 @@ export default function AnalyticsProvider({
   children: React.ReactNode;
 }) {
   const lastKeyRef = useRef<string | null>(null);
+  const lastFireTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!isValid(pageName)) return;
 
-    const normalizedName = pageName.trim();
-    const url = window.location.pathname + window.location.search + window.location.hash;
+    const now = Date.now();
 
-    // unique key per page instance
+    const normalizedName = pageName.trim();
+    const url = window.location.pathname + window.location.search;
+
     const key = `${normalizedName}::${url}`;
 
-    // prevent duplicate firing for same exact page state
-    if (lastKeyRef.current === key) return;
+    // stronger dedup (prevents SPA edge duplicates)
+    if (
+      lastKeyRef.current === key &&
+      now - lastFireTimeRef.current < 1500
+    ) {
+      return;
+    }
 
     lastKeyRef.current = key;
+    lastFireTimeRef.current = now;
 
     track("page_view", {
       page_name: normalizedName,
       path: window.location.pathname,
       url,
-      context: "navigation",
-      intent: "navigation",
+      source: "navigation",
     });
 
     if (process.env.NODE_ENV === "development") {
