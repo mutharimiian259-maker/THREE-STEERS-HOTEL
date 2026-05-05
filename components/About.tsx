@@ -1,9 +1,9 @@
+
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { trackLead } from "@/lib/analytics/trackLead";
+import { track } from "@/lib/core/analytics";
 import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 
@@ -12,7 +12,9 @@ function sanitizePhone(phone: string) {
 }
 
 export default function About() {
-  const whatsappNumber = sanitizePhone(HOTEL.contact.phone.whatsapp);
+  const whatsappNumber = sanitizePhone(
+    HOTEL.contact.phone.whatsapp
+  );
 
   const whatsappMessage = encodeURIComponent(
     "Hello, I would like to know more about Three Steers Hotel and make a booking."
@@ -21,16 +23,14 @@ export default function About() {
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   const handleWhatsAppClick = () => {
-    trackEvent("whatsapp_click", {
+    track("whatsapp_click", {
       source: "about_section",
       context: "about_page",
     });
-
-    trackLead("whatsapp_click");
   };
 
-  const handleNavEvent = (eventType: string, source: string) => {
-    trackEvent(eventType, {
+  const handleNavEvent = (source: string) => {
+    track("page_view", {
       source,
       context: "about_page",
     });
@@ -44,11 +44,11 @@ export default function About() {
         About {HOTEL.identity.name} – {HOTEL.location.city}, Kenya
       </h2>
 
-      {/* HERO TRUST IMAGE */}
+      {/* HERO IMAGE */}
       <div className="relative h-64 mt-4 rounded-lg overflow-hidden">
         <Image
           src={IMAGES.hotel.lobby}
-          alt="Three Steers Hotel Lobby"
+          alt="Hotel Lobby"
           fill
           className="object-cover"
         />
@@ -59,21 +59,20 @@ export default function About() {
       <p className="text-gray-300 mt-4 leading-relaxed">
         {HOTEL.identity.name} is a leading hotel in {HOTEL.location.city}, Kenya,
         offering premium accommodation, modern conference facilities,
-        and exceptional hospitality near the Mt Kenya region.
+        and exceptional hospitality near Mt Kenya.
       </p>
 
-      {/* ACCOMMODATION */}
+      {/* ROOMS */}
       <h3 className="text-lg font-semibold text-yellow-400 mt-4">
         Accommodation Experience
       </h3>
 
       <p className="text-gray-400 mt-2 leading-relaxed">
-        We feature 11 unique room categories designed for business travelers,
-        tourists, families, and groups seeking comfort, security, and convenience
-        in {HOTEL.location.city}.
+        We feature multiple room categories designed for comfort, business,
+        and leisure travelers in {HOTEL.location.city}.
       </p>
 
-      {/* FACILITIES VISUAL PROOF */}
+      {/* FACILITIES IMAGE */}
       <div className="relative h-56 mt-4 rounded-lg overflow-hidden">
         <Image
           src={IMAGES.hotel.garden}
@@ -90,8 +89,7 @@ export default function About() {
       </h3>
 
       <p className="text-gray-400 mt-2">
-        Guests enjoy restaurants, conference halls, fitness facilities, landscaped gardens,
-        ample parking, and premium hospitality services for both short and long stays.
+        Restaurants, conference halls, gardens, parking, and premium hospitality services.
       </p>
 
       {/* NAVIGATION */}
@@ -100,9 +98,7 @@ export default function About() {
         <Link
           href="/rooms"
           className="text-yellow-500 underline"
-          onClick={() =>
-            handleNavEvent("navigation", "about_rooms")
-          }
+          onClick={() => handleNavEvent("about_rooms")}
         >
           View Rooms
         </Link>
@@ -110,18 +106,15 @@ export default function About() {
         <Link
           href="/#dining"
           className="text-yellow-500 underline"
-          onClick={() =>
-            handleNavEvent("navigation", "about_dining_section")
-          }
+          onClick={() => handleNavEvent("about_dining")}
         >
           Explore Dining
         </Link>
 
       </div>
 
-      {/* WHATSAPP CTA */}
+      {/* CTA */}
       <div className="mt-6">
-
         <a
           href={whatsappLink}
           className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg"
@@ -129,7 +122,6 @@ export default function About() {
         >
           Talk to Reservations
         </a>
-
       </div>
 
     </section>
