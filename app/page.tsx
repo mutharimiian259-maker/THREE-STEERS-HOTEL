@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -13,11 +14,9 @@ import Link from "next/link";
 import rooms from "@/data/rooms";
 import { HOTEL } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
-import { trackLead } from "@/lib/core/trackLead";
 
 export default function Home() {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
-
   const roomViewTrackedRef = useRef(false);
 
   /* ---------------- INITIAL VISIT ---------------- */
@@ -28,7 +27,7 @@ export default function Home() {
     });
   }, []);
 
-  /* ---------------- ROOM VIEW (SAFE + CONTEXTUAL) ---------------- */
+  /* ---------------- ROOM VIEW ---------------- */
   const handleRoomView = () => {
     if (roomViewTrackedRef.current) return;
     roomViewTrackedRef.current = true;
@@ -41,6 +40,7 @@ export default function Home() {
 
   return (
     <main>
+
       {/* HERO */}
       <section id="home">
         <Hero />
@@ -57,10 +57,9 @@ export default function Home() {
             href="/rooms"
             className="text-sm text-yellow-500 underline"
             onClick={() =>
-              track("navigation", {
-                from: "home",
-                to: "rooms",
-                intent: "revenue",
+              track("page_view", {
+                source: "home_rooms_link",
+                context: "navigation",
               })
             }
           >
@@ -68,7 +67,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mt-4" onFocus={handleRoomView}>
+        <div className="grid md:grid-cols-3 gap-4 mt-4">
           {safeRooms.slice(0, 3).map((room: any, index: number) => (
             <RoomCard key={room?.id ?? index} room={room} />
           ))}
@@ -105,10 +104,6 @@ export default function Home() {
           {HOTEL.identity.name} is a premier hotel in {HOTEL.location.city},
           offering premium accommodation, dining, conferences, and hospitality services.
         </p>
-
-        <p className="text-gray-400 mt-2">
-          Located in {HOTEL.location.full}, we provide comfort, security, and world-class service.
-        </p>
       </section>
 
       {/* REVIEWS */}
@@ -123,6 +118,7 @@ export default function Home() {
 
       {/* BOOKING CTA */}
       <section id="booking" className="text-center p-10 bg-zinc-900">
+
         <h2 className="text-3xl font-bold text-yellow-500">
           Book Your Stay at {HOTEL.identity.name}
         </h2>
@@ -138,14 +134,12 @@ export default function Home() {
               "Hello, I want to book a room at " + HOTEL.identity.name
             )}`}
             className="px-6 py-3 bg-green-600 text-white rounded-lg"
-            onClick={() => {
+            onClick={() =>
               track("whatsapp_click", {
                 source: "homepage_cta",
                 page: "home",
-              });
-
-              trackLead("whatsapp_click");
-            }}
+              })
+            }
           >
             💬 WhatsApp Booking
           </a>
@@ -153,20 +147,19 @@ export default function Home() {
           <a
             href={`tel:${HOTEL.contact.phone.primary}`}
             className="px-6 py-3 bg-yellow-500 text-black rounded-lg"
-            onClick={() => {
+            onClick={() =>
               track("call_click", {
                 source: "homepage_cta",
                 page: "home",
-              });
-
-              trackLead("call_click");
-            }}
+              })
+            }
           >
             📞 Call Now
           </a>
 
         </div>
       </section>
+
     </main>
   );
 }
