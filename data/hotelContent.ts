@@ -17,34 +17,34 @@ export const hotelContent = {
   },
 
   navigation: [
-    { name: "Home", path: "/", type: "navigation" },
+    { name: "Home", path: "/", ui: "navigation" },
 
-    { name: "Rooms & Suites", path: "/rooms", type: "revenue" },
+    { name: "Rooms & Suites", path: "/rooms", ui: "primary" },
 
-    { name: "Food & Drinks", path: "/#dining", type: "engagement" },
+    { name: "Food & Drinks", path: "/#dining", ui: "secondary" },
 
     {
       name: "Conferencing & Banqueting",
       path: "/#conference",
-      type: "revenue",
+      ui: "primary",
     },
 
     {
       name: "Fun Experiences",
       path: "/#experiences",
-      type: "engagement",
+      ui: "secondary",
     },
 
     {
       name: "Blogs",
       path: "/blog",
-      type: "engagement",
+      ui: "secondary",
     },
 
     {
       name: "Contact Us",
       path: "/#booking",
-      type: "conversion",
+      ui: "conversion",
     },
   ],
 
@@ -53,14 +53,12 @@ export const hotelContent = {
       title: "Accommodation Categories",
       description:
         "Multiple room categories designed for business and leisure travelers.",
-      priority: "high",
     },
 
     dining: {
       title: "Food & Drinks",
       description:
         "Premium dining experiences crafted by expert chefs.",
-      priority: "medium",
     },
 
     conferences: {
@@ -68,7 +66,6 @@ export const hotelContent = {
       description:
         "Professional event spaces for corporate and private functions.",
       capacity: "10 to 300 guests",
-      priority: "high",
     },
 
     experiences: {
@@ -83,13 +80,9 @@ export const hotelContent = {
         "Ngare Ndare Forest Reserve",
       ],
 
-      culture: [
-        "Meru Museum",
-      ],
+      culture: ["Meru Museum"],
 
-      leisure: [
-        "Swimming Pool",
-      ],
+      leisure: ["Swimming Pool"],
     },
   },
 
