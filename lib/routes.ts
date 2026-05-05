@@ -3,68 +3,69 @@ export type Route = {
   path: string;
 
   /**
-   * page = full page navigation (/rooms)
-   * section = in-page anchor scroll (#dining)
+   * navigation = full route (/rooms)
+   * anchor = in-page section (#dining)
    */
-  type: "page" | "section";
+  type: "navigation" | "anchor";
 
   /**
-   * UI hint ONLY (DOES NOT affect funnel or analytics)
+   * UI metadata ONLY (DO NOT use for funnel or analytics)
    */
-  intent: "navigation" | "engagement" | "action";
+  uiHint: "navigation" | "engagement" | "action";
 };
 
 export const routes: Route[] = [
   {
     name: "Home",
     path: "/",
-    type: "page",
-    intent: "navigation",
+    type: "navigation",
+    uiHint: "navigation",
   },
   {
     name: "Rooms",
     path: "/rooms",
-    type: "page",
-    intent: "action",
+    type: "navigation",
+    uiHint: "action",
   },
   {
     name: "Dining",
     path: "#dining",
-    type: "section",
-    intent: "engagement",
+    type: "anchor",
+    uiHint: "engagement",
   },
   {
     name: "Conference",
     path: "#conference",
-    type: "section",
-    intent: "action",
+    type: "anchor",
+    uiHint: "action",
   },
   {
     name: "Experiences",
     path: "#experiences",
-    type: "section",
-    intent: "engagement",
+    type: "anchor",
+    uiHint: "engagement",
   },
   {
     name: "Book Stay",
     path: "#booking",
-    type: "section",
-    intent: "action",
+    type: "anchor",
+    uiHint: "action",
   },
 ];
 
 /**
- * Normalize ONLY pathname (no URL parsing)
+ * Normalize only base path
  */
 function normalizePath(path: string): string {
   return path.replace(/\/+$/, "") || "/";
 }
 
 /**
- * Extract base + hash separately (safe + deterministic)
+ * Split path safely (no URL parsing dependency)
  */
 function splitPath(path: string): { base: string; hash?: string } {
   const [base, hash] = path.split("#");
+
   return {
     base: normalizePath(base || "/"),
     hash: hash ? `#${hash}` : undefined,
@@ -81,14 +82,14 @@ export function getRoute(path: string): Route | undefined {
   });
 }
 
-export function getRoutesByIntent(
-  intent: Route["intent"]
+export function getRoutesByUiHint(
+  uiHint: Route["uiHint"]
 ): Route[] {
-  return routes.filter((r) => r.intent === intent);
+  return routes.filter((r) => r.uiHint === uiHint);
 }
 
-export function getSectionRoutes(): Route[] {
-  return routes.filter((r) => r.type === "section");
+export function getAnchorRoutes(): Route[] {
+  return routes.filter((r) => r.type === "anchor");
 }
 
 /**
@@ -98,12 +99,9 @@ if (process.env.NODE_ENV === "development") {
   const seen = new Set<string>();
 
   for (const route of routes) {
-    const key = route.path;
-
-    if (seen.has(key)) {
+    if (seen.has(route.path)) {
       console.warn("[ROUTE DUPLICATE DETECTED]", route.path);
     }
-
-    seen.add(key);
+    seen.add(route.path);
   }
 }
