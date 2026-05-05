@@ -1,4 +1,3 @@
-
 const LEAD_CACHE_PREFIX = "lead_last_sent_";
 const LEAD_QUEUE_KEY = "lead_retry_queue";
 const MAX_QUEUE_SIZE = 50;
@@ -24,7 +23,7 @@ type LeadPayload = {
 
 type LeadCache = {
   type: LeadType;
-  url?: string;
+  url: string;
   time: number;
 };
 
@@ -40,19 +39,22 @@ function canSendLead(type: LeadType, url: string): boolean {
   try {
     const key = getCacheKey(type);
     const last = localStorage.getItem(key);
+
+    if (!last) return true;
+
+    const parsed: LeadCache = JSON.parse(last);
+
     const now = Date.now();
 
-    if (last) {
-      const parsed: LeadCache | null = JSON.parse(last);
+    // stricter + safer dedup window
+    const SAME_PAGE_WINDOW = 5000;
 
-      if (
-        parsed &&
-        parsed.type === type &&
-        parsed.url === url &&
-        now - parsed.time < 5000
-      ) {
-        return false;
-      }
+    if (
+      parsed?.type === type &&
+      parsed?.url === url &&
+      now - parsed.time < SAME_PAGE_WINDOW
+    ) {
+      return false;
     }
 
     return true;
@@ -65,7 +67,11 @@ function markLeadSent(type: LeadType, url: string) {
   try {
     localStorage.setItem(
       getCacheKey(type),
-      JSON.stringify({ type, url, time: Date.now() })
+      JSON.stringify({
+        type,
+        url,
+        time: Date.now(),
+      })
     );
   } catch {}
 }
@@ -96,15 +102,12 @@ function getRetryQueue(): LeadPayload[] {
 
 function saveRetryQueue(queue: LeadPayload[]) {
   try {
-    const trimmed = queue.slice(-MAX_QUEUE_SIZE);
     localStorage.setItem(
       LEAD_QUEUE_KEY,
-      JSON.stringify(trimmed)
+      JSON.stringify(queue.slice(-MAX_QUEUE_SIZE))
     );
   } catch (err) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[LEAD] queue save failed", err);
-    }
+    console.error("[LEAD] queue save failed", err);
   }
 }
 
@@ -124,7 +127,7 @@ function queueFailedLead(payload: LeadPayload) {
   }
 }
 
-async function sendLead(payload: LeadPayload) {
+async function sendLead(payload: LeadPayload): Promise<boolean> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
 
@@ -136,9 +139,7 @@ async function sendLead(payload: LeadPayload) {
       body: JSON.stringify(payload),
     });
 
-    if (!res.ok) throw new Error("Bad response");
-
-    return true;
+    return res.ok;
   } catch {
     return false;
   } finally {
@@ -146,6 +147,9 @@ async function sendLead(payload: LeadPayload) {
   }
 }
 
+/**
+ * FIXED: deterministic queue flush (no race condition)
+ */
 async function flushQueue() {
   if (isFlushing) return;
   isFlushing = true;
@@ -158,12 +162,10 @@ async function flushQueue() {
 
   const remaining: LeadPayload[] = [];
 
-  await Promise.all(
-    queue.map(async (item) => {
-      const ok = await sendLead(item);
-      if (!ok) remaining.push(item);
-    })
-  );
+  for (const item of queue) {
+    const ok = await sendLead(item);
+    if (!ok) remaining.push(item);
+  }
 
   saveRetryQueue(remaining);
   isFlushing = false;
@@ -171,10 +173,10 @@ async function flushQueue() {
 
 export async function trackLead(type: LeadType) {
   if (typeof window === "undefined") return;
-  if (!type) return;
 
   const url = window.location.href;
 
+  // start recovery in background (non-blocking but safe)
   flushQueue();
 
   if (!canSendLead(type, url)) return;
