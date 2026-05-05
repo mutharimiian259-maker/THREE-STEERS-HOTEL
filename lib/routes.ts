@@ -1,3 +1,4 @@
+
 export type Route = {
   name: string;
   path: string;
@@ -9,9 +10,9 @@ export type Route = {
   type: "page" | "section";
 
   /**
-   * Semantic intent (used for analytics + personalization)
+   * UI classification ONLY (NOT funnel state)
    */
-  intent: "navigation" | "engagement" | "revenue" | "conversion";
+  intent: "navigation" | "engagement" | "action";
 };
 
 export const routes: Route[] = [
@@ -25,7 +26,7 @@ export const routes: Route[] = [
     name: "Rooms",
     path: "/rooms",
     type: "page",
-    intent: "revenue",
+    intent: "action",
   },
   {
     name: "Dining",
@@ -37,7 +38,7 @@ export const routes: Route[] = [
     name: "Conference",
     path: "/#conference",
     type: "section",
-    intent: "revenue",
+    intent: "action",
   },
   {
     name: "Experiences",
@@ -49,73 +50,57 @@ export const routes: Route[] = [
     name: "Book Stay",
     path: "/#booking",
     type: "section",
-    intent: "conversion",
+    intent: "action",
   },
 ];
 
-/**
- * 🔧 Normalize path for consistent matching
- */
 function normalizePath(path: string): string {
-  if (!path) return "/";
+  if (typeof window === "undefined") return path || "/";
 
   try {
     const url = new URL(path, window.location.origin);
 
-    let normalized = url.pathname.replace(/\/+$/, "") || "/";
+    const normalizedPath =
+      url.pathname.replace(/\/+$/, "") || "/";
 
-    if (url.hash) {
-      normalized += url.hash;
-    }
-
-    return normalized;
+    return url.hash
+      ? `${normalizedPath}${url.hash}`
+      : normalizedPath;
   } catch {
-    // fallback (SSR or malformed)
     return path.replace(/\/+$/, "") || "/";
   }
 }
 
-/**
- * 🔥 Helper: get route by path (normalized)
- */
 export function getRoute(path: string): Route | undefined {
   const target = normalizePath(path);
 
-  return routes.find(
-    (r) => normalizePath(r.path) === target
-  );
+  return routes.find((r) => {
+    const normalized = normalizePath(r.path);
+    return normalized === target;
+  });
 }
 
-/**
- * 🔥 SAFE UTILITY: filter by intent
- */
 export function getRoutesByIntent(
   intent: Route["intent"]
 ): Route[] {
   return routes.filter((r) => r.intent === intent);
 }
 
-/**
- * 🔥 SAFE UTILITY: get all section routes
- */
 export function getSectionRoutes(): Route[] {
   return routes.filter((r) => r.type === "section");
 }
 
 /**
- * 🔥 DEV SAFETY CHECK (normalized duplicate detection)
+ * DEV SAFETY CHECK
  */
 if (process.env.NODE_ENV === "development") {
   const seen = new Set<string>();
 
   for (const route of routes) {
-    const normalized = normalizePath(route.path);
+    const normalized = route.path;
 
     if (seen.has(normalized)) {
-      console.warn(
-        "[ROUTE DUPLICATE DETECTED]",
-        route.path
-      );
+      console.warn("[ROUTE DUPLICATE DETECTED]", route.path);
     }
 
     seen.add(normalized);
