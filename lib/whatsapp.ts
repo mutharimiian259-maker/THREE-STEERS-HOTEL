@@ -1,5 +1,5 @@
+
 import { HOTEL } from "@/lib/config";
-import { trackLead } from "@/lib/core/trackLead";
 import { track } from "@/lib/core/analytics";
 
 /**
@@ -22,10 +22,11 @@ export function buildWhatsAppLink(
   message: string,
   options?: WhatsAppOptions
 ): string {
-  const phone = sanitizePhone(HOTEL.contact.phone.whatsapp || "");
+  const phone = sanitizePhone(
+    HOTEL.contact.phone.whatsapp || ""
+  );
 
   if (!phone) {
-    // fail-safe instead of crashing production
     return "https://wa.me/";
   }
 
@@ -36,35 +37,30 @@ export function buildWhatsAppLink(
 }
 
 /**
- * SINGLE SOURCE OF TRUTH CONVERSION TRIGGER
+ * 🔥 SINGLE SOURCE OF TRUTH EVENT ONLY
+ * (NO LEAD LOGIC HERE)
  */
-export function trackWhatsAppClick(options?: WhatsAppOptions): void {
+export function trackWhatsAppClick(
+  options?: WhatsAppOptions
+): void {
   if (typeof window === "undefined") return;
 
-  // 1. Funnel + analytics system (event-driven)
   track("whatsapp_click", {
     source: options?.source ?? "unknown",
     room: options?.room ?? null,
     intent: options?.intent ?? "general",
   });
-
-  // 2. Lead system (CRM/backend ingestion)
-  trackLead("whatsapp_click", {
-    source: options?.source,
-    room: options?.room,
-    intent: options?.intent,
-  });
 }
 
 /**
- * PURE message builder (reusable + testable)
+ * PURE message builder (UI-only formatting)
  */
 function formatMessage(
   message: string,
   options?: WhatsAppOptions
 ): string {
   const lines = [
-    `🏨 ${HOTEL.identity.name} Booking Request`,
+    `🏨 ${HOTEL.identity.name}`,
     "",
     message,
     "",
