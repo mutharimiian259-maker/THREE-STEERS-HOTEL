@@ -1,9 +1,9 @@
-
 import { HOTEL } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
+import { trackLead } from "@/lib/trackLead";
 
 /**
- * Cleans phone number for WhatsApp API compatibility
+ * Clean phone for WhatsApp API
  */
 function sanitizePhone(phone: string): string {
   return phone.replace(/[^\d]/g, "");
@@ -12,50 +12,43 @@ function sanitizePhone(phone: string): string {
 type WhatsAppOptions = {
   source?: string;
   room?: string;
-  intent?: "room" | "conference" | "general";
 };
 
 /**
- * PURE: builds WhatsApp link only (NO SIDE EFFECTS)
+ * PURE: WhatsApp link builder
  */
-export function buildWhatsAppLink(
-  message: string,
-  options?: WhatsAppOptions
-): string {
-  const phone = sanitizePhone(
-    HOTEL.contact.phone.whatsapp || ""
-  );
+export function buildWhatsAppLink(message: string): string {
+  const phone = sanitizePhone(HOTEL.contact.phone.whatsapp || "");
 
-  if (!phone) {
-    return "https://wa.me/";
-  }
+  if (!phone) return "https://wa.me/";
 
-  const enrichedMessage = formatMessage(message, options);
-  const encoded = encodeURIComponent(enrichedMessage);
+  const encoded = encodeURIComponent(message);
 
   return `https://wa.me/${phone}?text=${encoded}`;
 }
 
 /**
- * 🔥 SINGLE SOURCE OF TRUTH EVENT ONLY
- * (NO LEAD LOGIC HERE)
+ * EVENT + LEAD TRIGGER (single responsibility chain)
  */
 export function trackWhatsAppClick(
   options?: WhatsAppOptions
 ): void {
   if (typeof window === "undefined") return;
 
+  // 1. Analytics event (funnel input)
   track("whatsapp_click", {
     source: options?.source ?? "unknown",
     room: options?.room ?? null,
-    intent: options?.intent ?? "general",
   });
+
+  // 2. Lead system (conversion output)
+  trackLead("whatsapp_click");
 }
 
 /**
- * PURE message builder (UI-only formatting)
+ * Message formatting (UI-only)
  */
-function formatMessage(
+export function formatWhatsAppMessage(
   message: string,
   options?: WhatsAppOptions
 ): string {
@@ -66,7 +59,6 @@ function formatMessage(
     "",
     "---",
     `Source: ${options?.source ?? "direct"}`,
-    `Intent: ${options?.intent ?? "general"}`,
     options?.room ? `Room: ${options.room}` : null,
   ];
 
