@@ -18,56 +18,51 @@ type SeoProps = {
 
 function safeBaseUrl(): string {
   try {
-    const url = new URL(HOTEL.domain.primary);
-    return url.origin;
-  } catch (err) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[SEO] Invalid base URL config", err);
-    }
+    return new URL(HOTEL.domain.primary).origin;
+  } catch {
     return "https://example.com";
   }
 }
 
 function joinUrl(base: string, path: string): string {
   try {
-    const url = new URL(path || "/", base);
-    return url.toString().replace(/\/+$/, "");
+    return new URL(path || "/", base).toString().replace(/\/+$/, "");
   } catch {
     return base;
   }
 }
 
+/**
+ * Intent-based SEO keywords (GLOBAL fallback layer)
+ */
 function getIntentKeywords(intent?: SeoIntent): string[] {
   switch (intent) {
     case "room":
       return [
-        "book hotel room Meru Kenya",
-        "hotel booking WhatsApp Meru",
-        "hotel rooms in Meru",
-        "luxury accommodation Kenya",
-        "affordable hotel rooms Meru",
+        "hotel rooms Meru Kenya",
+        "book hotel in Meru via WhatsApp",
+        "affordable luxury accommodation Kenya",
       ];
 
     case "conference":
       return [
-        "conference venues Meru",
-        "meeting rooms Kenya hotel",
-        "corporate events Meru",
-        "book conference hotel Kenya",
+        "conference venues Meru Kenya",
+        "hotel meeting rooms Kenya",
+        "corporate event spaces Meru",
       ];
 
     case "dining":
       return [
-        "restaurants in Meru hotel",
-        "fine dining Meru Kenya",
-        "hotel food Meru",
+        "hotel restaurant Meru Kenya",
+        "fine dining Kenya hotels",
+        "restaurant in hotel Meru",
       ];
 
     case "blog":
       return [
-        "travel Meru Kenya",
-        "hotels near Mt Kenya",
-        "Meru tourism guide",
+        "travel guide Meru Kenya",
+        "Mt Kenya tourism hotels",
+        "Kenya hotel experiences",
       ];
 
     default:
@@ -75,9 +70,28 @@ function getIntentKeywords(intent?: SeoIntent): string[] {
   }
 }
 
+/**
+ * Page-level keyword enhancer (NEW LAYER)
+ */
+function getPageBoostKeywords(path?: string): string[] {
+  if (!path) return [];
+
+  if (path.includes("/rooms/")) {
+    return ["book this hotel room", "hotel room details Meru"];
+  }
+
+  if (path === "/rooms") {
+    return ["all hotel rooms Meru", "hotel booking Kenya"];
+  }
+
+  return [];
+}
+
 function dedupeKeywords(arr: string[]): string[] {
   return Array.from(
-    new Set(arr.map((i) => i.trim().toLowerCase()).filter(Boolean))
+    new Set(
+      arr.map((i) => i.trim().toLowerCase()).filter(Boolean)
+    )
   );
 }
 
@@ -93,10 +107,6 @@ function validateImage(image?: string): string {
     }
 
     if (image.startsWith("/")) return image;
-
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[SEO] Invalid image fallback used:", image);
-    }
 
     return fallback;
   } catch {
@@ -146,7 +156,8 @@ export function generateSEO({
     : joinUrl(baseUrl, safeImage);
 
   const finalKeywords = dedupeKeywords([
-    ...getIntentKeywords(intent), // priority
+    ...getIntentKeywords(intent),
+    ...getPageBoostKeywords(path), // 🔥 NEW LAYER
     ...(keywords ?? []),
   ]);
 
