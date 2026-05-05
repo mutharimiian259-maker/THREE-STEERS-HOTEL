@@ -1,3 +1,4 @@
+
 const LEAD_CACHE_PREFIX = "lead_last_sent_";
 const LEAD_QUEUE_KEY = "lead_retry_queue";
 const MAX_QUEUE_SIZE = 50;
@@ -23,14 +24,17 @@ type LeadPayload = {
 
 type LeadCache = {
   type: LeadType;
+  url?: string;
   time: number;
 };
+
+let isFlushing = false;
 
 function getCacheKey(type: LeadType) {
   return `${LEAD_CACHE_PREFIX}${type}`;
 }
 
-function canSendLead(type: LeadType): boolean {
+function canSendLead(type: LeadType, url: string): boolean {
   if (typeof window === "undefined") return false;
 
   try {
@@ -44,6 +48,7 @@ function canSendLead(type: LeadType): boolean {
       if (
         parsed &&
         parsed.type === type &&
+        parsed.url === url &&
         now - parsed.time < 5000
       ) {
         return false;
@@ -56,11 +61,11 @@ function canSendLead(type: LeadType): boolean {
   }
 }
 
-function markLeadSent(type: LeadType) {
+function markLeadSent(type: LeadType, url: string) {
   try {
     localStorage.setItem(
       getCacheKey(type),
-      JSON.stringify({ type, time: Date.now() })
+      JSON.stringify({ type, url, time: Date.now() })
     );
   } catch {}
 }
@@ -70,7 +75,9 @@ function isValidPayload(p: any): p is LeadPayload {
     p &&
     typeof p.type === "string" &&
     typeof p.time === "string" &&
-    typeof p.url === "string"
+    typeof p.url === "string" &&
+    typeof p.device === "object" &&
+    typeof p.device.ua === "string"
   );
 }
 
@@ -140,8 +147,14 @@ async function sendLead(payload: LeadPayload) {
 }
 
 async function flushQueue() {
+  if (isFlushing) return;
+  isFlushing = true;
+
   const queue = getRetryQueue();
-  if (!queue.length) return;
+  if (!queue.length) {
+    isFlushing = false;
+    return;
+  }
 
   const remaining: LeadPayload[] = [];
 
@@ -153,34 +166,34 @@ async function flushQueue() {
   );
 
   saveRetryQueue(remaining);
+  isFlushing = false;
 }
 
 export async function trackLead(type: LeadType) {
   if (typeof window === "undefined") return;
   if (!type) return;
 
-  // non-blocking retry
+  const url = window.location.href;
+
   flushQueue();
 
-  if (!canSendLead(type)) return;
+  if (!canSendLead(type, url)) return;
 
-  const payload: LeadPayload = JSON.parse(
-    JSON.stringify({
-      type,
-      time: new Date().toISOString(),
-      url: window.location.href,
-      referrer: document.referrer || null,
-      device: {
-        ua: navigator.userAgent,
-        lang: navigator.language,
-      },
-    })
-  );
+  const payload: LeadPayload = {
+    type,
+    time: new Date().toISOString(),
+    url,
+    referrer: document.referrer || null,
+    device: {
+      ua: navigator.userAgent,
+      lang: navigator.language,
+    },
+  };
 
   const success = await sendLead(payload);
 
   if (success) {
-    markLeadSent(type);
+    markLeadSent(type, url);
   } else {
     queueFailedLead(payload);
   }
