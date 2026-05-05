@@ -21,8 +21,7 @@ const EVENT_TO_STEP: Partial<Record<StoredEvent["type"], FunnelStep>> = {
 
 let currentCache: FunnelStep | null = null;
 let initialized = false;
-let lastStep: FunnelStep | null = null;
-let lastUpdateTime = 0;
+let lastTransitionMap = new Map<string, number>();
 
 function isValidStep(step: unknown): step is FunnelStep {
   return ORDER.includes(step as FunnelStep);
@@ -33,10 +32,7 @@ function safeGet(): FunnelStep | null {
 
   try {
     const value = localStorage.getItem(STORAGE_KEY);
-    const parsed = isValidStep(value) ? value : null;
-
-    currentCache = parsed;
-    return parsed;
+    return isValidStep(value) ? value : null;
   } catch {
     return currentCache;
   }
@@ -56,64 +52,43 @@ function safeSet(step: FunnelStep): void {
   }
 }
 
-function isValidEvent(e: any): e is StoredEvent {
-  return (
-    e &&
-    typeof e.type === "string" &&
-    typeof e.time === "string"
-  );
-}
-
-function advance(next: FunnelStep): void {
+function advance(next: FunnelStep, eventType?: string): void {
   const now = Date.now();
   const current = safeGet() ?? "VISIT";
 
   const currentIndex = ORDER.indexOf(current);
-  const nextIndexRaw = ORDER.indexOf(next);
+  const nextIndex = ORDER.indexOf(next);
 
-  if (currentIndex === -1 || nextIndexRaw === -1) return;
+  if (currentIndex === -1 || nextIndex === -1) return;
 
-  let nextStep = next;
-
-  // promotion rule
-  if (current === "ENGAGEMENT" && next === "ENGAGEMENT") {
-    nextStep = "INTENT";
-  }
-
-  const nextIndex = ORDER.indexOf(nextStep);
-
+  // STRICT PROGRESSION ONLY (no skipping backwards or sideways)
   if (nextIndex <= currentIndex) return;
 
-  // prevent rapid duplicate transitions of SAME step only
-  if (
-    lastStep === nextStep &&
-    now - lastUpdateTime < 300
-  ) {
-    return;
-  }
+  // per-event-type debounce (stronger than previous version)
+  const key = `${current}-${next}-${eventType ?? "unknown"}`;
+  const last = lastTransitionMap.get(key) ?? 0;
 
-  lastStep = nextStep;
-  lastUpdateTime = now;
+  if (now - last < 500) return;
 
-  safeSet(nextStep);
+  lastTransitionMap.set(key, now);
+
+  safeSet(next);
 
   try {
     window.dispatchEvent(
       new CustomEvent<FunnelStep>("funnel:change", {
-        detail: nextStep,
+        detail: next,
       })
     );
-  } catch {
-    // isolate failures
-  }
+  } catch {}
 
   if (process.env.NODE_ENV === "development") {
-    console.log("[FUNNEL]", current, "→", nextStep);
+    console.log("[FUNNEL]", current, "→", next);
   }
 }
 
 /**
- * 🔥 SINGLETON EVENT LISTENER
+ * SINGLETON EVENT LISTENER
  */
 function initListener() {
   if (initialized || typeof window === "undefined") return;
@@ -121,23 +96,24 @@ function initListener() {
   initialized = true;
 
   window.addEventListener(APP_EVENT, (e: Event) => {
-    const detail = (e as CustomEvent).detail;
+    const detail = (e as CustomEvent).detail as StoredEvent;
 
-    if (!isValidEvent(detail)) return;
+    if (!detail?.type) return;
 
     const step = EVENT_TO_STEP[detail.type];
 
     if (!step) return;
 
-    advance(step);
+    // enforce VISIT-first rule
+    const current = safeGet();
+    if (!current && step !== "VISIT") return;
+
+    advance(step, detail.type);
   });
 }
 
 initListener();
 
-/**
- * SINGLE CONTROLLER
- */
 export const funnel = {
   get(): FunnelStep {
     return safeGet() ?? "VISIT";
