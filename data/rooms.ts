@@ -7,7 +7,13 @@ export type Room = {
   price: number;
   currency: "KES";
   desc: string;
-  image: string;
+
+  /**
+   * 🔥 FIX: decouple raw path from system
+   * (future CMS-ready)
+   */
+  imageKey: string;
+
   tag?: string;
 
   wing: "batianWing" | "lenanaWing";
@@ -28,7 +34,7 @@ const rooms: Room[] = [
     price: 8500,
     currency: "KES",
     desc: "Luxury comfort with modern amenities in a calm setting.",
-    image: "/images/rooms/batian-wing/deluxe-twin/hero.jpg",
+    imageKey: "batianWing.deluxeTwin",
     tag: "Most Booked",
     wing: "batianWing",
     maxGuests: 2,
@@ -44,7 +50,7 @@ const rooms: Room[] = [
     price: 12000,
     currency: "KES",
     desc: "Premium suite offering Mt Kenya views and executive comfort.",
-    image: "/images/rooms/batian-wing/executive-suite/hero.jpg",
+    imageKey: "batianWing.executiveSuite",
     tag: "Best Value",
     wing: "batianWing",
     maxGuests: 3,
@@ -60,7 +66,7 @@ const rooms: Room[] = [
     price: 6000,
     currency: "KES",
     desc: "Comfortable and affordable room for solo travelers.",
-    image: "/images/rooms/lenana-wing/standard-single/hero.jpg",
+    imageKey: "lenanaWing.standardSingle",
     wing: "lenanaWing",
     maxGuests: 1,
     bedType: "Single Bed",
@@ -75,7 +81,7 @@ const rooms: Room[] = [
     price: 15000,
     currency: "KES",
     desc: "Spacious room designed for families and group stays.",
-    image: "/images/rooms/lenana-wing/family-room/hero.jpg",
+    imageKey: "lenanaWing.familyRoom",
     tag: "Family Choice",
     wing: "lenanaWing",
     maxGuests: 4,
@@ -89,7 +95,7 @@ const rooms: Room[] = [
 export default rooms;
 
 /* --------------------------------------------------
-   🔥 SAFE HELPERS (STABLE + EXTENSIBLE)
+   🔥 DOMAIN HELPERS
 -------------------------------------------------- */
 
 export function getRoomBySlug(slug: string): Room | undefined {
@@ -100,23 +106,29 @@ export function getRoomById(id: string): Room | undefined {
   return rooms.find((r) => r.id === id);
 }
 
-/**
- * 🔥 FILTER: High revenue priority rooms
- */
 export function getHighDemandRooms(): Room[] {
   return rooms.filter((r) => r.demand === "high");
 }
 
-/**
- * 🔥 FILTER: Rooms by wing (useful for UI segmentation)
- */
 export function getRoomsByWing(wing: Room["wing"]): Room[] {
   return rooms.filter((r) => r.wing === wing);
 }
 
-/**
- * 🔥 SAFE PRICE FORMAT (centralized, avoids duplication elsewhere)
- */
 export function formatRoomPrice(price: number): string {
   return `${HOTEL.pricing.currency} ${price.toLocaleString()}`;
+}
+
+/**
+ * 🔥 NEW: demand-based sorting (REVENUE OPTIMIZATION)
+ */
+export function getSortedRooms(): Room[] {
+  const weight = {
+    high: 3,
+    medium: 2,
+    low: 1,
+  };
+
+  return [...rooms].sort(
+    (a, b) => (weight[b.demand ?? "medium"] - weight[a.demand ?? "medium"])
+  );
 }
