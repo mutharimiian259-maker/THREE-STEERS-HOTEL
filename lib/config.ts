@@ -1,3 +1,4 @@
+
 export const HOTEL = {
   identity: {
     name: "Three Steers Hotel Meru",
@@ -6,7 +7,6 @@ export const HOTEL = {
 
   domain: {
     primary: "https://www.threesteershotel.com",
-    canonical: "https://www.threesteershotel.com",
   },
 
   contact: {
@@ -59,53 +59,21 @@ export const HOTEL = {
 } as const;
 
 /* --------------------------------------------------
-   🔥 DERIVED SAFE HELPERS (NO DUPLICATION ELSEWHERE)
+   🔥 PURE SAFE HELPERS (NO BUSINESS LOGIC INSIDE CONFIG)
 -------------------------------------------------- */
 
-/**
- * Always returns clean numeric phone (safe for tel + whatsapp)
- */
 export function getCleanPhone(phone: string): string {
   return phone.replace(/[^\d]/g, "");
 }
 
-/**
- * Central WhatsApp-ready number (single source of truth usage)
- */
 export function getWhatsAppNumber(): string {
   return getCleanPhone(HOTEL.contact.phone.whatsapp);
 }
 
-/**
- * Primary contact number safe for tel:
- */
 export function getPrimaryPhone(): string {
   return getCleanPhone(HOTEL.contact.phone.primary);
 }
 
-/**
- * Canonical domain (safe single access point)
- */
 export function getDomain(): string {
-  return HOTEL.domain.canonical;
-}
-
-/**
- * SEO helper for future intent expansion (non-breaking extension)
- */
-export function getSeoKeywords(intent?: "room" | "blog" | "conference" | "dining") {
-  const base = [...HOTEL.seo.keywords];
-
-  switch (intent) {
-    case "room":
-      return [...base, "hotel rooms Meru Kenya", "luxury stays Meru"];
-    case "conference":
-      return [...base, "conference venues Meru", "meeting rooms Kenya"];
-    case "dining":
-      return [...base, "restaurants Meru hotel", "fine dining Kenya"];
-    case "blog":
-      return [...base, "travel Meru", "Mt Kenya hotels"];
-    default:
-      return base;
-  }
+  return HOTEL.domain.primary;
 }
