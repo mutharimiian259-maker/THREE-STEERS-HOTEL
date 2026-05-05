@@ -15,6 +15,7 @@ export type StoredEvent = {
   time: string;
   ts: number;
   url: string;
+  source?: "core" | "ui";
 };
 
 export const APP_EVENT = "app:event";
@@ -93,32 +94,19 @@ function safeSet(events: StoredEvent[]) {
   }
 }
 
-function stableStringify(obj: any): string {
-  try {
-    return JSON.stringify(obj, Object.keys(obj).sort());
-  } catch {
-    return "";
-  }
-}
+function isDuplicate(events: StoredEvent[], next: StoredEvent) {
+  const recent = events.slice(-10).reverse();
 
-function safePayloadEqual(a: EventPayload, b: EventPayload) {
-  return stableStringify(a) === stableStringify(b);
-}
+  return recent.some((e) => {
+    const timeDiff = next.ts - e.ts;
+    if (timeDiff > DEDUP_WINDOW_MS) return false;
 
-function isDuplicate(
-  last: StoredEvent | undefined,
-  next: StoredEvent
-) {
-  if (!last) return false;
-
-  const timeDiff = next.ts - last.ts;
-  if (timeDiff > DEDUP_WINDOW_MS) return false;
-
-  return (
-    last.type === next.type &&
-    last.url === next.url &&
-    safePayloadEqual(last.payload, next.payload)
-  );
+    return (
+      e.type === next.type &&
+      e.url === next.url &&
+      JSON.stringify(e.payload) === JSON.stringify(next.payload)
+    );
+  });
 }
 
 function sanitizePayload(payload: EventPayload): EventPayload {
@@ -126,17 +114,21 @@ function sanitizePayload(payload: EventPayload): EventPayload {
     const json = JSON.stringify(payload);
 
     if (json.length > MAX_PAYLOAD_SIZE) {
-      return {
-        ...payload,
-        __truncated: true,
-      };
+      return { ...payload, __truncated: true };
     }
 
-    return JSON.parse(json);
+    return payload;
   } catch {
     return {};
   }
 }
+
+/**
+ * Optional hook for funnel engine validation
+ */
+export let onEventIntercept:
+  | ((event: StoredEvent) => void)
+  | undefined;
 
 export function track(
   type: EventType,
@@ -154,12 +146,17 @@ export function track(
     time: new Date(now).toISOString(),
     ts: now,
     url: window.location.href,
+    source: "core",
   };
 
   const events = safeGet();
-  const last = events.at(-1);
 
-  if (isDuplicate(last, event)) return;
+  if (isDuplicate(events, event)) return;
+
+  // funnel hook (non-blocking)
+  try {
+    onEventIntercept?.(event);
+  } catch {}
 
   events.push(event);
   safeSet(events);
