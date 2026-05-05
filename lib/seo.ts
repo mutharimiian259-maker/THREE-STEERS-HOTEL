@@ -20,14 +20,15 @@ function safeBaseUrl(): string {
   try {
     const url = new URL(HOTEL.domain.primary);
     return url.origin;
-  } catch {
-    return "";
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[SEO] Invalid base URL config", err);
+    }
+    return "https://example.com";
   }
 }
 
 function joinUrl(base: string, path: string): string {
-  if (!base) return path || "";
-
   try {
     const url = new URL(path || "/", base);
     return url.toString().replace(/\/+$/, "");
@@ -75,16 +76,9 @@ function getIntentKeywords(intent?: SeoIntent): string[] {
 }
 
 function dedupeKeywords(arr: string[]): string[] {
-  const seen = new Set<string>();
-
-  for (const item of arr) {
-    const normalized = item.trim().toLowerCase();
-    if (normalized) {
-      seen.add(normalized);
-    }
-  }
-
-  return Array.from(seen);
+  return Array.from(
+    new Set(arr.map((i) => i.trim().toLowerCase()).filter(Boolean))
+  );
 }
 
 function validateImage(image?: string): string {
@@ -98,8 +92,10 @@ function validateImage(image?: string): string {
       return image;
     }
 
-    if (image.startsWith("/")) {
-      return image;
+    if (image.startsWith("/")) return image;
+
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[SEO] Invalid image fallback used:", image);
     }
 
     return fallback;
@@ -109,8 +105,9 @@ function validateImage(image?: string): string {
 }
 
 function clamp(text: string, max: number): string {
-  if (text.length <= max) return text;
-  return text.slice(0, max - 1).trim() + "…";
+  return text.length <= max
+    ? text
+    : text.slice(0, max - 1).trim() + "…";
 }
 
 export function generateSEO({
@@ -122,7 +119,6 @@ export function generateSEO({
   keywords,
 }: SeoProps = {}) {
   const baseUrl = safeBaseUrl();
-
   const siteName = HOTEL.identity?.name ?? "Hotel";
 
   const defaultTitle =
@@ -133,9 +129,7 @@ export function generateSEO({
     "Best hotel experience in Kenya";
 
   const fullTitle = clamp(
-    title
-      ? `${title} | ${siteName}`
-      : defaultTitle,
+    title ? `${title} | ${siteName}` : defaultTitle,
     60
   );
 
@@ -145,7 +139,6 @@ export function generateSEO({
   );
 
   const url = joinUrl(baseUrl, path);
-
   const safeImage = validateImage(image);
 
   const absoluteImage = safeImage.startsWith("http")
@@ -153,7 +146,7 @@ export function generateSEO({
     : joinUrl(baseUrl, safeImage);
 
   const finalKeywords = dedupeKeywords([
-    ...getIntentKeywords(intent),
+    ...getIntentKeywords(intent), // priority
     ...(keywords ?? []),
   ]);
 
