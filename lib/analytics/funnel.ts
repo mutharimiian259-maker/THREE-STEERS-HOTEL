@@ -1,5 +1,3 @@
-// /lib/core/funnel.ts
-
 import { FunnelStep } from "./types";
 import { APP_EVENT, StoredEvent } from "./analytics";
 
@@ -17,6 +15,9 @@ const EVENT_TO_STEP: Partial<Record<StoredEvent["type"], FunnelStep>> = {
   room_view: "ENGAGEMENT",
   whatsapp_click: "CONTACT",
   call_click: "CONTACT",
+
+  // 🔥 FIX 1: INTENT is now reachable
+  booking_intent: "INTENT",
 };
 
 let currentCache: FunnelStep | null = null;
@@ -46,9 +47,7 @@ function safeSet(step: FunnelStep): void {
   try {
     localStorage.setItem(STORAGE_KEY, step);
   } catch (err) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[FUNNEL] storage write failed", err);
-    }
+    console.error("[FUNNEL] storage write failed", err);
   }
 }
 
@@ -61,10 +60,9 @@ function advance(next: FunnelStep, eventType?: string): void {
 
   if (currentIndex === -1 || nextIndex === -1) return;
 
-  // STRICT PROGRESSION ONLY (no skipping backwards or sideways)
-  if (nextIndex <= currentIndex) return;
+  // 🔥 FIX 2: allow forward + skip progression (real UX behavior)
+  if (nextIndex < currentIndex) return;
 
-  // per-event-type debounce (stronger than previous version)
   const key = `${current}-${next}-${eventType ?? "unknown"}`;
   const last = lastTransitionMap.get(key) ?? 0;
 
@@ -104,8 +102,9 @@ function initListener() {
 
     if (!step) return;
 
-    // enforce VISIT-first rule
     const current = safeGet();
+
+    // enforce VISIT-first only (not strict funnel lock)
     if (!current && step !== "VISIT") return;
 
     advance(step, detail.type);
