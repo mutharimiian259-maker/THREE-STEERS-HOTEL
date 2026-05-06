@@ -7,33 +7,53 @@ import { HOTEL } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
 import { IMAGES } from "@/lib/images";
 import { useState, useMemo } from "react";
+import {
+  buildWhatsAppLink,
+  formatWhatsAppMessage,
+} from "@/lib/whatsapp";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
 
+  /**
+   * ✅ CORRECT: navigation event
+   */
   const handleNavClick = (routeName: string) => {
-    track("whatsapp_click", {
-      page: routeName,
-      source: "navbar",
-      context: "navigation",
-    });
+    track(
+      "page_view",
+      {
+        destination: routeName,
+        action: "navigation",
+      },
+      "navbar"
+    );
 
     setOpen(false);
   };
 
+  /**
+   * ✅ CENTRALIZED WhatsApp link
+   */
   const whatsappLink = useMemo(() => {
-    const message = encodeURIComponent(
-      `Hello, I would like to book a room at ${HOTEL.identity.name} in Meru. Please assist me with availability and pricing.`
+    const message = formatWhatsAppMessage(
+      "Hello, I would like to book a room. Please share availability and pricing.",
+      { source: "navbar" }
     );
 
-    return `https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${message}`;
+    return buildWhatsAppLink(message);
   }, []);
 
-  const handleWhatsAppClick = (source: string) => {
-    track("whatsapp_click", {
-      source,
-      context: "navbar",
-    });
+  /**
+   * ✅ CORRECT: WhatsApp click event
+   */
+  const handleWhatsAppClick = (variant: string) => {
+    track(
+      "whatsapp_click",
+      {
+        variant, // desktop / mobile
+      },
+      "navbar"
+    );
   };
 
   return (
@@ -105,7 +125,7 @@ export default function Navbar() {
           <a
             href={whatsappLink}
             className="mt-6 bg-green-600 text-white text-center py-3 rounded-lg font-semibold"
-            onClick={() => handleWhatsAppClick("navbar_mobile")}
+            onClick={() => handleWhatsAppClick("mobile")}
           >
             Book Now
           </a>
@@ -116,7 +136,7 @@ export default function Navbar() {
       <a
         href={whatsappLink}
         className="hidden md:inline-block btn btn-green font-semibold px-5 py-2"
-        onClick={() => handleWhatsAppClick("navbar")}
+        onClick={() => handleWhatsAppClick("desktop")}
       >
         Book Now
       </a>
