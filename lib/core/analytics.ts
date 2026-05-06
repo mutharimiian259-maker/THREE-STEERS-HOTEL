@@ -2,7 +2,8 @@ export type EventType =
   | "page_view"
   | "room_view"
   | "whatsapp_click"
-  | "call_click";
+  | "call_click"
+  | "booking_intent";
 
 export type EventPayload = Record<string, unknown>;
 
@@ -25,11 +26,15 @@ const MAX_PAYLOAD_SIZE = 2000;
 
 let cache: StoredEvent[] | null = null;
 
+/**
+ * Single source of truth for allowed events
+ */
 const VALID_TYPES = new Set<EventType>([
   "page_view",
   "room_view",
   "whatsapp_click",
   "call_click",
+  "booking_intent",
 ]);
 
 function generateId(): string {
@@ -86,6 +91,14 @@ function safeSet(events: StoredEvent[]) {
   }
 }
 
+/**
+ * Stable stringify prevents key-order false negatives
+ */
+function stableStringify(obj: any) {
+  if (!obj || typeof obj !== "object") return JSON.stringify(obj);
+  return JSON.stringify(obj, Object.keys(obj).sort());
+}
+
 function isDuplicate(events: StoredEvent[], next: StoredEvent) {
   return events.slice(-10).reverse().some((e) => {
     if (next.ts - e.ts > DEDUP_WINDOW_MS) return false;
@@ -93,11 +106,14 @@ function isDuplicate(events: StoredEvent[], next: StoredEvent) {
     return (
       e.type === next.type &&
       e.url === next.url &&
-      JSON.stringify(e.payload) === JSON.stringify(next.payload)
+      stableStringify(e.payload) === stableStringify(next.payload)
     );
   });
 }
 
+/**
+ * Prevent oversized payload explosion
+ */
 function sanitizePayload(payload: EventPayload): EventPayload {
   try {
     if (JSON.stringify(payload).length > MAX_PAYLOAD_SIZE) {
@@ -116,9 +132,39 @@ export let onEventIntercept:
   | ((event: StoredEvent) => void)
   | undefined;
 
+/**
+ * GA isolated sender (decoupled from core logic)
+ */
+function sendToGA(type: EventType, event: StoredEvent) {
+  const w = window as any;
+
+  if (typeof w.gtag !== "function") return;
+
+  try {
+    w.gtag("event", type, {
+      event_category: "engagement",
+      event_label: type,
+      page_location: event.url,
+      ...event.payload,
+    });
+  } catch (err) {
+    console.warn("[GA] send failed", err);
+  }
+}
+
+/**
+ * CORE EVENT PIPELINE (v1)
+ */
 export function track(type: EventType, payload: EventPayload = {}): void {
   if (typeof window === "undefined") return;
-  if (!VALID_TYPES.has(type)) return;
+
+  /**
+   * Guard with visibility instead of silent failure
+   */
+  if (!VALID_TYPES.has(type)) {
+    console.warn("[TRACK] Invalid event type:", type);
+    return;
+  }
 
   const now = Date.now();
 
@@ -136,34 +182,37 @@ export function track(type: EventType, payload: EventPayload = {}): void {
 
   if (isDuplicate(events, event)) return;
 
+  /**
+   * Funnel interception (safe hook)
+   */
   try {
     onEventIntercept?.(event);
-  } catch {}
+  } catch (err) {
+    console.warn("[TRACK] interceptor error", err);
+  }
 
   events.push(event);
   safeSet(events);
 
-  // GA isolation layer (prevents payload pollution)
-  const gtagPayload: Record<string, unknown> = {
-    event_category: "engagement",
-    event_label: type,
-    page_location: event.url,
-    ...event.payload,
-  };
-
+  /**
+   * Event bus dispatch (funnel relies on this)
+   */
   try {
     window.dispatchEvent(
       new CustomEvent(APP_EVENT, { detail: event })
     );
-  } catch {}
-
-  const w = window as any;
-  if (typeof w.gtag === "function") {
-    try {
-      w.gtag("event", type, gtagPayload);
-    } catch {}
+  } catch (err) {
+    console.warn("[TRACK] event dispatch failed", err);
   }
 
+  /**
+   * Analytics layer (isolated)
+   */
+  sendToGA(type, event);
+
+  /**
+   * Dev visibility
+   */
   if (process.env.NODE_ENV === "development") {
     console.log("[TRACK]", event);
   }
