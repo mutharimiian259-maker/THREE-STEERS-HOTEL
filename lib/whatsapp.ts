@@ -1,18 +1,28 @@
 import { HOTEL } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
-import { trackLead } from "@/lib/trackLead";
 
 /**
- * Clean phone for WhatsApp API
+ * STRICT ORIGIN TYPES (prevents random strings)
+ */
+type WhatsAppSource =
+  | "navbar"
+  | "footer"
+  | "room_card"
+  | "sticky_cta"
+  | "exit_intent"
+  | "unknown";
+
+type WhatsAppOptions = {
+  source?: WhatsAppSource;
+  room?: string;
+};
+
+/**
+ * PURE: phone sanitizer
  */
 function sanitizePhone(phone: string): string {
   return phone.replace(/[^\d]/g, "");
 }
-
-type WhatsAppOptions = {
-  source?: string;
-  room?: string;
-};
 
 /**
  * PURE: WhatsApp link builder
@@ -22,45 +32,38 @@ export function buildWhatsAppLink(message: string): string {
 
   if (!phone) return "https://wa.me/";
 
-  const encoded = encodeURIComponent(message);
-
-  return `https://wa.me/${phone}?text=${encoded}`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
 /**
- * EVENT + LEAD TRIGGER (single responsibility chain)
+ * ANALYTICS ONLY (intent tracking)
+ * ❗ NO BUSINESS SIDE EFFECTS HERE
  */
-export function trackWhatsAppClick(
-  options?: WhatsAppOptions
-): void {
+export function trackWhatsAppClick(options?: WhatsAppOptions): void {
   if (typeof window === "undefined") return;
 
-  // 1. Analytics event (funnel input)
   track("whatsapp_click", {
-    source: options?.source ?? "unknown",
     room: options?.room ?? null,
-  });
-
-  // 2. Lead system (conversion output)
-  trackLead("whatsapp_click");
+  }, options?.source ?? "unknown");
 }
 
 /**
- * Message formatting (UI-only)
+ * MESSAGE FORMATTER (UI ONLY)
  */
 export function formatWhatsAppMessage(
   message: string,
   options?: WhatsAppOptions
 ): string {
-  const lines = [
+  return [
     `🏨 ${HOTEL.identity.name}`,
     "",
     message,
     "",
     "---",
-    `Source: ${options?.source ?? "direct"}`,
+    `Source: ${options?.source ?? "unknown"}`,
     options?.room ? `Room: ${options.room}` : null,
-  ];
-
-  return lines.filter(Boolean).join("\n").trim();
+  ]
+    .filter(Boolean)
+    .join("\n")
+    .trim();
 }
