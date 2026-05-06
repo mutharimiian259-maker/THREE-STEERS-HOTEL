@@ -3,7 +3,7 @@
 import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 import Image from "next/image";
-import { trackEvent } from "@/lib/analytics/trackEvent";
+import { track } from "@/lib/core/analytics";
 
 export default function Conference() {
   const whatsappNumber = HOTEL.contact.phone.whatsapp.replace(/\s/g, "");
@@ -41,9 +41,9 @@ export default function Conference() {
         <div
           className="relative h-60 rounded-lg overflow-hidden cursor-pointer"
           onClick={() =>
-            trackEvent("room_view", {
+            track("room_view", {
               source: "conference",
-              space: "Summit Hall",
+              entity: "Summit Hall",
             })
           }
         >
@@ -68,9 +68,9 @@ export default function Conference() {
         <div
           className="relative h-60 rounded-lg overflow-hidden cursor-pointer"
           onClick={() =>
-            trackEvent("room_view", {
+            track("room_view", {
               source: "conference",
-              space: "Conference Room 2",
+              entity: "Conference Room 2",
             })
           }
         >
@@ -98,8 +98,9 @@ export default function Conference() {
         href={`https://wa.me/${whatsappNumber}?text=${enquiryMessage}`}
         className="mt-6 inline-block px-6 py-3 bg-green-600 text-white rounded-lg"
         onClick={() => {
-          trackEvent("booking_intent", {
+          track("whatsapp_click", {
             source: "conference_cta",
+            context: "intent",
           });
         }}
       >
