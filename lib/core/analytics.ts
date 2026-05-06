@@ -1,7 +1,7 @@
 "use client";
 
 /* ---------------------------------------
-   TYPES
+   TYPES (CORE TRUTH ONLY)
 --------------------------------------- */
 
 export type EventType =
@@ -34,7 +34,7 @@ export type StoredEvent = {
 };
 
 /* ---------------------------------------
-   CONFIG (CORE RULES)
+   CONFIG (CORE CONSTANTS ONLY)
 --------------------------------------- */
 
 const STORAGE_KEY = "hotel_events";
@@ -44,13 +44,7 @@ const MAX_EVENTS = 200;
 const DEDUP_WINDOW_MS = 3000;
 
 /* ---------------------------------------
-   MEMORY CACHE
---------------------------------------- */
-
-let cache: StoredEvent[] = [];
-
-/* ---------------------------------------
-   SESSION CORE (FIXED)
+   SESSION CORE (IDENTITY LAYER)
 --------------------------------------- */
 
 function getSessionId(): string {
@@ -67,22 +61,38 @@ function getSessionId(): string {
 }
 
 /* ---------------------------------------
+   STORAGE CORE (FUTURE DB READY)
+--------------------------------------- */
+
+const storage = {
+  get(): string | null {
+    return localStorage.getItem(STORAGE_KEY);
+  },
+
+  set(value: string) {
+    localStorage.setItem(STORAGE_KEY, value);
+  },
+};
+
+/* ---------------------------------------
+   MEMORY CACHE (PERFORMANCE ONLY)
+--------------------------------------- */
+
+let cache: StoredEvent[] = [];
+
+/* ---------------------------------------
    HELPERS
 --------------------------------------- */
 
-function generateId() {
+function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
-
-/* ---------------------------------------
-   STORAGE CORE (ONLY SOURCE OF TRUTH)
---------------------------------------- */
 
 function loadEvents(): StoredEvent[] {
   if (typeof window === "undefined") return [];
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = storage.get();
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -90,17 +100,32 @@ function loadEvents(): StoredEvent[] {
 }
 
 function saveEvents(events: StoredEvent[]) {
-  cache = events.slice(-MAX_EVENTS);
+  const trimmed = events.slice(-MAX_EVENTS);
+  cache = trimmed;
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
+    storage.set(JSON.stringify(trimmed));
   } catch (e) {
     console.warn("[CORE] storage failed", e);
   }
 }
 
 /* ---------------------------------------
-   DEDUP CORE
+   EVENT VALIDATION (RUNTIME SAFETY)
+--------------------------------------- */
+
+function isValidEventType(type: string): type is EventType {
+  return [
+    "page_view",
+    "room_view",
+    "whatsapp_click",
+    "call_click",
+    "booking_intent",
+  ].includes(type);
+}
+
+/* ---------------------------------------
+   DEDUP LOGIC (STABLE VERSION)
 --------------------------------------- */
 
 function isDuplicate(events: StoredEvent[], next: StoredEvent) {
@@ -111,7 +136,8 @@ function isDuplicate(events: StoredEvent[], next: StoredEvent) {
 
     if (
       e.type === next.type &&
-      e.url === next.url
+      e.url === next.url &&
+      e.origin === next.origin
     ) {
       return true;
     }
@@ -121,7 +147,7 @@ function isDuplicate(events: StoredEvent[], next: StoredEvent) {
 }
 
 /* ---------------------------------------
-   CORE EVENT ENGINE (SINGLE SOURCE OF TRUTH)
+   EVENT BUS (ADAPTER ENTRY POINT)
 --------------------------------------- */
 
 type Listener = (event: StoredEvent) => void;
@@ -134,7 +160,7 @@ export function subscribe(fn: Listener) {
 }
 
 /* ---------------------------------------
-   CORE TRACK FUNCTION
+   CORE TRACK ENGINE (ONLY ENTRY POINT)
 --------------------------------------- */
 
 export function track(
@@ -143,6 +169,9 @@ export function track(
   origin: EventSource = "unknown"
 ) {
   if (typeof window === "undefined") return;
+
+  // runtime safety guard
+  if (!isValidEventType(type)) return;
 
   const now = Date.now();
 
@@ -161,13 +190,20 @@ export function track(
 
   if (isDuplicate(events, event)) return;
 
-  events.push(event);
-  saveEvents(events);
+  const updated = [...events, event];
 
-  cache = events;
+  saveEvents(updated);
 
-  listeners.forEach((fn) => fn(event));
+  // broadcast to adapters (GA, API, etc later)
+  listeners.forEach((fn) => {
+    try {
+      fn(event);
+    } catch (e) {
+      console.warn("[CORE] listener error", e);
+    }
+  });
 
+  // dev visibility only
   if (process.env.NODE_ENV === "development") {
     console.log("[CORE EVENT]", event);
   }
