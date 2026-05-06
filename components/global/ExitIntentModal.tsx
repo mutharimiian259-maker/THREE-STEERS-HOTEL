@@ -5,9 +5,18 @@ export type EventType =
   | "room_view"
   | "whatsapp_click"
   | "call_click"
+  | "booking_intent"
   | "navigation"
-  | "email_click"
-  | "booking_intent";
+  | "email_click";
+
+export type EventSource =
+  | "navbar"
+  | "footer"
+  | "room_card"
+  | "exit_intent"
+  | "sticky_cta"
+  | "page"
+  | "unknown";
 
 export type EventPayload = Record<string, unknown>;
 
@@ -18,30 +27,47 @@ export type StoredEvent = {
   time: string;
   ts: number;
   url: string;
-  source?: "core";
+  source: "core";
+  origin: EventSource;
 };
 
 export const APP_EVENT = "app:event";
 
 const STORAGE_KEY = "hotel_events";
 const MAX_EVENTS = 200;
-const DEDUP_WINDOW_MS = 1500;
+const DEDUP_WINDOW_MS = 3000;
 const MAX_PAYLOAD_SIZE = 2000;
 
-let cache: StoredEvent[] | null = null;
+let cache: StoredEvent[] = [];
 
 const VALID_TYPES = new Set<EventType>([
   "page_view",
   "room_view",
   "whatsapp_click",
   "call_click",
+  "booking_intent",
   "navigation",
   "email_click",
-  "booking_intent",
 ]);
 
 function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/**
+ * CONSISTENT STRINGIFY (fix dedup inconsistency)
+ */
+function stableStringify(obj: any) {
+  if (!obj || typeof obj !== "object") return JSON.stringify(obj);
+
+  return JSON.stringify(
+    Object.keys(obj)
+      .sort()
+      .reduce((acc: any, key) => {
+        acc[key] = obj[key];
+        return acc;
+      }, {})
+  );
 }
 
 function isValidEvent(e: any): e is StoredEvent {
@@ -49,60 +75,58 @@ function isValidEvent(e: any): e is StoredEvent {
     e &&
     VALID_TYPES.has(e.type) &&
     typeof e.id === "string" &&
-    typeof e.time === "string" &&
     typeof e.ts === "number" &&
     typeof e.url === "string"
   );
-}
-
-function isValidEventArray(data: unknown): data is StoredEvent[] {
-  return Array.isArray(data) && data.every(isValidEvent);
 }
 
 function syncCache() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    cache = isValidEventArray(parsed) ? parsed : [];
+    cache = Array.isArray(parsed) ? parsed.filter(isValidEvent) : [];
   } catch {
     cache = [];
   }
 }
 
 function safeGet(): StoredEvent[] {
-  if (typeof window === "undefined") return [];
-  if (!cache) syncCache();
-  return cache!;
+  if (!cache.length) syncCache();
+  return cache;
 }
 
 function safeSet(events: StoredEvent[]) {
-  if (typeof window === "undefined") return;
-
   cache = events.slice(-MAX_EVENTS);
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
   } catch (err) {
-    console.error("[TRACK] localStorage write failed", err);
+    console.error("[TRACK] storage write failed", err);
   }
 }
 
 function isDuplicate(events: StoredEvent[], next: StoredEvent) {
-  return events.slice(-10).reverse().some((e) => {
-    if (next.ts - e.ts > DEDUP_WINDOW_MS) return false;
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i];
 
-    return (
+    if (next.ts - e.ts > DEDUP_WINDOW_MS) break;
+
+    if (
       e.type === next.type &&
       e.url === next.url &&
-      JSON.stringify(e.payload) === JSON.stringify(next.payload)
-    );
-  });
+      stableStringify(e.payload) === stableStringify(next.payload)
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function sanitizePayload(payload: EventPayload): EventPayload {
   try {
-    if (JSON.stringify(payload).length > MAX_PAYLOAD_SIZE) {
-      return { ...payload, __truncated: true };
+    const size = JSON.stringify(payload).length;
+    if (size > MAX_PAYLOAD_SIZE) {
+      return { __truncated: true };
     }
     return payload;
   } catch {
@@ -110,12 +134,42 @@ function sanitizePayload(payload: EventPayload): EventPayload {
   }
 }
 
-export let onEventIntercept:
-  | ((event: StoredEvent) => void)
-  | undefined;
+/**
+ * SAFE INTERCEPT HOOK (no mutation risk)
+ */
+type Listener = (event: StoredEvent) => void;
+const listeners = new Set<Listener>();
 
-export function track(type: EventType, payload: EventPayload = {}): void {
+export function subscribe(listener: Listener) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function sendToGA(event: StoredEvent) {
+  const w = window as any;
+
+  if (typeof w.gtag !== "function") return;
+
+  try {
+    w.gtag("event", event.type, {
+      event_category: "engagement",
+      event_label: event.origin,
+      page_location: event.url,
+      ...event.payload,
+    });
+  } catch {}
+}
+
+/**
+ * CORE TRACK FUNCTION
+ */
+export function track(
+  type: EventType,
+  payload: EventPayload = {},
+  origin: EventSource = "unknown"
+): void {
   if (typeof window === "undefined") return;
+
   if (!VALID_TYPES.has(type)) return;
 
   const now = Date.now();
@@ -128,35 +182,34 @@ export function track(type: EventType, payload: EventPayload = {}): void {
     ts: now,
     url: window.location.href,
     source: "core",
+    origin,
   };
 
   const events = safeGet();
 
   if (isDuplicate(events, event)) return;
 
-  try {
-    onEventIntercept?.(event);
-  } catch {}
-
   events.push(event);
   safeSet(events);
 
-  window.dispatchEvent(
-    new CustomEvent(APP_EVENT, { detail: event })
-  );
+  /**
+   * EVENT BUS
+   */
+  window.dispatchEvent(new CustomEvent(APP_EVENT, { detail: event }));
 
-  const w = window as any;
-
-  if (typeof w.gtag === "function") {
+  /**
+   * MULTI-LISTENER SUPPORT
+   */
+  listeners.forEach((fn) => {
     try {
-      w.gtag("event", type, {
-        event_category: "engagement",
-        event_label: type,
-        page_location: event.url,
-        ...event.payload,
-      });
+      fn(event);
     } catch {}
-  }
+  });
+
+  /**
+   * GA
+   */
+  sendToGA(event);
 
   if (process.env.NODE_ENV === "development") {
     console.log("[TRACK]", event);
