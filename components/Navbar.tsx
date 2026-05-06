@@ -16,14 +16,13 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   /**
-   * ✅ CORRECT: navigation event
+   * NAVIGATION EVENT (FIXED)
    */
   const handleNavClick = (routeName: string) => {
     track(
-      "page_view",
+      "navigation",
       {
         destination: routeName,
-        action: "navigation",
       },
       "navbar"
     );
@@ -32,7 +31,7 @@ export default function Navbar() {
   };
 
   /**
-   * ✅ CENTRALIZED WhatsApp link
+   * CENTRALIZED WHATSAPP LINK
    */
   const whatsappLink = useMemo(() => {
     const message = formatWhatsAppMessage(
@@ -44,13 +43,13 @@ export default function Navbar() {
   }, []);
 
   /**
-   * ✅ CORRECT: WhatsApp click event
+   * WHATSAPP CLICK EVENT
    */
-  const handleWhatsAppClick = (variant: string) => {
+  const handleWhatsAppClick = (variant: "desktop" | "mobile") => {
     track(
       "whatsapp_click",
       {
-        variant, // desktop / mobile
+        variant,
       },
       "navbar"
     );
@@ -83,7 +82,6 @@ export default function Navbar() {
           <Link
             key={route.path}
             href={route.path}
-            className="transition hover:text-yellow-500"
             onClick={() => handleNavClick(route.name)}
           >
             {route.name}
@@ -115,7 +113,6 @@ export default function Navbar() {
             <Link
               key={route.path}
               href={route.path}
-              className="text-gray-300 text-lg hover:text-yellow-500"
               onClick={() => handleNavClick(route.name)}
             >
               {route.name}
@@ -124,8 +121,8 @@ export default function Navbar() {
 
           <a
             href={whatsappLink}
-            className="mt-6 bg-green-600 text-white text-center py-3 rounded-lg font-semibold"
             onClick={() => handleWhatsAppClick("mobile")}
+            className="mt-6 bg-green-600 text-white text-center py-3 rounded-lg font-semibold"
           >
             Book Now
           </a>
@@ -135,8 +132,8 @@ export default function Navbar() {
       {/* DESKTOP CTA */}
       <a
         href={whatsappLink}
-        className="hidden md:inline-block btn btn-green font-semibold px-5 py-2"
         onClick={() => handleWhatsAppClick("desktop")}
+        className="hidden md:inline-block btn btn-green font-semibold px-5 py-2"
       >
         Book Now
       </a>
