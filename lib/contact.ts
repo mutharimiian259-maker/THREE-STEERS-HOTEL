@@ -7,6 +7,11 @@ export const INTENT = {
 export type Intent =
   typeof INTENT[keyof typeof INTENT];
 
+/* ---------------------------------------
+   FUNNEL STAGES (REFERENCE ONLY)
+   DO NOT USE AS RUNTIME SOURCE OF TRUTH
+--------------------------------------- */
+
 export const FUNNEL = {
   VISIT: "VISIT",
   ENGAGEMENT: "ENGAGEMENT",
@@ -17,10 +22,12 @@ export const FUNNEL = {
 export type FunnelStep =
   typeof FUNNEL[keyof typeof FUNNEL];
 
-/**
- * RAW USER BEHAVIOR EVENTS (analytics input layer)
- */
-export const EVENTS = {
+/* ---------------------------------------
+   EVENT LABELS (REFERENCE MAP ONLY)
+   These MUST match core analytics EventType
+--------------------------------------- */
+
+export const EVENT_LABELS = {
   PAGE_VIEW: "page_view",
   ROOM_VIEW: "room_view",
 
@@ -28,19 +35,12 @@ export const EVENTS = {
   CALL_CLICK: "call_click",
   EMAIL_CLICK: "email_click",
 
-  BLOG_CLICK: "blog_click",
-
-  /**
-   * 🔥 FIX: missing conversion trigger event
-   * This is what connects UI → INTENT funnel stage
-   */
   BOOKING_INTENT: "booking_intent",
-
-  /**
-   * 🔥 FIX: structural navigation tracking (used in routes)
-   */
   NAVIGATION_CLICK: "navigation_click",
 } as const;
 
-export type EventType =
-  typeof EVENTS[keyof typeof EVENTS];
+/**
+ * IMPORTANT:
+ * Do NOT export EventType from here.
+ * Core analytics is the ONLY source of truth.
+ */
