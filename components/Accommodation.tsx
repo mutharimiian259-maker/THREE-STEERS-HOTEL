@@ -3,8 +3,7 @@
 import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 import Image from "next/image";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { track } from "@/lib/core/analytics";
 
 export default function Accommodation() {
   const whatsappNumber = HOTEL.contact.phone.whatsapp.replace(/\s/g, "");
@@ -33,9 +32,9 @@ export default function Accommodation() {
         <div
           className="relative h-64 rounded-lg overflow-hidden cursor-pointer"
           onClick={() => {
-            trackEvent("room_view", {
+            track("room_view", {
               source: "accommodation",
-              wing: "batian",
+              entity: "batian_wing",
             });
           }}
         >
@@ -60,9 +59,9 @@ export default function Accommodation() {
         <div
           className="relative h-64 rounded-lg overflow-hidden cursor-pointer"
           onClick={() => {
-            trackEvent("room_view", {
+            track("room_view", {
               source: "accommodation",
-              wing: "lenana",
+              entity: "lenana_wing",
             });
           }}
         >
@@ -96,11 +95,10 @@ export default function Accommodation() {
         href={`https://wa.me/${whatsappNumber}?text=${message}`}
         className="mt-5 inline-block px-6 py-3 bg-green-600 text-white rounded-lg"
         onClick={() => {
-          trackEvent("booking_intent", {
+          track("whatsapp_click", {
             source: "accommodation_cta",
+            context: "intent",
           });
-
-          setFunnelStep("INTENT");
         }}
       >
         Book Your Room
