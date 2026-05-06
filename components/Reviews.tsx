@@ -1,4 +1,3 @@
-
 import { HOTEL } from "@/lib/config";
 
 type SeoIntent =
@@ -27,39 +26,36 @@ function joinUrl(base: string, path: string = ""): string {
   return `${cleanBase}${cleanPath}`;
 }
 
+/**
+ * FIX: Keep SEO intent separate from funnel logic
+ * (prevents semantic coupling across systems)
+ */
 function getIntentKeywords(intent?: SeoIntent): string[] {
-  switch (intent) {
-    case "room":
-      return [
-        "hotel rooms in Meru",
-        "luxury accommodation Kenya",
-        "book hotel room Meru",
-      ];
+  const map: Record<SeoIntent, string[]> = {
+    home: [],
+    room: [
+      "hotel rooms in Meru",
+      "luxury accommodation Kenya",
+      "book hotel room Meru",
+    ],
+    conference: [
+      "conference venues Meru",
+      "meeting rooms Kenya hotel",
+      "corporate events Meru",
+    ],
+    dining: [
+      "restaurants in Meru hotel",
+      "fine dining Meru Kenya",
+      "hotel food Meru",
+    ],
+    blog: [
+      "travel Meru Kenya",
+      "hotels near Mt Kenya",
+      "Meru tourism guide",
+    ],
+  };
 
-    case "conference":
-      return [
-        "conference venues Meru",
-        "meeting rooms Kenya hotel",
-        "corporate events Meru",
-      ];
-
-    case "dining":
-      return [
-        "restaurants in Meru hotel",
-        "fine dining Meru Kenya",
-        "hotel food Meru",
-      ];
-
-    case "blog":
-      return [
-        "travel Meru Kenya",
-        "hotels near Mt Kenya",
-        "Meru tourism guide",
-      ];
-
-    default:
-      return [];
-  }
+  return map[intent || "home"];
 }
 
 function dedupe(arr: string[]) {
@@ -73,9 +69,13 @@ function validateImage(image?: string): string {
     return fallback;
   }
 
-  return image.startsWith("/") || image.startsWith("http")
-    ? image
-    : fallback;
+  // FIX: basic safety guard
+  const isValid =
+    image.startsWith("/") ||
+    image.startsWith("http://") ||
+    image.startsWith("https://");
+
+  return isValid ? image : fallback;
 }
 
 export function generateSEO({
@@ -103,9 +103,9 @@ export function generateSEO({
     : joinUrl(baseUrl, safeImage);
 
   const finalKeywords = dedupe([
-    ...HOTEL.seo.keywords, // brand keywords
-    ...getIntentKeywords(intent), // intent keywords
-    ...keywords, // page-specific keywords
+    ...HOTEL.seo.keywords,
+    ...getIntentKeywords(intent),
+    ...keywords,
   ]);
 
   return {
