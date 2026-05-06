@@ -10,24 +10,32 @@ import Conference from "@/components/Conference";
 import Dining from "@/components/Dining";
 import Experience from "@/components/Experience";
 import Link from "next/link";
+
 import rooms from "@/data/rooms";
-import { HOTEL } from "@/lib/config";
+import { HOTEL, getPhoneByLabel } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
 
 export default function Home() {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
 
-  /* ---------------- INITIAL VISIT ---------------- */
+  /* ---------------------------------------
+     PAGE VIEW (CORE ENTRY EVENT)
+  --------------------------------------- */
   useEffect(() => {
     track("page_view", {
-      page_name: "home",
-      context: "navigation",
+      page: "home",
+      context: "entry",
     });
   }, []);
 
+  /* ---------------------------------------
+     CONTACT HELPERS (SINGLE SOURCE OF TRUTH)
+  --------------------------------------- */
+  const whatsapp = getPhoneByLabel("whatsapp");
+  const primaryPhone = getPhoneByLabel("primary");
+
   return (
     <main>
-
       {/* HERO */}
       <section id="home">
         <Hero />
@@ -40,14 +48,14 @@ export default function Home() {
             Rooms & Accommodation in {HOTEL.location.city}
           </h2>
 
-          {/* FIXED: navigation click is NOT page_view */}
+          {/* NAVIGATION EVENT ONLY (NO BUSINESS LOGIC MIX) */}
           <Link
             href="/rooms"
             className="text-sm text-yellow-500 underline"
             onClick={() =>
-              track("whatsapp_click", {
-                source: "home_rooms_navigation", // FIX: semantic correction
-                context: "navigation",
+              track("booking_intent", {
+                source: "rooms_navigation",
+                page: "home",
               })
             }
           >
@@ -90,7 +98,7 @@ export default function Home() {
 
         <p className="text-gray-300 mt-3 leading-relaxed">
           {HOTEL.identity.name} is a premier hotel in {HOTEL.location.city},
-          offering premium accommodation, dining, conferences, and hospitality services.
+          offering accommodation, dining, conferences, and hospitality services.
         </p>
       </section>
 
@@ -106,7 +114,6 @@ export default function Home() {
 
       {/* BOOKING CTA */}
       <section id="booking" className="text-center p-10 bg-zinc-900">
-
         <h2 className="text-3xl font-bold text-yellow-500">
           Book Your Stay at {HOTEL.identity.name}
         </h2>
@@ -117,10 +124,15 @@ export default function Home() {
 
         <div className="mt-6 flex flex-col md:flex-row justify-center gap-4">
 
+          {/* WHATSAPP CTA (PURE CONVERSION EVENT) */}
           <a
-            href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
-              "Hello, I want to book a room at " + HOTEL.identity.name
-            )}`}
+            href={
+              whatsapp
+                ? `https://wa.me/${whatsapp}?text=${encodeURIComponent(
+                    "Hello, I want to book a room at " + HOTEL.identity.name
+                  )}`
+                : "#"
+            }
             className="px-6 py-3 bg-green-600 text-white rounded-lg"
             onClick={() =>
               track("whatsapp_click", {
@@ -132,8 +144,9 @@ export default function Home() {
             💬 WhatsApp Booking
           </a>
 
+          {/* CALL CTA (PURE CONVERSION EVENT) */}
           <a
-            href={`tel:${HOTEL.contact.phone.primary}`}
+            href={primaryPhone ? `tel:${primaryPhone}` : "#"}
             className="px-6 py-3 bg-yellow-500 text-black rounded-lg"
             onClick={() =>
               track("call_click", {
@@ -147,7 +160,6 @@ export default function Home() {
 
         </div>
       </section>
-
     </main>
   );
 }
