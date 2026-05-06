@@ -1,19 +1,76 @@
-export const HOTEL = {
+export type HotelConfig = {
+  identity: {
+    name: string;
+    brand: string;
+  };
+
+  domain: {
+    primary: string;
+  };
+
+  contact: {
+    phones: {
+      label: "primary" | "secondary" | "whatsapp";
+      number: string;
+    }[];
+    email: string;
+  };
+
+  location: {
+    city: string;
+    region: string;
+    country: string;
+    full: string;
+    timezone: string;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
+  };
+
+  seo: {
+    defaultTitle: string;
+    defaultDescription: string;
+  };
+
+  pricing: {
+    currency: string;
+    range: {
+      min: number;
+      max: number;
+      display: string;
+    };
+  };
+
+  business: {
+    checkIn: string;
+    checkOut: string;
+    starRating: number;
+    policies: {
+      cancellation: string;
+      lateCheckout: string;
+    };
+  };
+};
+
+export const HOTEL: HotelConfig = {
   identity: {
     name: "Three Steers Hotel Meru",
     brand: "Three Steers Hotel",
   },
 
   domain: {
-    primary: "https://www.threesteershotel.com",
+    primary:
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "http://localhost:3000",
   },
 
   contact: {
-    phone: {
-      primary: "+254728588005",
-      secondary: "+254735497772",
-      whatsapp: "+254728588005",
-    },
+    phones: [
+      { label: "primary", number: "+254728588005" },
+      { label: "secondary", number: "+254735497772" },
+      { label: "whatsapp", number: "+254728588005" },
+    ],
     email: "reservation@threesteershotel.com",
   },
 
@@ -22,7 +79,7 @@ export const HOTEL = {
     region: "Meru County",
     country: "Kenya",
     full: "Meru, Kenya",
-    timezone: "Africa/Nairobi", // 🔥 FIX: important for analytics + booking flows
+    timezone: "Africa/Nairobi",
     coordinates: {
       lat: -0.046,
       lng: 37.65,
@@ -30,21 +87,10 @@ export const HOTEL = {
   },
 
   seo: {
-    defaultTitle: "Three Steers Hotel Meru | Luxury Hotel in Kenya",
+    defaultTitle:
+      "Three Steers Hotel Meru | Luxury Hotel in Kenya",
     defaultDescription:
       "Luxury hotel in Meru, Kenya offering accommodation, dining, conferences, and events near Mount Kenya. Book direct for best rates.",
-
-    /**
-     * GLOBAL SEO KEYWORDS ONLY (STATIC BRAND LAYER)
-     * Do NOT use for page-level ranking logic
-     */
-    keywords: [
-      "hotel in Meru Kenya",
-      "Three Steers Hotel",
-      "Meru accommodation",
-      "conference hotel Meru",
-      "best hotel near Mount Kenya",
-    ],
   },
 
   pricing: {
@@ -60,29 +106,32 @@ export const HOTEL = {
     checkIn: "12:00",
     checkOut: "10:00",
     starRating: 4,
-
-    // 🔥 FIX: future extensibility hook (important for booking engine later)
     policies: {
       cancellation: "24h flexible",
       lateCheckout: "subject to availability",
     },
   },
-} as const;
+};
 
-/* --------------------------------------------------
-   PURE HELPERS (NO BUSINESS LOGIC SIDE EFFECTS)
--------------------------------------------------- */
+/* -----------------------------
+   HELPERS (ENFORCED CENTRAL)
+----------------------------- */
 
 export function getCleanPhone(phone: string): string {
   return phone.replace(/[^\d]/g, "");
 }
 
-export function getWhatsAppNumber(): string {
-  return getCleanPhone(HOTEL.contact.phone.whatsapp);
+export function getPhoneByLabel(
+  label: "primary" | "secondary" | "whatsapp"
+): string | null {
+  const phone = HOTEL.contact.phones.find(
+    (p) => p.label === label
+  );
+  return phone ? getCleanPhone(phone.number) : null;
 }
 
-export function getPrimaryPhone(): string {
-  return getCleanPhone(HOTEL.contact.phone.primary);
+export function getWhatsAppNumber(): string | null {
+  return getPhoneByLabel("whatsapp");
 }
 
 export function getDomain(): string {
