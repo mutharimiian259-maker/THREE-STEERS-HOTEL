@@ -1,10 +1,14 @@
 "use client";
 
-import { track, EventType } from "@/lib/core/analytics";
+import {
+  track,
+  EventType,
+  EventSource,
+} from "@/lib/core/analytics";
 
 /**
  * Intent = semantic tagging only
- * MUST reuse core EventType
+ * MUST reuse core types
  */
 
 type IntentPayload = {
@@ -17,15 +21,18 @@ type IntentPayload = {
 export function trackIntent(
   type: EventType,
   payload: IntentPayload = {},
-  origin?: Parameters<typeof track>[2]
+  origin: EventSource = "unknown"
 ) {
   if (typeof window === "undefined") return;
+
+  // 🔥 ensure payload is always an object (safety for core)
+  const safePayload = payload ?? {};
 
   track(
     type,
     {
-      ...payload,
-      intent: true,
+      ...safePayload,
+      intent: true, // semantic flag only
     },
     origin
   );
