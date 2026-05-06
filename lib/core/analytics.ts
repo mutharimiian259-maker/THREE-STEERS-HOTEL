@@ -34,7 +34,7 @@ export type StoredEvent = {
 };
 
 /* ---------------------------------------
-   CONFIG (CORE CONSTANTS ONLY)
+   CONFIG
 --------------------------------------- */
 
 const STORAGE_KEY = "hotel_events";
@@ -44,7 +44,7 @@ const MAX_EVENTS = 200;
 const DEDUP_WINDOW_MS = 3000;
 
 /* ---------------------------------------
-   SESSION CORE (IDENTITY LAYER)
+   SESSION CORE
 --------------------------------------- */
 
 function getSessionId(): string {
@@ -61,7 +61,7 @@ function getSessionId(): string {
 }
 
 /* ---------------------------------------
-   STORAGE CORE (FUTURE DB READY)
+   STORAGE CORE
 --------------------------------------- */
 
 const storage = {
@@ -75,7 +75,7 @@ const storage = {
 };
 
 /* ---------------------------------------
-   MEMORY CACHE (PERFORMANCE ONLY)
+   MEMORY CACHE
 --------------------------------------- */
 
 let cache: StoredEvent[] = [];
@@ -111,34 +111,41 @@ function saveEvents(events: StoredEvent[]) {
 }
 
 /* ---------------------------------------
-   EVENT VALIDATION (RUNTIME SAFETY)
+   EVENT VALIDATION
 --------------------------------------- */
 
 function isValidEventType(type: string): type is EventType {
-  return [
-    "page_view",
-    "room_view",
-    "whatsapp_click",
-    "call_click",
-    "booking_intent",
-  ].includes(type);
+  return (
+    type === "page_view" ||
+    type === "room_view" ||
+    type === "whatsapp_click" ||
+    type === "call_click" ||
+    type === "booking_intent"
+  );
 }
 
 /* ---------------------------------------
-   DEDUP LOGIC (STABLE VERSION)
+   STRICT DEDUP (FINAL VERSION)
 --------------------------------------- */
 
+function getEventSignature(event: StoredEvent): string {
+  return JSON.stringify({
+    type: event.type,
+    url: event.url,
+    origin: event.origin,
+    payload: event.payload,
+  });
+}
+
 function isDuplicate(events: StoredEvent[], next: StoredEvent) {
+  const nextSig = getEventSignature(next);
+
   for (let i = events.length - 1; i >= 0; i--) {
     const e = events[i];
 
     if (next.ts - e.ts > DEDUP_WINDOW_MS) break;
 
-    if (
-      e.type === next.type &&
-      e.url === next.url &&
-      e.origin === next.origin
-    ) {
+    if (getEventSignature(e) === nextSig) {
       return true;
     }
   }
@@ -147,7 +154,7 @@ function isDuplicate(events: StoredEvent[], next: StoredEvent) {
 }
 
 /* ---------------------------------------
-   EVENT BUS (ADAPTER ENTRY POINT)
+   EVENT BUS
 --------------------------------------- */
 
 type Listener = (event: StoredEvent) => void;
@@ -160,7 +167,7 @@ export function subscribe(fn: Listener) {
 }
 
 /* ---------------------------------------
-   CORE TRACK ENGINE (ONLY ENTRY POINT)
+   CORE TRACK ENGINE
 --------------------------------------- */
 
 export function track(
@@ -170,7 +177,6 @@ export function track(
 ) {
   if (typeof window === "undefined") return;
 
-  // runtime safety guard
   if (!isValidEventType(type)) return;
 
   const now = Date.now();
@@ -194,7 +200,8 @@ export function track(
 
   saveEvents(updated);
 
-  // broadcast to adapters (GA, API, etc later)
+  cache = updated;
+
   listeners.forEach((fn) => {
     try {
       fn(event);
@@ -203,7 +210,6 @@ export function track(
     }
   });
 
-  // dev visibility only
   if (process.env.NODE_ENV === "development") {
     console.log("[CORE EVENT]", event);
   }
