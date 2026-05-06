@@ -3,8 +3,10 @@
 import { track } from "@/lib/core/analytics";
 
 /**
- * STRICT INTENT TYPES (NOT LEADS)
+ * Intent layer = semantic tagging ONLY
+ * NO schema mutation allowed here
  */
+
 type IntentType =
   | "room_view"
   | "whatsapp_click"
@@ -18,15 +20,14 @@ type IntentPayload = {
   context?: string;
   page?: string;
   value?: number;
-  [key: string]: unknown;
 };
 
 /**
- * INTENT TRACKING ONLY
+ * INTENT LAYER (SAFE)
  *
- * ❗ This is NOT a lead system
- * ❗ This is NOT CRM data
- * ❗ This is behavioral enrichment only
+ * - Does NOT redefine event schema
+ * - Does NOT inject non-core fields
+ * - Only enriches metadata
  */
 export function trackIntent(
   type: IntentType,
@@ -36,10 +37,6 @@ export function trackIntent(
 
   track(type, {
     ...payload,
-    event_category: "intent",
-    url: window.location.href,
-    referrer: document.referrer || undefined,
-    ua: navigator.userAgent,
-    lang: navigator.language,
+    intent: true, // simple semantic flag ONLY
   });
 }
