@@ -113,27 +113,37 @@ export const HOTEL: HotelConfig = {
   },
 };
 
-/* -----------------------------
-   HELPERS (ENFORCED CENTRAL)
------------------------------ */
+/* ---------------------------------------
+   STRICT ACCESS LAYER (IMPORTANT FIX)
+--------------------------------------- */
 
-export function getCleanPhone(phone: string): string {
+function sanitizePhone(phone: string): string {
   return phone.replace(/[^\d]/g, "");
 }
 
+/**
+ * SINGLE SOURCE OF TRUTH ACCESS ONLY
+ */
 export function getPhoneByLabel(
   label: "primary" | "secondary" | "whatsapp"
 ): string | null {
   const phone = HOTEL.contact.phones.find(
     (p) => p.label === label
   );
-  return phone ? getCleanPhone(phone.number) : null;
+
+  return phone ? sanitizePhone(phone.number) : null;
 }
 
+/**
+ * WHATSAPP IS A DERIVED VALUE (NOT RAW ACCESS)
+ */
 export function getWhatsAppNumber(): string | null {
   return getPhoneByLabel("whatsapp");
 }
 
+/**
+ * DOMAIN ACCESS ONLY THROUGH FUNCTION
+ */
 export function getDomain(): string {
   return HOTEL.domain.primary;
 }
