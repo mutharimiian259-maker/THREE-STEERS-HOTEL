@@ -1,8 +1,7 @@
 "use client";
 
 import { HOTEL } from "@/lib/config";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { track } from "@/lib/core/analytics";
 
 export default function Location() {
   const locationQuery = encodeURIComponent(
@@ -38,11 +37,10 @@ export default function Location() {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => {
-            trackEvent("navigation", {
+            track("room_view", {
               source: "directions",
+              context: "location",
             });
-
-            setFunnelStep("INTENT");
           }}
         >
           📍 Get Directions
@@ -58,11 +56,10 @@ export default function Location() {
               HOTEL.location.city
           )}`}
           onClick={() => {
-            trackEvent("whatsapp_click", {
+            track("whatsapp_click", {
               source: "location",
+              context: "intent",
             });
-
-            setFunnelStep("CONTACT");
           }}
         >
           💬 Book via WhatsApp
