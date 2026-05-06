@@ -1,8 +1,7 @@
 "use client";
 
 import { HOTEL } from "@/lib/config";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { track } from "@/lib/core/analytics";
 
 export default function ContactInfo() {
   const phone = HOTEL.contact.phone.primary.replace(/\s/g, "");
@@ -20,11 +19,10 @@ export default function ContactInfo() {
         href={`mailto:${HOTEL.contact.email}`}
         className="block mt-2 text-gray-400 hover:text-white"
         onClick={() => {
-          trackEvent("email_click", {
+          track("whatsapp_click", {
             source: "contact_section",
+            action: "email_click",
           });
-
-          setFunnelStep("VISIT");
         }}
       >
         {HOTEL.contact.email}
@@ -38,22 +36,21 @@ export default function ContactInfo() {
       {/* CTA BLOCK */}
       <div className="mt-6 flex flex-col md:flex-row justify-center gap-4">
 
-        {/* CALL CTA → HIGH INTENT CONTACT */}
+        {/* CALL CTA */}
         <a
           href={`tel:${phone}`}
           className="px-6 py-3 bg-yellow-500 text-black rounded-lg"
           onClick={() => {
-            trackEvent("call_click", {
+            track("call_click", {
               source: "contact_section",
+              context: "intent",
             });
-
-            setFunnelStep("CONTACT");
           }}
         >
           Call Now
         </a>
 
-        {/* WHATSAPP CTA → STRONG CONVERSION ACTION */}
+        {/* WHATSAPP CTA */}
         <a
           href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
             "Hello, I would like to book a stay at " +
@@ -62,11 +59,10 @@ export default function ContactInfo() {
           )}`}
           className="px-6 py-3 bg-green-600 text-white rounded-lg"
           onClick={() => {
-            trackEvent("whatsapp_click", {
+            track("whatsapp_click", {
               source: "contact_section",
+              context: "intent",
             });
-
-            setFunnelStep("CONTACT");
           }}
         >
           WhatsApp Booking
