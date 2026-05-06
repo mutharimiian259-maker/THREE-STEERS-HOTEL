@@ -1,108 +1,164 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { HOTEL } from "@/lib/config";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { trackLead } from "@/lib/analytics/trackLead";
+export type EventType =
+  | "page_view"
+  | "room_view"
+  | "whatsapp_click"
+  | "call_click"
+  | "navigation"
+  | "email_click"
+  | "booking_intent";
 
-export default function ExitIntentModal() {
-  const [show, setShow] = useState(false);
+export type EventPayload = Record<string, unknown>;
 
-  const whatsappNumber = HOTEL.contact.phone.whatsapp
-    .replace(/[^\d]/g, "");
+export type StoredEvent = {
+  id: string;
+  type: EventType;
+  payload: EventPayload;
+  time: string;
+  ts: number;
+  url: string;
+  source?: "core";
+};
 
-  const whatsappMessage = encodeURIComponent(
-    `Hello, I saw your website and would like to book a room at ${HOTEL.identity.name} in ${HOTEL.location.city}.`
+export const APP_EVENT = "app:event";
+
+const STORAGE_KEY = "hotel_events";
+const MAX_EVENTS = 200;
+const DEDUP_WINDOW_MS = 1500;
+const MAX_PAYLOAD_SIZE = 2000;
+
+let cache: StoredEvent[] | null = null;
+
+const VALID_TYPES = new Set<EventType>([
+  "page_view",
+  "room_view",
+  "whatsapp_click",
+  "call_click",
+  "navigation",
+  "email_click",
+  "booking_intent",
+]);
+
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function isValidEvent(e: any): e is StoredEvent {
+  return (
+    e &&
+    VALID_TYPES.has(e.type) &&
+    typeof e.id === "string" &&
+    typeof e.time === "string" &&
+    typeof e.ts === "number" &&
+    typeof e.url === "string"
   );
+}
 
-  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+function isValidEventArray(data: unknown): data is StoredEvent[] {
+  return Array.isArray(data) && data.every(isValidEvent);
+}
 
-  const handleWhatsAppClick = () => {
-    trackEvent("whatsapp_click", {
-      source: "exit_intent",
-      context: "exit_modal",
-    });
+function syncCache() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    cache = isValidEventArray(parsed) ? parsed : [];
+  } catch {
+    cache = [];
+  }
+}
 
-    trackLead("whatsapp_click");
+function safeGet(): StoredEvent[] {
+  if (typeof window === "undefined") return [];
+  if (!cache) syncCache();
+  return cache!;
+}
 
-    // ensure tracking is not lost
-    setTimeout(() => {
-      window.open(whatsappLink, "_blank", "noopener,noreferrer");
-    }, 120);
+function safeSet(events: StoredEvent[]) {
+  if (typeof window === "undefined") return;
+
+  cache = events.slice(-MAX_EVENTS);
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
+  } catch (err) {
+    console.error("[TRACK] localStorage write failed", err);
+  }
+}
+
+function isDuplicate(events: StoredEvent[], next: StoredEvent) {
+  return events.slice(-10).reverse().some((e) => {
+    if (next.ts - e.ts > DEDUP_WINDOW_MS) return false;
+
+    return (
+      e.type === next.type &&
+      e.url === next.url &&
+      JSON.stringify(e.payload) === JSON.stringify(next.payload)
+    );
+  });
+}
+
+function sanitizePayload(payload: EventPayload): EventPayload {
+  try {
+    if (JSON.stringify(payload).length > MAX_PAYLOAD_SIZE) {
+      return { ...payload, __truncated: true };
+    }
+    return payload;
+  } catch {
+    return {};
+  }
+}
+
+export let onEventIntercept:
+  | ((event: StoredEvent) => void)
+  | undefined;
+
+export function track(type: EventType, payload: EventPayload = {}): void {
+  if (typeof window === "undefined") return;
+  if (!VALID_TYPES.has(type)) return;
+
+  const now = Date.now();
+
+  const event: StoredEvent = {
+    id: generateId(),
+    type,
+    payload: sanitizePayload(payload),
+    time: new Date(now).toISOString(),
+    ts: now,
+    url: window.location.href,
+    source: "core",
   };
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const events = safeGet();
 
-    const alreadyShown = sessionStorage.getItem("exit_intent_shown");
-    if (alreadyShown) return;
+  if (isDuplicate(events, event)) return;
 
-    if (window.innerWidth < 768) return;
+  try {
+    onEventIntercept?.(event);
+  } catch {}
 
-    let triggered = false;
-    let lastY = 0;
+  events.push(event);
+  safeSet(events);
 
-    const handler = (e: MouseEvent) => {
-      // improved intent detection: upward fast exit only
-      const isIntentExit =
-        e.clientY <= 5 && e.clientY < lastY;
-
-      lastY = e.clientY;
-
-      if (isIntentExit && !triggered) {
-        triggered = true;
-
-        sessionStorage.setItem("exit_intent_shown", "true");
-
-        trackEvent("whatsapp_click", {
-          source: "exit_intent_trigger",
-        });
-
-        setShow(true);
-      }
-    };
-
-    const enableListener = setTimeout(() => {
-      window.addEventListener("mousemove", handler);
-    }, 4000);
-
-    return () => {
-      clearTimeout(enableListener);
-      window.removeEventListener("mousemove", handler);
-    };
-  }, []);
-
-  if (!show) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-
-      <div className="bg-white p-6 rounded max-w-md text-center shadow-lg">
-
-        <h2 className="text-xl font-bold">
-          Wait! Before you go
-        </h2>
-
-        <p className="text-gray-600 mt-2">
-          Book directly with {HOTEL.identity.name} for better rates and instant confirmation.
-        </p>
-
-        <button
-          onClick={handleWhatsAppClick}
-          className="mt-4 inline-block bg-green-500 text-white px-5 py-2 rounded"
-        >
-          Book via WhatsApp
-        </button>
-
-        <button
-          onClick={() => setShow(false)}
-          className="block mt-3 text-sm text-gray-500"
-        >
-          Close
-        </button>
-
-      </div>
-
-    </div>
+  window.dispatchEvent(
+    new CustomEvent(APP_EVENT, { detail: event })
   );
+
+  const w = window as any;
+
+  if (typeof w.gtag === "function") {
+    try {
+      w.gtag("event", type, {
+        event_category: "engagement",
+        event_label: type,
+        page_location: event.url,
+        ...event.payload,
+      });
+    } catch {}
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("[TRACK]", event);
+  }
 }
