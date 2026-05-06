@@ -7,12 +7,14 @@ type EventType =
   | "call_click"
   | "booking_intent";
 
-type LeadEventPayload = {
+type EventPayload = {
   source?: string;
   room?: string;
   value?: number;
   url?: string;
   ts?: number;
+  session_id?: string;
+  user_id?: string;
   [key: string]: unknown;
 };
 
@@ -27,8 +29,24 @@ function isValidType(type: string): type is EventType {
 }
 
 /**
- * EVENT INGESTION LAYER
- * (NOT CRM — just structured logging)
+ * SAFE PAYLOAD SANITIZER
+ */
+function sanitizePayload(payload: any): EventPayload {
+  if (!payload || typeof payload !== "object") return {};
+
+  return {
+    source: payload.source ?? "unknown",
+    room: payload.room ?? null,
+    value: payload.value ?? null,
+    url: payload.url ?? null,
+    ts: payload.ts ?? Date.now(),
+    session_id: payload.session_id ?? null,
+    user_id: payload.user_id ?? null,
+  };
+}
+
+/**
+ * EVENT INGESTION LAYER (NOT CRM)
  */
 export async function POST(req: Request) {
   try {
@@ -43,8 +61,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const payload: LeadEventPayload = body?.payload || {};
+    const payload = sanitizePayload(body?.payload);
 
+    /**
+     * EVENT OBJECT (IMMUTABLE RECORD)
+     */
     const event = {
       id: crypto.randomUUID(),
       type,
@@ -54,15 +75,18 @@ export async function POST(req: Request) {
     };
 
     /**
-     * DEV LOGGING ONLY
+     * DEV OBSERVABILITY ONLY
      */
     if (process.env.NODE_ENV !== "production") {
       console.log("[EVENT INGEST]", event);
     }
 
     /**
-     * FUTURE PERSISTENCE LAYER (REAL STORAGE)
-     * This is where Supabase / DB goes
+     * FUTURE: IDEMPOTENT STORAGE LAYER
+     *
+     * IMPORTANT:
+     * Add unique constraint on:
+     * - id OR (session_id + type + ts bucket)
      *
      * await supabase.from("events").insert(event);
      */
@@ -73,7 +97,7 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: "Invalid request" },
+      { success: false, error: "Invalid request body" },
       { status: 500 }
     );
   }
