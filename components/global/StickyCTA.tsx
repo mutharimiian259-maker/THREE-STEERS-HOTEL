@@ -1,44 +1,51 @@
 "use client";
 
-import { useRef } from "react";
-import { HOTEL } from "@/lib/config";
+import { HOTEL, getPrimaryPhone } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
+import {
+  buildWhatsAppLink,
+  formatWhatsAppMessage,
+} from "@/lib/whatsapp";
 
 export default function StickyCTA() {
-  const clickedRef = useRef(false);
-
-  const whatsappNumber = HOTEL.contact.phone.whatsapp.replace(
-    /[^\d]/g,
-    ""
+  /**
+   * ✅ CENTRALIZED WhatsApp link
+   */
+  const whatsappLink = buildWhatsAppLink(
+    formatWhatsAppMessage(
+      "Hello, I would like to book a room. Please share availability and pricing.",
+      { source: "sticky_cta" }
+    )
   );
 
-  const whatsappMessage = encodeURIComponent(
-    `Hello, I would like to book a room at ${HOTEL.identity.name} in ${HOTEL.location.city}.`
-  );
-
-  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
-
+  /**
+   * ✅ WhatsApp tracking (clean + consistent)
+   */
   const handleWhatsAppClick = () => {
-    track("whatsapp_click", {
-      source: "sticky_cta",
-    });
+    track(
+      "whatsapp_click",
+      {
+        action: "cta_click",
+      },
+      "sticky_cta"
+    );
 
-    setTimeout(() => {
-      window.open(whatsappLink, "_blank", "noopener,noreferrer");
-    }, 120);
+    window.open(whatsappLink, "_blank", "noopener,noreferrer");
   };
 
+  /**
+   * ✅ Call tracking (clean)
+   */
   const handleCallClick = () => {
-    track("call_click", {
-      source: "sticky_cta",
-    });
+    track(
+      "call_click",
+      {
+        action: "cta_click",
+      },
+      "sticky_cta"
+    );
 
-    setTimeout(() => {
-      window.location.href = `tel:${HOTEL.contact.phone.primary.replace(
-        /[^\d]/g,
-        ""
-      )}`;
-    }, 80);
+    window.location.href = `tel:${getPrimaryPhone()}`;
   };
 
   return (
