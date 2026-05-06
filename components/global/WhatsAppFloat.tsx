@@ -1,24 +1,30 @@
 "use client";
 
-import { HOTEL } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
+import { buildWhatsAppLink, formatWhatsAppMessage } from "@/lib/whatsapp";
 
 export default function WhatsAppFloat() {
-  const whatsappNumber = HOTEL.contact.phone.whatsapp.replace(
-    /[^\d]/g,
-    ""
+  /**
+   * CENTRALIZED WHATSAPP LINK
+   */
+  const whatsappLink = buildWhatsAppLink(
+    formatWhatsAppMessage(
+      "Hello, I would like to book a room. Please share availability and pricing.",
+      { source: "float_button" }
+    )
   );
 
-  const whatsappMessage = encodeURIComponent(
-    `Hello, I would like to book a room at ${HOTEL.identity.name} in ${HOTEL.location.city}.`
-  );
-
-  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
-
+  /**
+   * TRACK + ACTION
+   */
   const handleClick = () => {
-    track("whatsapp_click", {
-      source: "float_button",
-    });
+    track(
+      "whatsapp_click",
+      {
+        action: "float_click",
+      },
+      "float_button"
+    );
 
     window.open(whatsappLink, "_blank", "noopener,noreferrer");
   };
