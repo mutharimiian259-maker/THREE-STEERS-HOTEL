@@ -1,20 +1,17 @@
 "use client";
 
 import { HOTEL } from "@/lib/config";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { trackLead } from "@/lib/analytics/trackLead";
+import { track } from "@/lib/core/analytics";
 
 export default function CallBar() {
   const phone = HOTEL.contact.phone.primary.replace(/[^\d]/g, "");
 
   const handleCallClick = () => {
-    trackEvent("call_click", {
+    track("call_click", {
       source: "call_bar",
     });
 
-    trackLead("call_click");
-
-    // slight delay ensures tracking is not dropped
+    // small delay for event flush stability
     setTimeout(() => {
       window.location.href = `tel:${phone}`;
     }, 80);
