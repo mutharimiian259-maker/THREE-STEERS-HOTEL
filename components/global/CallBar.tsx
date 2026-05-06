@@ -1,20 +1,27 @@
 "use client";
 
-import { HOTEL } from "@/lib/config";
+import { HOTEL, getPrimaryPhone } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
 
 export default function CallBar() {
-  const phone = HOTEL.contact.phone.primary.replace(/[^\d]/g, "");
+  /**
+   * CENTRALIZED PHONE SOURCE
+   */
+  const phone = getPrimaryPhone();
 
+  /**
+   * CALL TRACKING + NAVIGATION
+   */
   const handleCallClick = () => {
-    track("call_click", {
-      source: "call_bar",
-    });
+    track(
+      "call_click",
+      {
+        action: "call_bar_click",
+      },
+      "call_bar"
+    );
 
-    // small delay for event flush stability
-    setTimeout(() => {
-      window.location.href = `tel:${phone}`;
-    }, 80);
+    window.location.href = `tel:${phone}`;
   };
 
   return (
