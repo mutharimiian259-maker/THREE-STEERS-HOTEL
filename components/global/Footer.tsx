@@ -1,8 +1,7 @@
 "use client";
 
 import { HOTEL } from "@/lib/config";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { trackLead } from "@/lib/analytics/trackLead";
+import { track } from "@/lib/core/analytics";
 
 function sanitizePhone(phone: string) {
   return phone.replace(/[^\d]/g, "");
@@ -20,21 +19,18 @@ export default function Footer() {
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   const handleWhatsAppClick = (source: string) => {
-    trackEvent("whatsapp_click", {
+    track("whatsapp_click", {
       source,
       context: "footer",
     });
 
-    trackLead("whatsapp_click");
-
-    // small delay ensures tracking is not dropped
     setTimeout(() => {
       window.open(whatsappLink, "_blank", "noopener,noreferrer");
     }, 120);
   };
 
   const handleContactClick = (type: string) => {
-    trackEvent("navigation", {
+    track("navigation", {
       source: "footer",
       type,
     });
