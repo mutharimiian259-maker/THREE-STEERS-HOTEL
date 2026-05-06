@@ -114,7 +114,7 @@ export const HOTEL: HotelConfig = {
 };
 
 /* ---------------------------------------
-   STRICT ACCESS LAYER (IMPORTANT FIX)
+   🔒 STRICT ACCESS LAYER (LOCKED)
 --------------------------------------- */
 
 function sanitizePhone(phone: string): string {
@@ -122,7 +122,7 @@ function sanitizePhone(phone: string): string {
 }
 
 /**
- * SINGLE SOURCE OF TRUTH ACCESS ONLY
+ * ONLY SAFE PHONE ACCESS
  */
 export function getPhoneByLabel(
   label: "primary" | "secondary" | "whatsapp"
@@ -135,15 +135,36 @@ export function getPhoneByLabel(
 }
 
 /**
- * WHATSAPP IS A DERIVED VALUE (NOT RAW ACCESS)
+ * DERIVED VALUE ONLY
  */
 export function getWhatsAppNumber(): string | null {
   return getPhoneByLabel("whatsapp");
 }
 
 /**
- * DOMAIN ACCESS ONLY THROUGH FUNCTION
+ * DOMAIN SAFE ACCESS
  */
 export function getDomain(): string {
   return HOTEL.domain.primary;
 }
+
+/**
+ * SAFE SEO ACCESS (prevents future undefined usage)
+ */
+export function getSEO() {
+  return HOTEL.seo;
+}
+
+/**
+ * SAFE IDENTITY ACCESS
+ */
+export function getIdentity() {
+  return HOTEL.identity;
+}
+
+/**
+ * SAFE LOCATION ACCESS
+ */
+export function getLocation() {
+  return HOTEL.location;
+}c
