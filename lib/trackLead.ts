@@ -2,7 +2,10 @@
 
 import { track } from "@/lib/core/analytics";
 
-type LeadType =
+/**
+ * STRICT INTENT TYPES (NOT LEADS)
+ */
+type IntentType =
   | "room_view"
   | "whatsapp_click"
   | "call_click"
@@ -10,7 +13,7 @@ type LeadType =
   | "blog_click"
   | "navigation";
 
-type LeadPayload = {
+type IntentPayload = {
   source?: string;
   context?: string;
   page?: string;
@@ -19,25 +22,24 @@ type LeadPayload = {
 };
 
 /**
- * CLEAN ARCHITECTURE:
- * Leads are just enriched analytics events.
- * No queues, no retries, no API coupling.
+ * INTENT TRACKING ONLY
+ *
+ * ❗ This is NOT a lead system
+ * ❗ This is NOT CRM data
+ * ❗ This is behavioral enrichment only
  */
-export function trackLead(type: LeadType, payload: LeadPayload = {}) {
+export function trackIntent(
+  type: IntentType,
+  payload: IntentPayload = {}
+) {
   if (typeof window === "undefined") return;
 
   track(type, {
     ...payload,
-
-    // unified metadata layer
-    event_category: "lead",
+    event_category: "intent",
     url: window.location.href,
-    referrer: document.referrer || null,
-    timestamp: Date.now(),
-
-    device: {
-      ua: navigator.userAgent,
-      lang: navigator.language,
-    },
+    referrer: document.referrer || undefined,
+    ua: navigator.userAgent,
+    lang: navigator.language,
   });
 }
