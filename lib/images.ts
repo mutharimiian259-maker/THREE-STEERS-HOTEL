@@ -15,12 +15,9 @@ export const IMAGES = {
     },
 
     lenanaWing: {
-      standardSingle:
-        "/images/rooms/lenana-wing/standard-single/hero.jpg",
-      standardDouble:
-        "/images/rooms/lenana-wing/standard-double/hero.jpg",
-      familyRoom:
-        "/images/rooms/lenana-wing/family-room/hero.jpg",
+      standardSingle: "/images/rooms/lenana-wing/standard-single/hero.jpg",
+      standardDouble: "/images/rooms/lenana-wing/standard-double/hero.jpg",
+      familyRoom: "/images/rooms/lenana-wing/family-room/hero.jpg",
     },
   },
 
@@ -38,22 +35,23 @@ export const IMAGES = {
 } as const;
 
 /* --------------------------------------------------
-   🔥 SAFE IMAGE RESOLVER (HARDENED)
+   SAFE IMAGE RESOLVER (STABLE CORE VERSION)
 -------------------------------------------------- */
 
 export function getImage(
   path?: string,
-  fallback = "/images/hotel/exterior-hero.jpg"
+  fallback: string = "/images/hotel/exterior-hero.jpg"
 ): string {
   if (!path) return fallback;
 
   try {
-    // absolute URL
+    // external image safety check
     if (path.startsWith("http")) {
-      return new URL(path).toString();
+      new URL(path); // validates URL format
+      return path;
     }
 
-    // valid internal path
+    // internal asset validation
     if (path.startsWith("/")) {
       return path;
     }
