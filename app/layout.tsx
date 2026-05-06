@@ -22,15 +22,12 @@ const siteUrl = getSafeUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-
   title: {
     default: HOTEL.seo.defaultTitle,
     template: `%s | ${HOTEL.identity.name}`,
   },
-
   description: HOTEL.seo.defaultDescription,
   keywords: HOTEL.seo.keywords,
-
   openGraph: {
     title: HOTEL.identity.name,
     description: HOTEL.seo.defaultDescription,
@@ -47,7 +44,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-
   alternates: {
     canonical: siteUrl,
   },
@@ -83,8 +79,7 @@ export default function RootLayout({
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
   const safeGaId =
-    typeof gaId === "string" &&
-    /^[A-Z0-9-]+$/.test(gaId.trim())
+    typeof gaId === "string" && /^[A-Z0-9-]+$/.test(gaId.trim())
       ? gaId.trim()
       : null;
 
@@ -97,10 +92,13 @@ export default function RootLayout({
         <main className="min-h-screen">{children}</main>
 
         <StickyCTA />
+
+        {/* GLOBAL BEHAVIORAL LAYER */}
         <ExitIntentModal />
+
         <Footer />
 
-        {/* GOOGLE ANALYTICS (FIXED) */}
+        {/* GA INITIALIZATION (ISOLATED) */}
         {safeGaId && (
           <>
             <Script
@@ -108,20 +106,21 @@ export default function RootLayout({
               strategy="afterInteractive"
             />
 
-            <Script id="ga-script" strategy="afterInteractive">
+            <Script id="ga-init" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                window.gtag = gtag;
 
-                try {
-                  gtag('js', new Date());
+                function gtag(){
+                  window.dataLayer.push(arguments);
+                }
 
-                  // IMPORTANT: prevent duplicate page_view tracking
-                  gtag('config', '${safeGaId}', {
-                    send_page_view: false
-                  });
-                } catch (e) {}
+                window.gtag = window.gtag || gtag;
+
+                gtag('js', new Date());
+
+                gtag('config', '${safeGaId}', {
+                  send_page_view: false
+                });
               `}
             </Script>
           </>
