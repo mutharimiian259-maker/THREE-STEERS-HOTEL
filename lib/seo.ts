@@ -16,7 +16,11 @@ type SeoProps = {
   keywords?: string[];
 };
 
-function safeBaseUrl(): string {
+/* ---------------------------------------
+   CORE URL BASE (SINGLE SOURCE)
+--------------------------------------- */
+
+function getBaseUrl(): string {
   try {
     return new URL(HOTEL.domain.primary).origin;
   } catch {
@@ -24,45 +28,47 @@ function safeBaseUrl(): string {
   }
 }
 
-function joinUrl(base: string, path: string): string {
+/* ---------------------------------------
+   PURE URL JOIN (NO SIDE EFFECTS)
+--------------------------------------- */
+
+function resolveUrl(base: string, path: string): string {
   try {
-    return new URL(path || "/", base).toString().replace(/\/+$/, "");
+    return new URL(path || "/", base).toString();
   } catch {
     return base;
   }
 }
 
-/**
- * Intent-based SEO keywords (GLOBAL fallback layer)
- */
-function getIntentKeywords(intent?: SeoIntent): string[] {
+/* ---------------------------------------
+   INTENT KEYWORDS (STATIC DOMAIN KNOWLEDGE)
+--------------------------------------- */
+
+function intentKeywords(intent?: SeoIntent): string[] {
   switch (intent) {
     case "room":
       return [
         "hotel rooms Meru Kenya",
-        "book hotel in Meru via WhatsApp",
-        "affordable luxury accommodation Kenya",
+        "hotel booking Kenya",
+        "luxury accommodation Meru",
       ];
 
     case "conference":
       return [
-        "conference venues Meru Kenya",
-        "hotel meeting rooms Kenya",
-        "corporate event spaces Meru",
+        "conference venues Meru",
+        "meeting rooms Kenya hotels",
       ];
 
     case "dining":
       return [
-        "hotel restaurant Meru Kenya",
+        "hotel restaurant Meru",
         "fine dining Kenya hotels",
-        "restaurant in hotel Meru",
       ];
 
     case "blog":
       return [
-        "travel guide Meru Kenya",
-        "Mt Kenya tourism hotels",
-        "Kenya hotel experiences",
+        "travel Kenya hotels",
+        "Mt Kenya tourism",
       ];
 
     default:
@@ -70,55 +76,62 @@ function getIntentKeywords(intent?: SeoIntent): string[] {
   }
 }
 
-/**
- * Page-level keyword enhancer (NEW LAYER)
- */
-function getPageBoostKeywords(path?: string): string[] {
+/* ---------------------------------------
+   PATH ENRICHMENT (STRICT RULES ONLY)
+--------------------------------------- */
+
+function pathKeywords(path?: string): string[] {
   if (!path) return [];
 
-  if (path.includes("/rooms/")) {
-    return ["book this hotel room", "hotel room details Meru"];
+  if (path.startsWith("/rooms/")) {
+    return ["hotel room details", "book hotel room Kenya"];
   }
 
   if (path === "/rooms") {
-    return ["all hotel rooms Meru", "hotel booking Kenya"];
+    return ["all hotel rooms", "hotel booking page"];
   }
 
   return [];
 }
 
-function dedupeKeywords(arr: string[]): string[] {
+/* ---------------------------------------
+   KEYWORD DEDUP (PURE FUNCTION)
+--------------------------------------- */
+
+function dedupe(list: string[]): string[] {
   return Array.from(
-    new Set(
-      arr.map((i) => i.trim().toLowerCase()).filter(Boolean)
-    )
+    new Set(list.map((k) => k.trim().toLowerCase()).filter(Boolean))
   );
 }
+
+/* ---------------------------------------
+   IMAGE VALIDATION (SAFE ONLY)
+--------------------------------------- */
 
 function validateImage(image?: string): string {
   const fallback = "/images/hotel/og/default.jpg";
 
   if (!image) return fallback;
 
-  try {
-    if (image.startsWith("http")) {
-      new URL(image);
-      return image;
-    }
+  if (image.startsWith("http")) return image;
+  if (image.startsWith("/")) return image;
 
-    if (image.startsWith("/")) return image;
-
-    return fallback;
-  } catch {
-    return fallback;
-  }
+  return fallback;
 }
+
+/* ---------------------------------------
+   TEXT LIMITS (SEO CONSTRAINT LAYER)
+--------------------------------------- */
 
 function clamp(text: string, max: number): string {
-  return text.length <= max
-    ? text
-    : text.slice(0, max - 1).trim() + "…";
+  return text.length > max
+    ? text.slice(0, max - 1).trim() + "…"
+    : text;
 }
+
+/* ---------------------------------------
+   MAIN SEO ENGINE (SINGLE OUTPUT CONTRACT)
+--------------------------------------- */
 
 export function generateSEO({
   title,
@@ -128,36 +141,29 @@ export function generateSEO({
   intent = "home",
   keywords,
 }: SeoProps = {}) {
-  const baseUrl = safeBaseUrl();
+  const baseUrl = getBaseUrl();
   const siteName = HOTEL.identity?.name ?? "Hotel";
 
-  const defaultTitle =
-    HOTEL.seo?.defaultTitle ?? siteName;
-
-  const defaultDescription =
-    HOTEL.seo?.defaultDescription ??
-    "Best hotel experience in Kenya";
-
   const fullTitle = clamp(
-    title ? `${title} | ${siteName}` : defaultTitle,
+    title ? `${title} | ${siteName}` : HOTEL.seo.defaultTitle,
     60
   );
 
   const fullDescription = clamp(
-    description ?? defaultDescription,
+    description ?? HOTEL.seo.defaultDescription,
     160
   );
 
-  const url = joinUrl(baseUrl, path);
+  const url = resolveUrl(baseUrl, path);
   const safeImage = validateImage(image);
 
-  const absoluteImage = safeImage.startsWith("http")
+  const finalImage = safeImage.startsWith("http")
     ? safeImage
-    : joinUrl(baseUrl, safeImage);
+    : resolveUrl(baseUrl, safeImage);
 
-  const finalKeywords = dedupeKeywords([
-    ...getIntentKeywords(intent),
-    ...getPageBoostKeywords(path), // 🔥 NEW LAYER
+  const finalKeywords = dedupe([
+    ...intentKeywords(intent),
+    ...pathKeywords(path),
     ...(keywords ?? []),
   ]);
 
@@ -175,7 +181,7 @@ export function generateSEO({
       locale: "en_KE",
       images: [
         {
-          url: absoluteImage,
+          url: finalImage,
           width: 1200,
           height: 630,
           alt: fullTitle,
@@ -187,7 +193,7 @@ export function generateSEO({
       card: "summary_large_image",
       title: fullTitle,
       description: fullDescription,
-      images: [absoluteImage],
+      images: [finalImage],
     },
 
     alternates: {
