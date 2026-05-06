@@ -3,8 +3,7 @@
 import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 import Image from "next/image";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { track } from "@/lib/core/analytics";
 
 const experiences = [
   {
@@ -25,18 +24,19 @@ const experiences = [
 ];
 
 export default function Experience() {
+
   const handleExperienceClick = (experience: string) => {
-    trackEvent("experience_view", {
+    track("room_view", {
       experience,
+      source: "experience_section",
     });
   };
 
   const handleCTA = () => {
-    trackEvent("booking_intent", {
+    track("whatsapp_click", {
       source: "experience_cta",
+      context: "intent",
     });
-
-    setFunnelStep("INTENT");
   };
 
   return (
