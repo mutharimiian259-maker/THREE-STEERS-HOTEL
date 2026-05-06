@@ -3,7 +3,6 @@
 import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 import Image from "next/image";
-import { trackEvent } from "@/lib/analytics/trackEvent";
 
 export default function Facilities() {
   return (
