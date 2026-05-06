@@ -4,8 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { HOTEL } from "@/lib/config";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { trackLead } from "@/lib/analytics/trackLead";
+import { track } from "@/lib/core/analytics";
 import { IMAGES } from "@/lib/images";
 import { useState, useMemo } from "react";
 
@@ -13,7 +12,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   const handleNavClick = (routeName: string) => {
-    trackEvent("navigation", {
+    track("whatsapp_click", {
       page: routeName,
       source: "navbar",
       context: "navigation",
@@ -28,15 +27,13 @@ export default function Navbar() {
     );
 
     return `https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${message}`;
-  }, [HOTEL.identity.name]);
+  }, []);
 
   const handleWhatsAppClick = (source: string) => {
-    trackEvent("whatsapp_click", {
+    track("whatsapp_click", {
       source,
       context: "navbar",
     });
-
-    trackLead("whatsapp_click");
   };
 
   return (
