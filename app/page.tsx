@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import Hero from "@/components/Hero";
 import RoomCard from "@/components/RoomCard";
 import Facilities from "@/components/Facilities";
@@ -17,7 +16,6 @@ import { track } from "@/lib/core/analytics";
 
 export default function Home() {
   const safeRooms = Array.isArray(rooms) ? rooms : [];
-  const roomViewTrackedRef = useRef(false);
 
   /* ---------------- INITIAL VISIT ---------------- */
   useEffect(() => {
@@ -26,17 +24,6 @@ export default function Home() {
       context: "navigation",
     });
   }, []);
-
-  /* ---------------- ROOM VIEW ---------------- */
-  const handleRoomView = () => {
-    if (roomViewTrackedRef.current) return;
-    roomViewTrackedRef.current = true;
-
-    track("room_view", {
-      source: "homepage_rooms_section",
-      rooms_visible: safeRooms.slice(0, 3).map((r: any) => r?.id),
-    });
-  };
 
   return (
     <main>
@@ -53,12 +40,13 @@ export default function Home() {
             Rooms & Accommodation in {HOTEL.location.city}
           </h2>
 
+          {/* FIXED: navigation click is NOT page_view */}
           <Link
             href="/rooms"
             className="text-sm text-yellow-500 underline"
             onClick={() =>
-              track("page_view", {
-                source: "home_rooms_link",
+              track("whatsapp_click", {
+                source: "home_rooms_navigation", // FIX: semantic correction
                 context: "navigation",
               })
             }
