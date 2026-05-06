@@ -1,26 +1,79 @@
+import { NextResponse } from "next/server";
+
+type EventType =
+  | "page_view"
+  | "room_view"
+  | "whatsapp_click"
+  | "call_click"
+  | "booking_intent";
+
+type LeadEventPayload = {
+  source?: string;
+  room?: string;
+  value?: number;
+  url?: string;
+  ts?: number;
+  [key: string]: unknown;
+};
+
+function isValidType(type: string): type is EventType {
+  return [
+    "page_view",
+    "room_view",
+    "whatsapp_click",
+    "call_click",
+    "booking_intent",
+  ].includes(type);
+}
+
+/**
+ * EVENT INGESTION LAYER
+ * (NOT CRM — just structured logging)
+ */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const lead = {
+    const type = String(body?.type);
+
+    if (!isValidType(type)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid event type" },
+        { status: 400 }
+      );
+    }
+
+    const payload: LeadEventPayload = body?.payload || {};
+
+    const event = {
       id: crypto.randomUUID(),
-      type: String(body?.type || "unknown"),
+      type,
       source: String(body?.source || "website"),
-      payload: body?.payload || {},
+      payload,
       createdAt: new Date().toISOString(),
     };
 
+    /**
+     * DEV LOGGING ONLY
+     */
     if (process.env.NODE_ENV !== "production") {
-      console.log("[LEAD EVENT]", lead);
+      console.log("[EVENT INGEST]", event);
     }
 
-    // FUTURE ONLY STORAGE LAYER
-    // await supabase.from("events").insert(lead);
+    /**
+     * FUTURE PERSISTENCE LAYER (REAL STORAGE)
+     * This is where Supabase / DB goes
+     *
+     * await supabase.from("events").insert(event);
+     */
 
-    return Response.json({ success: true, lead }, { status: 200 });
+    return NextResponse.json(
+      { success: true, event },
+      { status: 200 }
+    );
   } catch (error) {
-    return Response.json(
-      { success: false, error: "Server error" },
+    return NextResponse.json(
+      { success: false, error: "Invalid request" },
       { status: 500 }
     );
   }
