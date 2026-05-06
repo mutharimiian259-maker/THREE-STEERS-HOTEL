@@ -5,7 +5,7 @@ export const INTENT = {
 } as const;
 
 export type Intent =
-  typeof INTENT[keyof typeof INTENT];
+  (typeof INTENT)[keyof typeof INTENT];
 
 /* ---------------------------------------
    FUNNEL STAGES (REFERENCE ONLY)
@@ -20,11 +20,11 @@ export const FUNNEL = {
 } as const;
 
 export type FunnelStep =
-  typeof FUNNEL[keyof typeof FUNNEL];
+  (typeof FUNNEL)[keyof typeof FUNNEL];
 
 /* ---------------------------------------
-   EVENT LABELS (REFERENCE MAP ONLY)
-   These MUST match core analytics EventType
+   EVENT LABELS (REFERENCE ONLY)
+   MUST ALIGN WITH CORE ANALYTICS
 --------------------------------------- */
 
 export const EVENT_LABELS = {
@@ -40,7 +40,9 @@ export const EVENT_LABELS = {
 } as const;
 
 /**
- * IMPORTANT:
- * Do NOT export EventType from here.
- * Core analytics is the ONLY source of truth.
+ * IMPORTANT RULES:
+ * - This file is NOT a runtime engine
+ * - This file is NOT analytics source of truth
+ * - Core analytics owns EventType strictly
+ * - These labels are only for mapping/reference/UI consistency
  */
