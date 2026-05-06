@@ -1,8 +1,7 @@
 "use client";
 
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { trackLead } from "@/lib/analytics/trackLead";
 import { HOTEL } from "@/lib/config";
+import { track } from "@/lib/core/analytics";
 
 export default function WhatsAppFloat() {
   const whatsappNumber = HOTEL.contact.phone.whatsapp.replace(
@@ -17,16 +16,11 @@ export default function WhatsAppFloat() {
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   const handleClick = () => {
-    trackEvent("whatsapp_click", {
+    track("whatsapp_click", {
       source: "float_button",
     });
 
-    trackLead("whatsapp_click");
-
-    // ensure event is not lost on fast navigation
-    setTimeout(() => {
-      window.open(whatsappLink, "_blank", "noopener,noreferrer");
-    }, 120);
+    window.open(whatsappLink, "_blank", "noopener,noreferrer");
   };
 
   return (
