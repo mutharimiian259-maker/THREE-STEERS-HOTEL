@@ -1,4 +1,4 @@
-import { HOTEL } from "@/lib/config";
+import { HOTEL, getPhoneByLabel } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
 
 /**
@@ -18,8 +18,7 @@ type WhatsAppOptions = {
 };
 
 /* ---------------------------------------
-   PHONE SANITIZER (SHARED LOGIC)
-   NOTE: keep PURE, no side effects
+   PHONE SANITIZER (PURE)
 --------------------------------------- */
 
 function sanitizePhone(phone?: string): string {
@@ -50,11 +49,12 @@ export function formatWhatsAppMessage(
 }
 
 /* ---------------------------------------
-   LINK BUILDER (ADAPTER LAYER LOGIC)
+   LINK BUILDER (ADAPTER LAYER)
 --------------------------------------- */
 
 export function buildWhatsAppLink(message: string): string {
-  const phone = sanitizePhone(HOTEL.contact?.phone?.whatsapp);
+  const rawPhone = getPhoneByLabel("whatsapp");
+  const phone = sanitizePhone(rawPhone || undefined);
 
   if (!phone) {
     console.warn("[WHATSAPP] Missing phone number");
@@ -65,7 +65,7 @@ export function buildWhatsAppLink(message: string): string {
 }
 
 /* ---------------------------------------
-   ANALYTICS ONLY (NO SIDE EFFECTS)
+   ANALYTICS ONLY (NO STATE / NO STORAGE)
 --------------------------------------- */
 
 export function trackWhatsAppClick(options?: WhatsAppOptions): void {
