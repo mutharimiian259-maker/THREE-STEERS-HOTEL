@@ -3,13 +3,12 @@ export type Route = {
   path: string;
 
   /**
-   * navigation = full route (/rooms)
-   * anchor = in-page section (#dining)
+   * routing classification ONLY
    */
   type: "navigation" | "anchor";
 
   /**
-   * UI metadata ONLY (DO NOT use for funnel or analytics)
+   * UI rendering hint ONLY (never analytics, never funnel)
    */
   uiHint: "navigation" | "engagement" | "action";
 };
@@ -53,34 +52,51 @@ export const routes: Route[] = [
   },
 ];
 
-/**
- * Normalize only base path
- */
-function normalizePath(path: string): string {
-  return path.replace(/\/+$/, "") || "/";
+/* ---------------------------------------
+   ROUTE NORMALIZATION (STRICT)
+--------------------------------------- */
+
+function normalize(path: string): string {
+  const cleaned = path.trim();
+
+  if (!cleaned) return "/";
+
+  return cleaned.replace(/\/+$/, "");
 }
 
-/**
- * Split path safely (no URL parsing dependency)
- */
-function splitPath(path: string): { base: string; hash?: string } {
+/* ---------------------------------------
+   SAFE ROUTE SPLIT
+--------------------------------------- */
+
+function split(path: string) {
   const [base, hash] = path.split("#");
 
   return {
-    base: normalizePath(base || "/"),
+    base: normalize(base || "/"),
     hash: hash ? `#${hash}` : undefined,
   };
 }
 
+/* ---------------------------------------
+   SINGLE LOOKUP (NO FUZZY MATCHING)
+--------------------------------------- */
+
 export function getRoute(path: string): Route | undefined {
-  const { base, hash } = splitPath(path);
+  const target = split(path);
 
   return routes.find((r) => {
-    const { base: rBase, hash: rHash } = splitPath(r.path);
+    const current = split(r.path);
 
-    return rBase === base && rHash === hash;
+    return (
+      current.base === target.base &&
+      current.hash === target.hash
+    );
   });
 }
+
+/* ---------------------------------------
+   FILTER HELPERS (PURE QUERIES ONLY)
+--------------------------------------- */
 
 export function getRoutesByUiHint(
   uiHint: Route["uiHint"]
@@ -92,16 +108,17 @@ export function getAnchorRoutes(): Route[] {
   return routes.filter((r) => r.type === "anchor");
 }
 
-/**
- * DEV SAFETY CHECK
- */
+/* ---------------------------------------
+   BACKBONE SAFETY (DEV ONLY)
+--------------------------------------- */
+
 if (process.env.NODE_ENV === "development") {
   const seen = new Set<string>();
 
-  for (const route of routes) {
-    if (seen.has(route.path)) {
-      console.warn("[ROUTE DUPLICATE DETECTED]", route.path);
+  for (const r of routes) {
+    if (seen.has(r.path)) {
+      console.warn("[ROUTE DUPLICATE]", r.path);
     }
-    seen.add(route.path);
+    seen.add(r.path);
   }
 }
