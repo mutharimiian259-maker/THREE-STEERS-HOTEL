@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -12,9 +11,7 @@ function sanitizePhone(phone: string) {
 }
 
 export default function About() {
-  const whatsappNumber = sanitizePhone(
-    HOTEL.contact.phone.whatsapp
-  );
+  const whatsappNumber = sanitizePhone(HOTEL.contact.phone.whatsapp);
 
   const whatsappMessage = encodeURIComponent(
     "Hello, I would like to know more about Three Steers Hotel and make a booking."
@@ -30,8 +27,9 @@ export default function About() {
   };
 
   const handleNavEvent = (source: string) => {
-    track("page_view", {
-      source,
+    track("room_view", {
+      source: "navigation",
+      destination: source,
       context: "about_page",
     });
   };
@@ -98,7 +96,7 @@ export default function About() {
         <Link
           href="/rooms"
           className="text-yellow-500 underline"
-          onClick={() => handleNavEvent("about_rooms")}
+          onClick={() => handleNavEvent("rooms")}
         >
           View Rooms
         </Link>
@@ -106,7 +104,7 @@ export default function About() {
         <Link
           href="/#dining"
           className="text-yellow-500 underline"
-          onClick={() => handleNavEvent("about_dining")}
+          onClick={() => handleNavEvent("dining")}
         >
           Explore Dining
         </Link>
