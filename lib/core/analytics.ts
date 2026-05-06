@@ -1,3 +1,9 @@
+"use client";
+
+/* ---------------------------------------
+   EVENT TYPES
+--------------------------------------- */
+
 export type EventType =
   | "page_view"
   | "room_view"
@@ -14,7 +20,15 @@ export type EventSource =
   | "page"
   | "unknown";
 
+/* ---------------------------------------
+   EVENT PAYLOAD (keep flexible but safe)
+--------------------------------------- */
+
 export type EventPayload = Record<string, unknown>;
+
+/* ---------------------------------------
+   EVENT STRUCTURE (FIXED)
+--------------------------------------- */
 
 export type StoredEvent = {
   id: string;
@@ -24,21 +38,31 @@ export type StoredEvent = {
   ts: number;
   url: string;
   source: "core";
-  origin?: EventSource;
+  origin: EventSource;
+  session_id: string; // 🔥 CRITICAL FIX
 };
 
-export const APP_EVENT = "app:event";
+/* ---------------------------------------
+   CONSTANTS
+--------------------------------------- */
 
 const STORAGE_KEY = "hotel_events";
+const SESSION_KEY = "hotel_session_id";
+
 const MAX_EVENTS = 200;
 const DEDUP_WINDOW_MS = 3000;
 const MAX_PAYLOAD_SIZE = 2000;
 
-let cache: StoredEvent[] = [];
+/* ---------------------------------------
+   INTERNAL STATE
+--------------------------------------- */
 
-/**
- * STRICT EVENT CONTRACT
- */
+let cache: StoredEvent[] | null = null;
+
+/* ---------------------------------------
+   VALIDATION
+--------------------------------------- */
+
 const VALID_TYPES = new Set<EventType>([
   "page_view",
   "room_view",
@@ -47,9 +71,54 @@ const VALID_TYPES = new Set<EventType>([
   "booking_intent",
 ]);
 
+/* ---------------------------------------
+   SESSION (CRITICAL)
+--------------------------------------- */
+
+function getSessionId(): string {
+  let id = sessionStorage.getItem(SESSION_KEY);
+
+  if (!id) {
+    id = crypto.randomUUID();
+    sessionStorage.setItem(SESSION_KEY, id);
+  }
+
+  return id;
+}
+
+/* ---------------------------------------
+   HELPERS
+--------------------------------------- */
+
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
+
+function stableStringify(obj: any) {
+  if (!obj || typeof obj !== "object") return JSON.stringify(obj);
+
+  return JSON.stringify(
+    Object.keys(obj).sort().reduce((acc: any, key) => {
+      acc[key] = obj[key];
+      return acc;
+    }, {})
+  );
+}
+
+function sanitizePayload(payload: EventPayload): EventPayload {
+  try {
+    if (JSON.stringify(payload).length > MAX_PAYLOAD_SIZE) {
+      return { __truncated: true };
+    }
+    return payload;
+  } catch {
+    return {};
+  }
+}
+
+/* ---------------------------------------
+   STORAGE
+--------------------------------------- */
 
 function isValidEvent(e: any): e is StoredEvent {
   return (
@@ -61,29 +130,19 @@ function isValidEvent(e: any): e is StoredEvent {
   );
 }
 
-function isValidEventArray(data: unknown): data is StoredEvent[] {
-  return Array.isArray(data) && data.every(isValidEvent);
-}
-
-/**
- * STORAGE SYNC
- */
 function syncCache() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    cache = isValidEventArray(parsed) ? parsed : [];
+    cache = Array.isArray(parsed) ? parsed.filter(isValidEvent) : [];
   } catch {
     cache = [];
   }
 }
 
-/**
- * SAFE GET/SET
- */
 function safeGet(): StoredEvent[] {
-  if (!cache.length) syncCache();
-  return cache;
+  if (cache === null) syncCache();
+  return cache!;
 }
 
 function safeSet(events: StoredEvent[]) {
@@ -92,26 +151,24 @@ function safeSet(events: StoredEvent[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
   } catch (err) {
-    console.error("[TRACK] storage write failed", err);
+    console.error("[TRACK] storage failed", err);
   }
 }
 
-/**
- * CONSISTENT STRINGIFY (single source of truth)
- */
-function stableStringify(obj: any) {
-  if (!obj || typeof obj !== "object") return JSON.stringify(obj);
-  return JSON.stringify(
-    Object.keys(obj).sort().reduce((acc: any, key) => {
-      acc[key] = obj[key];
-      return acc;
-    }, {})
-  );
+/* ---------------------------------------
+   CROSS TAB SYNC (RESTORED)
+--------------------------------------- */
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === STORAGE_KEY) syncCache();
+  });
 }
 
-/**
- * GLOBAL DEDUP (expanded window)
- */
+/* ---------------------------------------
+   DEDUP
+--------------------------------------- */
+
 function isDuplicate(events: StoredEvent[], next: StoredEvent) {
   for (let i = events.length - 1; i >= 0; i--) {
     const e = events[i];
@@ -130,45 +187,33 @@ function isDuplicate(events: StoredEvent[], next: StoredEvent) {
   return false;
 }
 
-/**
- * PAYLOAD SAFETY
- */
-function sanitizePayload(payload: EventPayload): EventPayload {
-  try {
-    const size = JSON.stringify(payload).length;
-    if (size > MAX_PAYLOAD_SIZE) {
-      return { __truncated: true };
-    }
-    return payload;
-  } catch {
-    return {};
-  }
-}
+/* ---------------------------------------
+   SINGLE EVENT BUS (ONE ONLY)
+--------------------------------------- */
 
-/**
- * MULTI-LISTENER EVENT BUS
- */
-type EventListener = (event: StoredEvent) => void;
+type Listener = (event: StoredEvent) => void;
 
-const listeners = new Set<EventListener>();
+const listeners = new Set<Listener>();
 
-export function subscribe(listener: EventListener) {
+export function subscribe(listener: Listener) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
-/**
- * GA LAYER
- */
-function sendToGA(type: EventType, event: StoredEvent) {
+/* ---------------------------------------
+   GA LAYER
+--------------------------------------- */
+
+function sendToGA(event: StoredEvent) {
   const w = window as any;
   if (typeof w.gtag !== "function") return;
 
   try {
-    w.gtag("event", type, {
-      event_category: "engagement",
-      event_label: event.origin ?? "unknown",
+    w.gtag("event", event.type, {
+      event_category: event.type,
+      event_label: event.origin,
       page_location: event.url,
+      session_id: event.session_id,
       ...event.payload,
     });
   } catch (err) {
@@ -176,9 +221,10 @@ function sendToGA(type: EventType, event: StoredEvent) {
   }
 }
 
-/**
- * CORE TRACK FUNCTION
- */
+/* ---------------------------------------
+   CORE TRACK
+--------------------------------------- */
+
 export function track(
   type: EventType,
   payload: EventPayload = {},
@@ -202,6 +248,7 @@ export function track(
     url: window.location.href,
     source: "core",
     origin,
+    session_id: getSessionId(),
   };
 
   const events = safeGet();
@@ -211,9 +258,6 @@ export function track(
   events.push(event);
   safeSet(events);
 
-  /**
-   * EVENT BUS (multi consumer safe)
-   */
   listeners.forEach((fn) => {
     try {
       fn(event);
@@ -222,17 +266,7 @@ export function track(
     }
   });
 
-  /**
-   * DOM EVENT (legacy compatibility)
-   */
-  try {
-    window.dispatchEvent(new CustomEvent(APP_EVENT, { detail: event }));
-  } catch {}
-
-  /**
-   * GA
-   */
-  sendToGA(type, event);
+  sendToGA(event);
 
   if (process.env.NODE_ENV === "development") {
     console.log("[TRACK]", event);
