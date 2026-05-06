@@ -1,11 +1,10 @@
-
 "use client";
 
 import Image from "next/image";
 import { HOTEL } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
 import { IMAGES } from "@/lib/images";
-import { useMemo, useCallback, useEffect } from "react";
+import { useMemo, useCallback } from "react";
 
 type Room = {
   id: string | number;
@@ -18,16 +17,10 @@ type Room = {
   slug?: string;
 };
 
-function sanitizePhone(phone: string) {
-  return phone.replace(/[^\d]/g, "");
-}
-
 export default function RoomCard({ room }: { room: Room }) {
   if (!room) return null;
 
-  const whatsappNumber = sanitizePhone(
-    HOTEL.contact.phone.whatsapp
-  );
+  const whatsappNumber = HOTEL.contact.phone.whatsapp.replace(/[^\d]/g, "");
 
   const message = useMemo(() => {
     return encodeURIComponent(
@@ -47,31 +40,38 @@ export default function RoomCard({ room }: { room: Room }) {
       ? "High demand — book early to secure this room"
       : "Limited availability";
 
-  /* ---------------- TRACKING ---------------- */
-
-  useEffect(() => {
+  /* ---------------- TRACK VIEW (FIXED SEMANTICS) ---------------- */
+  const handleRoomImpression = useCallback(() => {
     track("room_view", {
-      room: room.name,
+      room_id: room.id, // FIX: stable identifier
+      room_name: room.name,
       source: "room_card",
     });
-  }, [room.name]);
+  }, [room.id, room.name]);
 
-  /* ---------------- HANDLER ---------------- */
-
+  /* ---------------- WHATSAPP CLICK (SAFE + RELIABLE) ---------------- */
   const handleWhatsAppClick = useCallback(() => {
     track("whatsapp_click", {
-      room: room.name,
+      room_id: room.id,
+      room_name: room.name,
       source: "room_card",
     });
 
     const url = `https://wa.me/${whatsappNumber}?text=${message}`;
 
-    // ensure tracking is flushed before navigation
-    window.location.href = url;
-  }, [room.name, whatsappNumber, message]);
+    /**
+     * FIX: allow event dispatch before navigation
+     */
+    setTimeout(() => {
+      window.location.href = url;
+    }, 50);
+  }, [room.id, room.name, whatsappNumber, message]);
 
   return (
-    <div className="card relative overflow-hidden bg-white">
+    <div
+      className="card relative overflow-hidden bg-white"
+      onMouseEnter={handleRoomImpression} // FIX: real “view intent”
+    >
 
       {room.tag && (
         <span className="absolute top-3 right-3 bg-yellow-500 text-black text-xs px-2 py-1 rounded z-10">
@@ -119,28 +119,22 @@ export default function RoomCard({ room }: { room: Room }) {
 }
 
 /**
- * PURE mapping function
+ * PURE mapping function (unchanged)
  */
 function getRoomImage(slug?: string) {
   switch (slug) {
     case "deluxe-room":
       return IMAGES.rooms.batianWing.deluxeTwin;
-
     case "executive-suite":
       return IMAGES.rooms.batianWing.executiveSuite;
-
     case "honeymoon":
       return IMAGES.rooms.batianWing.honeymoon;
-
     case "standard-single":
       return IMAGES.rooms.lenanaWing.standardSingle;
-
     case "standard-double":
       return IMAGES.rooms.lenanaWing.standardDouble;
-
     case "family-room":
       return IMAGES.rooms.lenanaWing.familyRoom;
-
     default:
       return IMAGES.hotel.exteriorHero;
   }
