@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { trackLead } from "@/lib/analytics/trackLead";
 import { HOTEL } from "@/lib/config";
+import { track } from "@/lib/core/analytics";
 
 export default function StickyCTA() {
   const clickedRef = useRef(false);
@@ -20,14 +19,9 @@ export default function StickyCTA() {
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   const handleWhatsAppClick = () => {
-    if (clickedRef.current) return;
-    clickedRef.current = true;
-
-    trackEvent("whatsapp_click", {
+    track("whatsapp_click", {
       source: "sticky_cta",
     });
-
-    trackLead("whatsapp_click");
 
     setTimeout(() => {
       window.open(whatsappLink, "_blank", "noopener,noreferrer");
@@ -35,14 +29,9 @@ export default function StickyCTA() {
   };
 
   const handleCallClick = () => {
-    if (clickedRef.current) return;
-    clickedRef.current = true;
-
-    trackEvent("call_click", {
+    track("call_click", {
       source: "sticky_cta",
     });
-
-    trackLead("call_click");
 
     setTimeout(() => {
       window.location.href = `tel:${HOTEL.contact.phone.primary.replace(
