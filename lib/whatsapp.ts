@@ -2,7 +2,7 @@ import { HOTEL } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
 
 /**
- * STRICT ORIGIN TYPES (prevents random strings)
+ * ORIGIN TYPES (SAFE ENUM ONLY)
  */
 type WhatsAppSource =
   | "navbar"
@@ -17,39 +17,20 @@ type WhatsAppOptions = {
   room?: string;
 };
 
-/**
- * PURE: phone sanitizer
- */
-function sanitizePhone(phone: string): string {
+/* ---------------------------------------
+   PHONE SANITIZER (SHARED LOGIC)
+   NOTE: keep PURE, no side effects
+--------------------------------------- */
+
+function sanitizePhone(phone?: string): string {
+  if (!phone) return "";
   return phone.replace(/[^\d]/g, "");
 }
 
-/**
- * PURE: WhatsApp link builder
- */
-export function buildWhatsAppLink(message: string): string {
-  const phone = sanitizePhone(HOTEL.contact.phone.whatsapp || "");
+/* ---------------------------------------
+   MESSAGE FORMATTER (PURE DOMAIN)
+--------------------------------------- */
 
-  if (!phone) return "https://wa.me/";
-
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-}
-
-/**
- * ANALYTICS ONLY (intent tracking)
- * ❗ NO BUSINESS SIDE EFFECTS HERE
- */
-export function trackWhatsAppClick(options?: WhatsAppOptions): void {
-  if (typeof window === "undefined") return;
-
-  track("whatsapp_click", {
-    room: options?.room ?? null,
-  }, options?.source ?? "unknown");
-}
-
-/**
- * MESSAGE FORMATTER (UI ONLY)
- */
 export function formatWhatsAppMessage(
   message: string,
   options?: WhatsAppOptions
@@ -66,4 +47,36 @@ export function formatWhatsAppMessage(
     .filter(Boolean)
     .join("\n")
     .trim();
+}
+
+/* ---------------------------------------
+   LINK BUILDER (ADAPTER LAYER LOGIC)
+--------------------------------------- */
+
+export function buildWhatsAppLink(message: string): string {
+  const phone = sanitizePhone(HOTEL.contact?.phone?.whatsapp);
+
+  if (!phone) {
+    console.warn("[WHATSAPP] Missing phone number");
+    return "https://wa.me/";
+  }
+
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+
+/* ---------------------------------------
+   ANALYTICS ONLY (NO SIDE EFFECTS)
+--------------------------------------- */
+
+export function trackWhatsAppClick(options?: WhatsAppOptions): void {
+  if (typeof window === "undefined") return;
+
+  track(
+    "whatsapp_click",
+    {
+      room: options?.room ?? null,
+      source: options?.source ?? "unknown",
+    },
+    options?.source ?? "unknown"
+  );
 }
