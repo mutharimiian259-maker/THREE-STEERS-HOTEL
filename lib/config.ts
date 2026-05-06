@@ -149,7 +149,7 @@ export function getDomain(): string {
 }
 
 /**
- * SAFE SEO ACCESS (prevents future undefined usage)
+ * SAFE SEO ACCESS
  */
 export function getSEO() {
   return HOTEL.seo;
@@ -167,4 +167,4 @@ export function getIdentity() {
  */
 export function getLocation() {
   return HOTEL.location;
-}c
+}
