@@ -1,39 +1,50 @@
 "use client";
 
-import { HOTEL } from "@/lib/config";
+import { HOTEL, getPrimaryPhone } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
-
-function sanitizePhone(phone: string) {
-  return phone.replace(/[^\d]/g, "");
-}
+import {
+  buildWhatsAppLink,
+  formatWhatsAppMessage,
+} from "@/lib/whatsapp";
 
 export default function Footer() {
-  const whatsappNumber = sanitizePhone(
-    HOTEL.contact.phone.whatsapp
+  /**
+   * CENTRALIZED WHATSAPP LINK
+   */
+  const whatsappLink = buildWhatsAppLink(
+    formatWhatsAppMessage(
+      "Hello, I would like to book a room. Please share availability and pricing.",
+      { source: "footer" }
+    )
   );
 
-  const whatsappMessage = encodeURIComponent(
-    `Hello, I would like to book a room at ${HOTEL.identity.name} in ${HOTEL.location.city}. Please assist me with availability and pricing.`
-  );
+  /**
+   * WHATSAPP CLICK
+   */
+  const handleWhatsAppClick = () => {
+    track(
+      "whatsapp_click",
+      {
+        action: "footer_cta",
+      },
+      "footer"
+    );
 
-  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
-
-  const handleWhatsAppClick = (source: string) => {
-    track("whatsapp_click", {
-      source,
-      context: "footer",
-    });
-
-    setTimeout(() => {
-      window.open(whatsappLink, "_blank", "noopener,noreferrer");
-    }, 120);
+    window.open(whatsappLink, "_blank", "noopener,noreferrer");
   };
 
-  const handleContactClick = (type: string) => {
-    track("navigation", {
-      source: "footer",
-      type,
-    });
+  /**
+   * CONTACT TRACKING (FIXED SEMANTICS)
+   */
+  const handleContactClick = (type: "location" | "phone" | "email") => {
+    track(
+      "call_click",
+      {
+        action: "footer_contact",
+        contact_type: type,
+      },
+      "footer"
+    );
   };
 
   return (
@@ -66,7 +77,7 @@ export default function Footer() {
             className="text-sm text-zinc-400 cursor-pointer"
             onClick={() => handleContactClick("phone")}
           >
-            {HOTEL.contact.phone.primary}
+            {getPrimaryPhone()}
           </p>
 
           <p
@@ -82,7 +93,7 @@ export default function Footer() {
           <h3 className="font-semibold mb-3">Book Now</h3>
 
           <button
-            onClick={() => handleWhatsAppClick("footer")}
+            onClick={handleWhatsAppClick}
             className="inline-block bg-green-500 text-white px-4 py-2 rounded-md text-sm"
           >
             WhatsApp Booking
