@@ -5,9 +5,16 @@ export type EventType =
   | "room_view"
   | "whatsapp_click"
   | "call_click"
-  | "navigation"
-  | "email_click"
   | "booking_intent";
+
+export type EventSource =
+  | "navbar"
+  | "footer"
+  | "room_card"
+  | "sticky_cta"
+  | "exit_intent"
+  | "page"
+  | "unknown";
 
 export type EventPayload = Record<string, unknown>;
 
@@ -18,174 +25,171 @@ export type StoredEvent = {
   time: string;
   ts: number;
   url: string;
-  source?: "core";
+  origin: EventSource;
+  session_id: string;
+  _sig: string;
 };
 
-export const APP_EVENT = "app:event";
+/* ── CONFIG ───────────────────────────── */
 
 const STORAGE_KEY = "hotel_events";
+const SESSION_KEY = "hotel_session_id";
 const MAX_EVENTS = 200;
-const DEDUP_WINDOW_MS = 1500;
-const MAX_PAYLOAD_SIZE = 2000;
+const DEDUP_WINDOW_MS = 3000;
 
-let cache: StoredEvent[] = [];
+/* ── CACHE ────────────────────────────── */
 
-const VALID_TYPES = new Set<EventType>([
-  "page_view",
-  "room_view",
-  "whatsapp_click",
-  "call_click",
-  "navigation",
-  "email_click",
-  "booking_intent",
-]);
+let _cache: StoredEvent[] | null = null;
+let _sessionId: string | null = null;
 
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+/* ── SESSION ──────────────────────────── */
+
+function getSessionId(): string {
+  if (typeof window === "undefined") return "server";
+  if (_sessionId) return _sessionId;
+
+  _sessionId = localStorage.getItem(SESSION_KEY) ?? crypto.randomUUID();
+  localStorage.setItem(SESSION_KEY, _sessionId);
+  return _sessionId;
 }
 
-/* ---------------------------------------
-   STRICT VALIDATION (ENFORCED)
---------------------------------------- */
+/* ── SAFE STORAGE ─────────────────────── */
 
-function isValidEventType(type: string): type is EventType {
-  return VALID_TYPES.has(type as EventType);
-}
-
-/* ---------------------------------------
-   STABLE PAYLOAD HASH (FIXED DEDUP)
---------------------------------------- */
-
-function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
+function safeGet(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
   }
+}
+
+function safeSet(value: string): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, value);
+  } catch {}
+}
+
+/* ── NORMALIZATION (FIXED STABILITY) ──── */
+
+function normalize(value: unknown): unknown {
+  if (value === null || typeof value !== "object") return value;
 
   if (Array.isArray(value)) {
-    return `[${value.map(stableStringify).join(",")}]`;
+    return value.map(normalize);
   }
 
   const obj = value as Record<string, unknown>;
-  const keys = Object.keys(obj).sort();
-
   const sorted: Record<string, unknown> = {};
-  for (const k of keys) sorted[k] = obj[k];
 
-  return JSON.stringify(
-    Object.fromEntries(
-      Object.entries(sorted).map(([k, v]) => [k, stableStringify(v)])
-    )
-  );
-}
-
-/* ---------------------------------------
-   STORAGE SAFETY
---------------------------------------- */
-
-function syncCache(): void {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    cache = Array.isArray(parsed) ? parsed : [];
-  } catch {
-    cache = [];
+  for (const k of Object.keys(obj).sort()) {
+    sorted[k] = normalize(obj[k]);
   }
+
+  return sorted;
 }
 
-function safeGet(): StoredEvent[] {
-  if (!cache.length) syncCache();
-  return cache;
+/* ── SIGNATURE ────────────────────────── */
+
+function buildSig(
+  type: EventType,
+  payload: EventPayload,
+  origin: EventSource,
+  session_id: string
+): string {
+  return JSON.stringify({
+    type,
+    payload: normalize(payload),
+    origin,
+    session_id,
+  });
 }
 
-function safeSet(events: StoredEvent[]): void {
-  cache = events.slice(-MAX_EVENTS);
+/* ── CACHE LOADER ─────────────────────── */
+
+function loadCache(): StoredEvent[] {
+  if (_cache) return _cache;
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
-  } catch {}
+    const raw = safeGet();
+    _cache = raw ? (JSON.parse(raw) as StoredEvent[]) : [];
+  } catch {
+    _cache = [];
+  }
+
+  if (_cache.length > MAX_EVENTS) {
+    _cache = _cache.slice(-MAX_EVENTS);
+    safeSet(JSON.stringify(_cache));
+  }
+
+  return _cache;
 }
 
-/* ---------------------------------------
-   DEDUP ENGINE (FIXED)
---------------------------------------- */
-
-function isDuplicate(events: StoredEvent[], next: StoredEvent): boolean {
-  const nextSig = stableStringify({
-    type: next.type,
-    url: next.url,
-    payload: next.payload,
-  });
-
-  return events.slice(-10).some((e) => {
-    const timeValid = next.ts - e.ts <= DEDUP_WINDOW_MS;
-
-    const existingSig = stableStringify({
-      type: e.type,
-      url: e.url,
-      payload: e.payload,
-    });
-
-    return timeValid && existingSig === nextSig;
-  });
+function flushCache(): void {
+  if (!_cache) return;
+  safeSet(JSON.stringify(_cache));
 }
 
-/* ---------------------------------------
-   TRACK CORE ENGINE
---------------------------------------- */
+/* ── DEDUP ────────────────────────────── */
 
-export let onEventIntercept:
-  | ((event: StoredEvent) => void)
-  | undefined;
+function isDuplicate(sig: string, now: number, events: StoredEvent[]): boolean {
+  const cutoff = now - DEDUP_WINDOW_MS;
 
-export function track(type: EventType, payload: EventPayload = {}): void {
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i];
+
+    if (e.ts < cutoff) break;
+
+    if (e._sig === sig) return true;
+  }
+
+  return false;
+}
+
+/* ── TRACK ────────────────────────────── */
+
+export function track(
+  type: EventType,
+  payload: EventPayload = {},
+  origin: EventSource = "unknown"
+): void {
   if (typeof window === "undefined") return;
-  if (!isValidEventType(type)) return;
 
+  const events = loadCache();
   const now = Date.now();
+  const session_id = getSessionId();
+
+  const sig = buildSig(type, payload, origin, session_id);
+
+  if (isDuplicate(sig, now, events)) return;
 
   const event: StoredEvent = {
-    id: generateId(),
+    id: crypto.randomUUID(),
     type,
-    payload:
-      JSON.stringify(payload).length > MAX_PAYLOAD_SIZE
-        ? { __truncated: true }
-        : payload,
+    payload: normalize(payload),
     time: new Date(now).toISOString(),
     ts: now,
-    url: window.location.href,
-    source: "core",
+    url: window.location.pathname, // 🔥 FIX: removes query-string noise
+    origin,
+    session_id,
+    _sig: sig,
   };
 
-  const events = safeGet();
-
-  if (isDuplicate(events, event)) return;
-
   events.push(event);
-  safeSet(events);
 
-  /* event bus */
-  window.dispatchEvent(new CustomEvent(APP_EVENT, { detail: event }));
-
-  /* intercept hook (safe) */
-  try {
-    onEventIntercept?.(event);
-  } catch {}
-
-  /* GA adapter (isolated but NOT blocking core) */
-  const w = window as any;
-
-  if (typeof w.gtag === "function") {
-    try {
-      w.gtag("event", type, {
-        event_category: "engagement",
-        event_label: type,
-        page_location: event.url,
-        ...event.payload,
-      });
-    } catch {}
+  if (events.length > MAX_EVENTS) {
+    events.splice(0, events.length - MAX_EVENTS);
   }
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("[TRACK]", event);
-  }
+  flushCache();
+}
+
+/* ── PUBLIC API ───────────────────────── */
+
+export function getEvents(): StoredEvent[] {
+  return loadCache();
+}
+
+export function clearEvents(): void {
+  _cache = [];
+  safeSet("[]");
 }
