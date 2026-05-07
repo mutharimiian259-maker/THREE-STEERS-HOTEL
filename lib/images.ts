@@ -33,35 +33,3 @@ export const IMAGES = {
     natureWalk: "/images/experiences/nature-walk.jpg",
   },
 } as const;
-
-/* --------------------------------------------------
-   SAFE IMAGE RESOLVER (STABLE CORE VERSION)
--------------------------------------------------- */
-
-export function getImage(
-  path?: string,
-  fallback: string = "/images/hotel/exterior-hero.jpg"
-): string {
-  if (!path) return fallback;
-
-  try {
-    // external image safety check
-    if (path.startsWith("http")) {
-      new URL(path); // validates URL format
-      return path;
-    }
-
-    // internal asset validation
-    if (path.startsWith("/")) {
-      return path;
-    }
-
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[IMAGE] Invalid image path:", path);
-    }
-
-    return fallback;
-  } catch {
-    return fallback;
-  }
-}
