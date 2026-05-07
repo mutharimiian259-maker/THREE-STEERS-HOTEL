@@ -1,134 +1,190 @@
 import { HOTEL } from "@/lib/config";
 
-export type Room = {
+/* ---------------------------------------
+   TYPES
+--------------------------------------- */
+
+export type RoomWing =
+  | "batianWing"
+  | "lenanaWing";
+
+export type RoomDemand =
+  | "high"
+  | "medium"
+  | "low";
+
+export type ImageKey =
+  | "batianWing.deluxeTwin"
+  | "batianWing.executiveSuite"
+  | "lenanaWing.standardSingle"
+  | "lenanaWing.familyRoom";
+
+export type Room = Readonly<{
   id: string;
+
   slug: string;
+
   name: string;
+
   price: number;
-  currency: "KES";
+
   desc: string;
 
-  /**
-   * 🔥 FIX: decouple raw path from system
-   * (future CMS-ready)
-   */
-  imageKey: string;
+  imageKey: ImageKey;
+
+  wing: RoomWing;
 
   tag?: string;
 
-  wing: "batianWing" | "lenanaWing";
-
   maxGuests?: number;
+
   bedType?: string;
-  amenities?: string[];
+
+  amenities?: readonly string[];
+
   view?: string;
 
-  demand?: "high" | "medium" | "low";
-};
+  demand?: RoomDemand;
+}>;
 
-const rooms: Room[] = [
+/* ---------------------------------------
+   ROOM REGISTRY
+--------------------------------------- */
+
+export const rooms: readonly Room[] = [
   {
     id: "deluxe",
+
     slug: "deluxe-room",
+
     name: "Deluxe Room",
+
     price: 8500,
-    currency: "KES",
-    desc: "Luxury comfort with modern amenities in a calm setting.",
+
+    desc:
+      "Luxury comfort with modern amenities in a calm setting.",
+
     imageKey: "batianWing.deluxeTwin",
+
     tag: "Most Booked",
+
     wing: "batianWing",
+
     maxGuests: 2,
+
     bedType: "Queen Bed",
-    amenities: ["WiFi", "Breakfast", "Room Service", "Hot Shower"],
+
+    amenities: [
+      "WiFi",
+      "Breakfast",
+      "Room Service",
+      "Hot Shower",
+    ],
+
     view: "City View",
+
     demand: "high",
   },
+
   {
     id: "executive",
+
     slug: "executive-suite",
+
     name: "Executive Suite",
+
     price: 12000,
-    currency: "KES",
-    desc: "Premium suite offering Mt Kenya views and executive comfort.",
+
+    desc:
+      "Premium suite offering Mt Kenya views and executive comfort.",
+
     imageKey: "batianWing.executiveSuite",
+
     tag: "Best Value",
+
     wing: "batianWing",
+
     maxGuests: 3,
+
     bedType: "King Bed",
-    amenities: ["WiFi", "Breakfast", "Lounge Access", "Mini Bar"],
+
+    amenities: [
+      "WiFi",
+      "Breakfast",
+      "Lounge Access",
+      "Mini Bar",
+    ],
+
     view: "Mountain View",
+
     demand: "high",
   },
-  {
-    id: "standard-single",
-    slug: "standard-single",
-    name: "Standard Single Room",
-    price: 6000,
-    currency: "KES",
-    desc: "Comfortable and affordable room for solo travelers.",
-    imageKey: "lenanaWing.standardSingle",
-    wing: "lenanaWing",
-    maxGuests: 1,
-    bedType: "Single Bed",
-    amenities: ["WiFi", "Breakfast", "Hot Shower"],
-    view: "Garden View",
-    demand: "medium",
-  },
-  {
-    id: "family-room",
-    slug: "family-room",
-    name: "Family Room",
-    price: 15000,
-    currency: "KES",
-    desc: "Spacious room designed for families and group stays.",
-    imageKey: "lenanaWing.familyRoom",
-    tag: "Family Choice",
-    wing: "lenanaWing",
-    maxGuests: 4,
-    bedType: "Multiple Beds",
-    amenities: ["WiFi", "Breakfast", "Extra Space", "Living Area"],
-    view: "Garden View",
-    demand: "medium",
-  },
-];
+] as const;
 
-export default rooms;
+/* ---------------------------------------
+   DOMAIN QUERIES
+--------------------------------------- */
 
-/* --------------------------------------------------
-   🔥 DOMAIN HELPERS
--------------------------------------------------- */
-
-export function getRoomBySlug(slug: string): Room | undefined {
-  return rooms.find((r) => r.slug === slug);
+export function getRoomBySlug(
+  slug: string
+): Room | null {
+  return (
+    rooms.find((room) => room.slug === slug) ??
+    null
+  );
 }
 
-export function getRoomById(id: string): Room | undefined {
-  return rooms.find((r) => r.id === id);
+export function getRoomById(
+  id: string
+): Room | null {
+  return (
+    rooms.find((room) => room.id === id) ??
+    null
+  );
+}
+
+export function getRoomsByWing(
+  wing: RoomWing
+): Room[] {
+  return rooms.filter(
+    (room) => room.wing === wing
+  );
 }
 
 export function getHighDemandRooms(): Room[] {
-  return rooms.filter((r) => r.demand === "high");
-}
-
-export function getRoomsByWing(wing: Room["wing"]): Room[] {
-  return rooms.filter((r) => r.wing === wing);
-}
-
-export function formatRoomPrice(price: number): string {
-  return `${HOTEL.pricing.currency} ${price.toLocaleString()}`;
-}
-
-/**
- * 🔥 NEW: demand-based sorting (REVENUE OPTIMIZATION)
- */
-export function getSortedRooms(): Room[] {
-  const weight = {
-    high: 3,
-    medium: 2,
-    low: 1,
-  };
-
-  return [...rooms].sort(
-    (a, b) => (weight[b.demand ?? "medium"] - weight[a.demand ?? "medium"])
+  return rooms.filter(
+    (room) => room.demand === "high"
   );
+}
+
+/* ---------------------------------------
+   REVENUE PRIORITY SORTING
+--------------------------------------- */
+
+const DEMAND_WEIGHT: Record<
+  RoomDemand,
+  number
+> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+export function getSortedRooms(): Room[] {
+  return [...rooms].sort((a, b) => {
+    return (
+      DEMAND_WEIGHT[b.demand ?? "medium"] -
+      DEMAND_WEIGHT[a.demand ?? "medium"]
+    );
+  });
+}
+
+/* ---------------------------------------
+   PRESENTATION HELPERS
+--------------------------------------- */
+
+export function formatRoomPrice(
+  price: number
+): string {
+  return `${HOTEL.pricing.currency} ${price.toLocaleString()}`;
 }
