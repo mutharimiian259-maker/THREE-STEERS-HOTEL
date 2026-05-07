@@ -1,35 +1,98 @@
 export const IMAGES = {
   hotel: {
-    exteriorHero: "/images/hotel/exterior-hero.jpg",
-    exteriorNight: "/images/hotel/exterior-night-view.jpg",
-    lobby: "/images/hotel/lobby-interior.jpg",
-    reception: "/images/hotel/reception-area.jpg",
-    garden: "/images/hotel/garden-relaxation-area.jpg",
+    exteriorPrimary: {
+      src: "/images/hotel/exterior-hero.jpg",
+      alt: "Three Steers Hotel exterior",
+    },
+
+    exteriorNight: {
+      src: "/images/hotel/exterior-night-view.jpg",
+      alt: "Three Steers Hotel at night",
+    },
+
+    lobby: {
+      src: "/images/hotel/lobby-interior.jpg",
+      alt: "Hotel lobby interior",
+    },
+
+    reception: {
+      src: "/images/hotel/reception-area.jpg",
+      alt: "Hotel reception area",
+    },
+
+    garden: {
+      src: "/images/hotel/garden-relaxation-area.jpg",
+      alt: "Hotel garden relaxation area",
+    },
   },
 
   rooms: {
     batianWing: {
-      honeymoon: "/images/rooms/batian-wing/honeymoon/hero.jpg",
-      deluxeTwin: "/images/rooms/batian-wing/deluxe-twin/hero.jpg",
-      executiveSuite: "/images/rooms/batian-wing/executive-suite/hero.jpg",
+      honeymoon: {
+        src: "/images/rooms/batian-wing/honeymoon/hero.jpg",
+        alt: "Batian Wing honeymoon suite",
+      },
+
+      deluxeTwin: {
+        src: "/images/rooms/batian-wing/deluxe-twin/hero.jpg",
+        alt: "Batian Wing deluxe twin room",
+      },
+
+      executiveSuite: {
+        src: "/images/rooms/batian-wing/executive-suite/hero.jpg",
+        alt: "Batian Wing executive suite",
+      },
     },
 
     lenanaWing: {
-      standardSingle: "/images/rooms/lenana-wing/standard-single/hero.jpg",
-      standardDouble: "/images/rooms/lenana-wing/standard-double/hero.jpg",
-      familyRoom: "/images/rooms/lenana-wing/family-room/hero.jpg",
+      standardSingle: {
+        src: "/images/rooms/lenana-wing/standard-single/hero.jpg",
+        alt: "Lenana Wing standard single room",
+      },
+
+      standardDouble: {
+        src: "/images/rooms/lenana-wing/standard-double/hero.jpg",
+        alt: "Lenana Wing standard double room",
+      },
+
+      familyRoom: {
+        src: "/images/rooms/lenana-wing/family-room/hero.jpg",
+        alt: "Lenana Wing family room",
+      },
     },
   },
 
   food: {
-    buffetBreakfast: "/images/food/buffet-breakfast.jpg",
-    fineDining: "/images/food/fine-dining.jpg",
-    chefSpecial: "/images/food/chef-special.jpg",
+    buffetBreakfast: {
+      src: "/images/food/buffet-breakfast.jpg",
+      alt: "Buffet breakfast selection",
+    },
+
+    fineDining: {
+      src: "/images/food/fine-dining.jpg",
+      alt: "Fine dining experience",
+    },
+
+    chefSpecial: {
+      src: "/images/food/chef-special.jpg",
+      alt: "Chef special meal",
+    },
   },
 
   experiences: {
-    safari: "/images/experiences/safari-booking.jpg",
-    sunrise: "/images/experiences/mountain-view-sunrise.jpg",
-    natureWalk: "/images/experiences/nature-walk.jpg",
+    safari: {
+      src: "/images/experiences/safari-booking.jpg",
+      alt: "Safari booking experience",
+    },
+
+    sunrise: {
+      src: "/images/experiences/mountain-view-sunrise.jpg",
+      alt: "Mountain sunrise view",
+    },
+
+    natureWalk: {
+      src: "/images/experiences/nature-walk.jpg",
+      alt: "Nature walk experience",
+    },
   },
 } as const;
