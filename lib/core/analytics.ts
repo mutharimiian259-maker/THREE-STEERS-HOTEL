@@ -4,34 +4,23 @@ import type { EventType, EventPayload, EventSource, StoredEvent } from "./types"
 import { dispatch } from "./router";
 
 /* ─────────────────────────────────────────
-   SESSION (lightweight, browser only)
+   SESSION (in-memory only — IO removed)
 ───────────────────────────────────────── */
 
 let _sessionId: string | null = null;
 
 function getSessionId(): string {
-  if (typeof window === "undefined") return "server";
-
   if (_sessionId) return _sessionId;
-
-  const key = "hotel_session_id";
-
-  _sessionId =
-    localStorage.getItem(key) ?? crypto.randomUUID();
-
-  localStorage.setItem(key, _sessionId);
-
+  _sessionId = crypto.randomUUID();
   return _sessionId;
 }
 
 /* ─────────────────────────────────────────
-   NORMALIZATION (deterministic payload)
+   NORMALIZATION
 ───────────────────────────────────────── */
 
 function normalize(value: unknown): unknown {
-  if (value === null || typeof value !== "object") {
-    return value;
-  }
+  if (value === null || typeof value !== "object") return value;
 
   if (Array.isArray(value)) {
     return value.map(normalize);
@@ -48,37 +37,37 @@ function normalize(value: unknown): unknown {
 }
 
 /* ─────────────────────────────────────────
-   SIGNATURE (dedup-safe identity)
+   SIGNATURE (stable identity)
 ───────────────────────────────────────── */
 
-function buildSig(
+function buildSignature(
   type: EventType,
   payload: EventPayload,
-  origin: EventSource,
+  source: EventSource,
   session_id: string,
   url: string
 ): string {
   return JSON.stringify({
     type,
     payload: normalize(payload),
-    origin,
+    source,
     session_id,
-    url
+    url,
   });
 }
 
 /* ─────────────────────────────────────────
-   MAIN TRACK FUNCTION (CORE ENTRYPOINT)
+   CORE TRACK FUNCTION
 ───────────────────────────────────────── */
 
 export function track(
   type: EventType,
   payload: EventPayload = {},
-  origin: EventSource = "unknown"
+  source: EventSource = "unknown"
 ): void {
   if (typeof window === "undefined") return;
 
-  const now = Date.now();
+  const timestamp = Date.now();
   const session_id = getSessionId();
   const url = window.location.pathname;
 
@@ -86,18 +75,12 @@ export function track(
     id: crypto.randomUUID(),
     type,
     payload: normalize(payload),
-    time: new Date(now).toISOString(),
-    ts: now,
-    url,
-    origin,
+    source,
+    timestamp,
     session_id,
-    _sig: buildSig(type, payload, origin, session_id, url),
+    url,
+    signature: buildSignature(type, payload, source, session_id, url),
   };
-
-  /* ─────────────────────────────────────
-     SINGLE RESPONSIBILITY:
-     HAND OFF TO ROUTER ONLY
-  ───────────────────────────────────── */
 
   dispatch(event);
 }
