@@ -1,47 +1,78 @@
 import type { SeoIntent } from "@/lib/seoTypes";
 
-export function getSeoKeywordsByIntent(intent: SeoIntent): string[] {
-  switch (intent) {
-    case "room":
-      return [
-        "hotel rooms Meru Kenya",
-        "hotel booking Kenya",
-        "luxury accommodation Meru",
-      ];
+/* ---------------------------------------
+   SEO KEYWORD REGISTRY
+--------------------------------------- */
 
-    case "conference":
-      return [
-        "conference venues Meru",
-        "meeting rooms Kenya hotels",
-      ];
+const SEO_KEYWORDS: Record<SeoIntent, string[]> = {
+  room: [
+    "hotel rooms Meru Kenya",
+    "hotel booking Kenya",
+    "luxury accommodation Meru",
+  ],
 
-    case "dining":
-      return [
-        "hotel restaurant Meru",
-        "fine dining Kenya hotels",
-      ];
+  conference: [
+    "conference venues Meru",
+    "meeting rooms Kenya hotels",
+  ],
 
-    case "blog":
-      return [
-        "travel Kenya hotels",
-        "Mt Kenya tourism",
-      ];
+  dining: [
+    "hotel restaurant Meru",
+    "fine dining Kenya hotels",
+  ],
 
-    default:
-      return [];
-  }
+  blog: [
+    "travel Kenya hotels",
+    "Mt Kenya tourism",
+  ],
+};
+
+/* ---------------------------------------
+   PATH-BASED SEO REGISTRY
+--------------------------------------- */
+
+const SEO_PATH_KEYWORDS: Record<string, string[]> = {
+  "/rooms": [
+    "all hotel rooms",
+    "hotel booking page",
+  ],
+};
+
+/* ---------------------------------------
+   INTENT SEO
+--------------------------------------- */
+
+export function getSeoKeywordsByIntent(
+  intent: SeoIntent
+): string[] {
+  return SEO_KEYWORDS[intent] ?? [];
 }
 
-export function getSeoKeywordsByPath(path?: string): string[] {
+/* ---------------------------------------
+   PATH SEO
+--------------------------------------- */
+
+export function getSeoKeywordsByPath(
+  path?: string
+): string[] {
   if (!path) return [];
 
   if (path.startsWith("/rooms/")) {
-    return ["hotel room details", "book hotel room Kenya"];
+    return [
+      "hotel room details",
+      "book hotel room Kenya",
+    ];
   }
 
-  if (path === "/rooms") {
-    return ["all hotel rooms", "hotel booking page"];
-  }
+  return SEO_PATH_KEYWORDS[path] ?? [];
+}
 
-  return [];
+/* ---------------------------------------
+   DEDUP SAFE MERGER
+--------------------------------------- */
+
+export function mergeSeoKeywords(
+  ...groups: string[][]
+): string[] {
+  return [...new Set(groups.flat())];
 }
