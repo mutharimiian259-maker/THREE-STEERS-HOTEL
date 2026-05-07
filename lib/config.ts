@@ -53,7 +53,7 @@ export type HotelConfig = {
   };
 };
 
-export const HOTEL: HotelConfig = {
+export const HOTEL: Readonly<HotelConfig> = {
   identity: {
     name: "Three Steers Hotel Meru",
     brand: "Three Steers Hotel",
