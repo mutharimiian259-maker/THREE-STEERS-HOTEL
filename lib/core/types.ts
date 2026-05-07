@@ -3,7 +3,8 @@ export type EventType =
   | "room_view"
   | "whatsapp_click"
   | "call_click"
-  | "booking_intent";
+  | "booking_intent"
+  | "system_error"; // added observability layer
 
 export type EventSource =
   | "navbar"
@@ -12,13 +13,14 @@ export type EventSource =
   | "sticky_cta"
   | "exit_intent"
   | "page"
+  | "system"        // added internal system origin
   | "unknown";
 
 export type EventPayload = Record<string, unknown>;
 
 /**
  * CANONICAL EVENT CONTRACT
- * Treat as database schema equivalent
+ * Treated as immutable schema boundary
  */
 export type StoredEvent = {
   id: string;
@@ -27,12 +29,20 @@ export type StoredEvent = {
 
   payload: EventPayload;
 
-  timestamp: number;     // single source of truth
+  timestamp: number;
 
   url: string;
   session_id: string;
 
-  signature: string;     // dedup + integrity hash
+  signature: string;
 
-  version: number;       // schema versioning for future evolution
+  version: number;
+
+  /**
+   * OPTIONAL OBSERVABILITY EXTENSION
+   * (safe to ignore if unused)
+   */
+  status?: "created" | "processed" | "failed";
+
+  adapters?: string[]; // which adapters handled this event
 };
