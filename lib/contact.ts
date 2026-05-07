@@ -1,35 +1,35 @@
+import type { EventType } from "@/lib/core/types";
+
 /**
- * UI EVENT SEMANTIC MAP
- * ONLY for UI readability / grouping
- * MUST NOT be used as analytics source of truth
+ * UI SEMANTIC CLASSIFICATION
+ * Presentation-only grouping
+ *
+ * MUST NOT be used as:
+ * - analytics truth
+ * - funnel source
+ * - persistence schema
  */
 
-/* ---------------------------------------
-   UI INTENT CLASSIFICATION
---------------------------------------- */
-
-export const INTENT = {
+export const UI_INTENT = {
   NAVIGATION: "navigation",
   ENGAGEMENT: "engagement",
   ACTION: "action",
 } as const;
 
-export type Intent =
-  (typeof INTENT)[keyof typeof INTENT];
+export type UiIntent =
+  (typeof UI_INTENT)[keyof typeof UI_INTENT];
 
 /* ---------------------------------------
-   EVENT LABELS (UI REFERENCE ONLY)
-   MUST MATCH CORE EventType SEMANTICS
+   UI EVENT REFERENCES
+   Derived from canonical EventType
 --------------------------------------- */
 
-export const EVENT_LABELS = {
-  PAGE_VIEW: "page_view",
-  ROOM_VIEW: "room_view",
+export const UI_EVENT = {
+  PAGE_VIEW: "page_view" as EventType,
+  ROOM_VIEW: "room_view" as EventType,
 
-  WHATSAPP_CLICK: "whatsapp_click",
-  CALL_CLICK: "call_click",
-  EMAIL_CLICK: "email_click",
+  WHATSAPP_CLICK: "whatsapp_click" as EventType,
+  CALL_CLICK: "call_click" as EventType,
 
-  BOOKING_INTENT: "booking_intent",
-  NAVIGATION_CLICK: "navigation_click",
+  BOOKING_INTENT: "booking_intent" as EventType,
 } as const;
