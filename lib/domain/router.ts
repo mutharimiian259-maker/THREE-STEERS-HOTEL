@@ -1,33 +1,59 @@
-import { routes, Route } from "@/lib/routes";
+import { routes, type Route } from "@/lib/routes";
 
-function normalizePath(path: string): string {
+/* ---------------------------------------
+   PATH NORMALIZATION
+--------------------------------------- */
+
+export function normalizePath(path: string): string {
   const cleaned = path.trim();
+
   if (!cleaned) return "/";
-  const withoutTrailing = cleaned.replace(/\/+$/, "");
-  return withoutTrailing || "/";
+
+  const normalized = cleaned.replace(/\/+$/, "");
+
+  return normalized || "/";
 }
 
-function splitPath(path: string): {
+/* ---------------------------------------
+   PATH PARSING
+--------------------------------------- */
+
+export function parseRoutePath(path: string): {
   base: string;
-  hash?: string;
+  hash: string | null;
 } {
-  const [base, hash] = path.split("#");
+  try {
+    const url = new URL(path, "http://localhost");
 
-  return {
-    base: normalizePath(base || "/"),
-    hash: hash ? `#${hash}` : undefined,
-  };
+    return {
+      base: normalizePath(url.pathname),
+      hash: url.hash || null,
+    };
+  } catch {
+    return {
+      base: "/",
+      hash: null,
+    };
+  }
 }
 
-export function getRoute(path: string): Route | undefined {
-  const target = splitPath(path);
+/* ---------------------------------------
+   ROUTE LOOKUP
+--------------------------------------- */
 
-  return routes.find((route) => {
-    const current = splitPath(route.path);
+export function getRoute(
+  path: string
+): Route | null {
+  const target = parseRoutePath(path);
 
-    return (
-      current.base === target.base &&
-      current.hash === target.hash
-    );
-  });
+  return (
+    routes.find((route) => {
+      const current = parseRoutePath(route.path);
+
+      return (
+        current.base === target.base &&
+        current.hash === target.hash
+      );
+    }) ?? null
+  );
 }
