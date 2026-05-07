@@ -2,53 +2,68 @@
 
 import Link from "next/link";
 import Image from "next/image";
+
 import { blogPosts } from "@/data/blog";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+
+import { track } from "@/lib/core/analytics";
+
+import { getImage } from "@/lib/domain/images";
 
 export default function BlogPage() {
-  
-  const handleClick = (slug: string) => {
-    trackEvent("BLOG_CLICK", { blog: slug });
-    setFunnelStep("ENGAGEMENT");
-  };
+
+  function handleBlogClick(slug: string) {
+    track(
+      "blog_view",
+      {
+        blog: slug,
+      },
+      "page"
+    );
+  }
 
   return (
-    <main className="p-6 max-w-6xl mx-auto">
+    <main className="mx-auto max-w-6xl p-6">
 
       <header className="text-center">
 
-        <h1 className="text-3xl text-yellow-500 font-bold">
+        <h1 className="text-3xl font-bold text-yellow-500">
           Hotel Blog – Three Steers Meru
         </h1>
 
-        <p className="text-gray-400 mt-2 max-w-2xl mx-auto">
-          Travel guides, hotel tips, and conference insights in Meru Kenya.
+        <p className="mx-auto mt-2 max-w-2xl text-gray-400">
+          Travel guides, hotel tips,
+          and conference insights in Meru Kenya.
         </p>
 
       </header>
 
-      <section className="grid md:grid-cols-2 gap-6 mt-8">
+      <section className="mt-8 grid gap-6 md:grid-cols-2">
 
         {blogPosts.map((post) => {
-          const imageSrc =
-            post.image || "/images/blog/default-blog.jpg";
+
+          const imageSrc = getImage(
+            post.imageKey
+          );
 
           return (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="card overflow-hidden hover:scale-[1.01] transition block"
-              onClick={() => handleClick(post.slug)}
+              className="card block overflow-hidden transition hover:scale-[1.01]"
+              onClick={() => {
+                handleBlogClick(post.slug);
+              }}
             >
 
-              <div className="relative w-full h-52">
+              <div className="relative h-52 w-full">
+
                 <Image
                   src={imageSrc}
                   alt={post.title}
                   fill
                   className="object-cover"
                 />
+
               </div>
 
               <div className="p-4">
@@ -57,11 +72,11 @@ export default function BlogPage() {
                   {post.title}
                 </h2>
 
-                <p className="text-gray-400 mt-2 text-sm">
+                <p className="mt-2 text-sm text-gray-400">
                   {post.excerpt}
                 </p>
 
-                <p className="text-yellow-500 mt-3 text-sm font-medium">
+                <p className="mt-3 text-sm font-medium text-yellow-500">
                   Read More →
                 </p>
 
