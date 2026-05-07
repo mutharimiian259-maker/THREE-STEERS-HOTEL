@@ -1,43 +1,61 @@
-export type BlogPost = {
+export type BlogIntent =
+  | "content"
+  | "conversion";
+
+export type BlogCTAAction =
+  | "whatsapp"
+  | "rooms"
+  | "conference";
+
+export type BlogCTA = Readonly<{
+  label: string;
+
+  action: BlogCTAAction;
+}>;
+
+export type BlogPost = Readonly<{
   id: string;
+
   slug: string;
+
   title: string;
+
   excerpt: string;
+
   metaDescription: string;
 
-  /**
-   * 🔥 FIX: keep keywords as OPTIONAL hints only
-   * DO NOT treat as SEO authority source
-   */
-  keywords?: string[];
+  keywords?: readonly string[];
 
   content: string;
+
   author: string;
+
   publishedAt: string;
-  image?: string;
+
+  imageKey?: string;
+
   category?: string;
+
   readingTime?: number;
 
-  /**
-   * 🔥 FIX: content classification only (NOT system intent)
-   */
-  intent?: "content" | "conversion";
+  intent?: BlogIntent;
 
-  /**
-   * 🔥 FIX: CTA is UI trigger definition only
-   * actual tracking happens in UI layer
-   */
-  cta?: {
-    label: string;
-    action: "whatsapp" | "rooms" | "conference";
-  };
-};
+  cta?: BlogCTA;
+}>;
 
-export const blogPosts: BlogPost[] = [
+/* ---------------------------------------
+   BLOG CONTENT REGISTRY
+--------------------------------------- */
+
+export const blogPosts: readonly BlogPost[] = [
   {
     id: "blog-001",
+
     slug: "best-hotel-in-meru-kenya",
-    title: "Best Hotel in Meru Kenya for Luxury Stay",
+
+    title:
+      "Best Hotel in Meru Kenya for Luxury Stay",
+
     excerpt:
       "Discover why Three Steers Hotel is among the top hotels in Meru for comfort, conferences, and dining.",
 
@@ -55,73 +73,25 @@ export const blogPosts: BlogPost[] = [
 # Best Hotel in Meru Kenya
 
 Three Steers Hotel offers premium accommodation in Meru Kenya with modern rooms, fine dining, and conference facilities.
-
-## Why choose us:
-- 11 room categories
-- Conference halls
-- Fine dining restaurants
-- Gardens & leisure spaces
-
-Looking for a stay in Meru? Book directly for the best rates and availability.
     `,
 
     author: "Three Steers Hotel",
+
     publishedAt: "2026-04-30",
 
-    image: "/images/blog/accommodation/best-hotel-meru/hero.jpg",
+    imageKey:
+      "blog.accommodation.bestHotelMeru",
+
     category: "Accommodation",
+
     readingTime: 3,
 
     intent: "conversion",
 
     cta: {
       label: "Book Your Stay via WhatsApp",
+
       action: "whatsapp",
     },
   },
-
-  {
-    id: "blog-002",
-    slug: "conference-venues-in-meru",
-    title: "Top Conference Venues in Meru for Corporate Events",
-    excerpt:
-      "Explore modern conference facilities at Three Steers Hotel suitable for meetings and corporate events.",
-
-    metaDescription:
-      "Three Steers Hotel offers modern conference venues in Meru Kenya with WiFi, AV equipment, and catering services.",
-
-    keywords: [
-      "conference venues Meru",
-      "meetings Meru hotel",
-      "corporate events Meru Kenya",
-    ],
-
-    content: `
-# Conference Venues in Meru
-
-Three Steers Hotel provides fully equipped conference halls in Meru suitable for seminars, workshops, and corporate meetings.
-
-## Facilities include:
-- High-speed WiFi
-- Audio-visual equipment
-- Catering services
-- Flexible seating capacity
-
-Planning a corporate event? Contact us for tailored packages.
-    `,
-
-    author: "Three Steers Hotel",
-    publishedAt: "2026-04-30",
-
-    image: "/images/blog/conference/conference-venues-meru/hero.jpg",
-    category: "Events",
-    readingTime: 4,
-
-    intent: "conversion",
-
-    cta: {
-      label: "Make Conference Enquiry",
-      action: "conference",
-    },
-  },
-];
+] as const;
