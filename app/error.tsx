@@ -13,21 +13,24 @@ export default function Error({
 }) {
   useEffect(() => {
     try {
-      console.error("APP ERROR OBJECT:", {
+      console.error("APP ERROR:", {
         message: error?.message,
         digest: error?.digest,
         stack: error?.stack,
         name: error?.name,
       });
 
-      // Optional analytics hook (safe, non-blocking)
-      track("page_view", {
-        error: true,
-        message: error?.message,
-        digest: error?.digest,
-      });
+      track(
+        "app_error",
+        {
+          message: error?.message,
+          digest: error?.digest,
+          stack: error?.stack,
+        },
+        "page"
+      );
     } catch {
-      // silent fail
+      // intentionally silent
     }
   }, [error]);
 
@@ -36,27 +39,29 @@ export default function Error({
       reset();
     } catch {
       if (typeof window !== "undefined") {
-        // safer fallback than full reload
         window.location.href = "/";
       }
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center text-center px-6">
+    <div className="flex min-h-screen items-center justify-center px-6 text-center">
       <div className="max-w-md">
 
         <h2 className="text-3xl font-bold text-red-500">
           Something went wrong
         </h2>
 
-        <p className="text-gray-400 mt-3">
-          An unexpected issue occurred. You can retry or return to the homepage.
+        <p className="mt-3 text-gray-400">
+          An unexpected issue occurred. You can retry or return home.
         </p>
 
         <div className="mt-6 flex flex-col gap-3">
 
-          <button onClick={handleReset} className="btn btn-green">
+          <button
+            onClick={handleReset}
+            className="btn btn-green"
+          >
             Try Again
           </button>
 
