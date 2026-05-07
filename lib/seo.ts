@@ -1,4 +1,6 @@
 import { HOTEL } from "@/lib/config";
+import { getSeoKeywordsByIntent, getSeoKeywordsByPath } from "@/lib/domain/seoStrategy";
+import { resolveUrl, validateImage } from "@/lib/utils/seoUtils";
 
 type SeoIntent =
   | "home"
@@ -16,9 +18,13 @@ type SeoProps = {
   keywords?: string[];
 };
 
-/* ---------------------------------------
-   CORE URL BASE (SINGLE SOURCE)
---------------------------------------- */
+function clamp(text: string, max: number): string {
+  return text.length > max ? text.slice(0, max - 1).trim() + "…" : text;
+}
+
+function dedupe(list: string[]): string[] {
+  return Array.from(new Set(list.map((k) => k.trim().toLowerCase()).filter(Boolean)));
+}
 
 function getBaseUrl(): string {
   try {
@@ -27,111 +33,6 @@ function getBaseUrl(): string {
     return "https://example.com";
   }
 }
-
-/* ---------------------------------------
-   PURE URL JOIN (NO SIDE EFFECTS)
---------------------------------------- */
-
-function resolveUrl(base: string, path: string): string {
-  try {
-    return new URL(path || "/", base).toString();
-  } catch {
-    return base;
-  }
-}
-
-/* ---------------------------------------
-   INTENT KEYWORDS (STATIC DOMAIN KNOWLEDGE)
---------------------------------------- */
-
-function intentKeywords(intent?: SeoIntent): string[] {
-  switch (intent) {
-    case "room":
-      return [
-        "hotel rooms Meru Kenya",
-        "hotel booking Kenya",
-        "luxury accommodation Meru",
-      ];
-
-    case "conference":
-      return [
-        "conference venues Meru",
-        "meeting rooms Kenya hotels",
-      ];
-
-    case "dining":
-      return [
-        "hotel restaurant Meru",
-        "fine dining Kenya hotels",
-      ];
-
-    case "blog":
-      return [
-        "travel Kenya hotels",
-        "Mt Kenya tourism",
-      ];
-
-    default:
-      return HOTEL.seo?.keywords ?? [];
-  }
-}
-
-/* ---------------------------------------
-   PATH ENRICHMENT (STRICT RULES ONLY)
---------------------------------------- */
-
-function pathKeywords(path?: string): string[] {
-  if (!path) return [];
-
-  if (path.startsWith("/rooms/")) {
-    return ["hotel room details", "book hotel room Kenya"];
-  }
-
-  if (path === "/rooms") {
-    return ["all hotel rooms", "hotel booking page"];
-  }
-
-  return [];
-}
-
-/* ---------------------------------------
-   KEYWORD DEDUP (PURE FUNCTION)
---------------------------------------- */
-
-function dedupe(list: string[]): string[] {
-  return Array.from(
-    new Set(list.map((k) => k.trim().toLowerCase()).filter(Boolean))
-  );
-}
-
-/* ---------------------------------------
-   IMAGE VALIDATION (SAFE ONLY)
---------------------------------------- */
-
-function validateImage(image?: string): string {
-  const fallback = "/images/hotel/og/default.jpg";
-
-  if (!image) return fallback;
-
-  if (image.startsWith("http")) return image;
-  if (image.startsWith("/")) return image;
-
-  return fallback;
-}
-
-/* ---------------------------------------
-   TEXT LIMITS (SEO CONSTRAINT LAYER)
---------------------------------------- */
-
-function clamp(text: string, max: number): string {
-  return text.length > max
-    ? text.slice(0, max - 1).trim() + "…"
-    : text;
-}
-
-/* ---------------------------------------
-   MAIN SEO ENGINE (SINGLE OUTPUT CONTRACT)
---------------------------------------- */
 
 export function generateSEO({
   title,
@@ -142,7 +43,7 @@ export function generateSEO({
   keywords,
 }: SeoProps = {}) {
   const baseUrl = getBaseUrl();
-  const siteName = HOTEL.identity?.name ?? "Hotel";
+  const siteName = HOTEL.identity.name;
 
   const fullTitle = clamp(
     title ? `${title} | ${siteName}` : HOTEL.seo.defaultTitle,
@@ -155,15 +56,15 @@ export function generateSEO({
   );
 
   const url = resolveUrl(baseUrl, path);
-  const safeImage = validateImage(image);
 
+  const safeImage = validateImage(image);
   const finalImage = safeImage.startsWith("http")
     ? safeImage
     : resolveUrl(baseUrl, safeImage);
 
   const finalKeywords = dedupe([
-    ...intentKeywords(intent),
-    ...pathKeywords(path),
+    ...getSeoKeywordsByIntent(intent),
+    ...getSeoKeywordsByPath(path),
     ...(keywords ?? []),
   ]);
 
