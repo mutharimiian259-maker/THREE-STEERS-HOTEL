@@ -1,27 +1,16 @@
 import { track } from "@/lib/core/analytics";
 
-type WhatsAppSource =
-  | "navbar"
-  | "footer"
-  | "room_card"
-  | "sticky_cta"
-  | "exit_intent"
-  | "unknown";
-
 type WhatsAppOptions = {
-  source?: WhatsAppSource;
+  source?: "navbar" | "footer" | "room_card" | "sticky_cta" | "exit_intent" | "unknown";
   room?: string;
 };
 
-export function trackWhatsAppClick(options?: WhatsAppOptions): void {
-  if (typeof window === "undefined") return;
-
+export function trackWhatsAppClick(options: WhatsAppOptions = {}): void {
   track(
     "whatsapp_click",
     {
-      room: options?.room ?? null,
-      source: options?.source ?? "unknown",
+      room: options.room ?? null,
     },
-    options?.source ?? "unknown"
+    options.source ?? "unknown"
   );
 }
