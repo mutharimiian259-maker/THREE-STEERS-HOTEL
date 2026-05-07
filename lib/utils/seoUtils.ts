@@ -1,18 +1,45 @@
+const DEFAULT_IMAGE = "/images/hotel/og/default.jpg";
+
+/* ---------------------------------------
+   URL RESOLUTION
+--------------------------------------- */
+
 export function resolveUrl(base: string, path: string): string {
   try {
     return new URL(path || "/", base).toString();
-  } catch {
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[resolveUrl] invalid URL", {
+        base,
+        path,
+        err,
+      });
+    }
+
     return base;
   }
 }
 
-export function validateImage(image?: string): string {
-  const fallback = "/images/hotel/og/default.jpg";
+/* ---------------------------------------
+   IMAGE PATH RESOLUTION
+--------------------------------------- */
 
-  if (!image) return fallback;
+export function resolveImagePath(image?: string): string {
+  if (!image) return DEFAULT_IMAGE;
 
-  if (image.startsWith("http")) return image;
-  if (image.startsWith("/")) return image;
+  try {
+    // external image
+    if (image.startsWith("http://") || image.startsWith("https://")) {
+      return image;
+    }
 
-  return fallback;
+    // internal asset
+    if (image.startsWith("/")) {
+      return image;
+    }
+
+    return DEFAULT_IMAGE;
+  } catch {
+    return DEFAULT_IMAGE;
+  }
 }
