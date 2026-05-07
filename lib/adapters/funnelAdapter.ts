@@ -16,18 +16,37 @@ export const FunnelAdapter: EventAdapter = {
   name: "funnel",
 
   handle(event: StoredEvent) {
+    if (typeof window === "undefined") return;
+
     const stage = STAGE_MAP[event.type];
     if (!stage) return;
 
-    const current = localStorage.getItem(FUNNEL_KEY);
+    try {
+      const existingRaw = localStorage.getItem(FUNNEL_KEY);
 
-    const updated = {
-      stage,
-      lastEvent: event.type,
-      timestamp: event.timestamp,
-      session_id: event.session_id,
-    };
+      const existing = existingRaw ? JSON.parse(existingRaw) : null;
 
-    localStorage.setItem(FUNNEL_KEY, JSON.stringify(updated));
+      const updated = {
+        stage,
+
+        lastEvent: event.type,
+        timestamp: event.timestamp,
+        session_id: event.session_id,
+
+        // preserve funnel continuity (important fix)
+        history: [
+          ...(existing?.history ?? []),
+          {
+            stage,
+            event: event.type,
+            timestamp: event.timestamp,
+          },
+        ].slice(-50), // prevent infinite growth
+      };
+
+      localStorage.setItem(FUNNEL_KEY, JSON.stringify(updated));
+    } catch (err) {
+      console.error("[FunnelAdapter] failed", err, event);
+    }
   },
 };
