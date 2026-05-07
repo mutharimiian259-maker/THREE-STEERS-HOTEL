@@ -87,8 +87,7 @@ export const HOTEL: HotelConfig = {
   },
 
   seo: {
-    defaultTitle:
-      "Three Steers Hotel Meru | Luxury Hotel in Kenya",
+    defaultTitle: "Three Steers Hotel Meru | Luxury Hotel in Kenya",
     defaultDescription:
       "Luxury hotel in Meru, Kenya offering accommodation, dining, conferences, and events near Mount Kenya. Book direct for best rates.",
   },
@@ -112,59 +111,3 @@ export const HOTEL: HotelConfig = {
     },
   },
 };
-
-/* ---------------------------------------
-   🔒 STRICT ACCESS LAYER (LOCKED)
---------------------------------------- */
-
-function sanitizePhone(phone: string): string {
-  return phone.replace(/[^\d]/g, "");
-}
-
-/**
- * ONLY SAFE PHONE ACCESS
- */
-export function getPhoneByLabel(
-  label: "primary" | "secondary" | "whatsapp"
-): string | null {
-  const phone = HOTEL.contact.phones.find(
-    (p) => p.label === label
-  );
-
-  return phone ? sanitizePhone(phone.number) : null;
-}
-
-/**
- * DERIVED VALUE ONLY
- */
-export function getWhatsAppNumber(): string | null {
-  return getPhoneByLabel("whatsapp");
-}
-
-/**
- * DOMAIN SAFE ACCESS
- */
-export function getDomain(): string {
-  return HOTEL.domain.primary;
-}
-
-/**
- * SAFE SEO ACCESS
- */
-export function getSEO() {
-  return HOTEL.seo;
-}
-
-/**
- * SAFE IDENTITY ACCESS
- */
-export function getIdentity() {
-  return HOTEL.identity;
-}
-
-/**
- * SAFE LOCATION ACCESS
- */
-export function getLocation() {
-  return HOTEL.location;
-}
