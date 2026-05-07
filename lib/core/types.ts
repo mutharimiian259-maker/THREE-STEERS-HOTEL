@@ -17,16 +17,22 @@ export type EventSource =
 export type EventPayload = Record<string, unknown>;
 
 /**
- * Internal canonical event object
+ * CANONICAL EVENT CONTRACT
+ * Treat as database schema equivalent
  */
 export type StoredEvent = {
   id: string;
   type: EventType;
+  source: EventSource;
+
   payload: EventPayload;
-  time: string;
-  ts: number;
+
+  timestamp: number;     // single source of truth
+
   url: string;
-  origin: EventSource;
   session_id: string;
-  _sig: string;
+
+  signature: string;     // dedup + integrity hash
+
+  version: number;       // schema versioning for future evolution
 };
