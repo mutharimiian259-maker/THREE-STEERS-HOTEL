@@ -1,15 +1,14 @@
 import { MetadataRoute } from "next";
 import { HOTEL } from "@/lib/config";
 
-function getBaseUrl(): string {
+function getBaseUrl(): string | null {
   try {
-    const url = new URL(HOTEL.domain.primary);
-    return url.origin.replace(/\/$/, "");
+    return new URL(HOTEL.domain.primary).origin.replace(/\/$/, "");
   } catch {
     if (process.env.NODE_ENV === "development") {
       console.warn("[ROBOTS] Invalid domain config");
     }
-    return "";
+    return null;
   }
 }
 
@@ -21,10 +20,6 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
 
-        // Allow all public content (includes dynamic routes)
-        allow: ["/"],
-
-        // Block system/private endpoints
         disallow: [
           "/api/",
           "/admin/",
@@ -34,9 +29,8 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
 
-    sitemap: baseUrl ? `${baseUrl}/sitemap.xml` : undefined,
-
-    // only include host if valid
-    ...(baseUrl ? { host: baseUrl } : {}),
+    sitemap: baseUrl
+      ? `${baseUrl}/sitemap.xml`
+      : undefined,
   };
 }
