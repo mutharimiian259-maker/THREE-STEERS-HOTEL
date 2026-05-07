@@ -8,8 +8,8 @@ import ExitIntentModal from "@/components/global/ExitIntentModal";
 import Script from "next/script";
 
 import { HOTEL } from "@/lib/config";
-import { track } from "@/lib/core/analytics";
 import { useEffect } from "react";
+import { initAnalytics } from "@/lib/adapters/bootstrap";
 
 /* ---------------------------------------
    SAFE URL
@@ -42,11 +42,11 @@ export default function RootLayout({
       : null;
 
   /* ---------------------------------------
-     GLOBAL CORE BOOTSTRAP (IMPORTANT FIX)
+     CORE SYSTEM BOOTSTRAP (CRITICAL FIX)
   --------------------------------------- */
 
   useEffect(() => {
-    track("page_view", {}, "page");
+    initAnalytics(); // ✅ THIS WAS MISSING
   }, []);
 
   return (
@@ -59,7 +59,6 @@ export default function RootLayout({
 
         <StickyCTA />
 
-        {/* BEHAVIOR LAYER */}
         <ExitIntentModal />
 
         <Footer />
@@ -103,19 +102,26 @@ export default function RootLayout({
               "@type": "Hotel",
               name: HOTEL.identity.name,
               url: siteUrl,
-              telephone: HOTEL.contact.phones.find(p => p.label === "primary")?.number ?? "",
+
+              telephone:
+                HOTEL.contact.phones.find(p => p.label === "primary")
+                  ?.number ?? "",
+
               priceRange: HOTEL.pricing.range.display ?? "",
+
               address: {
                 "@type": "PostalAddress",
                 addressLocality: HOTEL.location.city,
                 addressRegion: HOTEL.location.region,
                 addressCountry: HOTEL.location.country,
               },
+
               geo: {
                 "@type": "GeoCoordinates",
                 latitude: HOTEL.location.coordinates.lat,
                 longitude: HOTEL.location.coordinates.lng,
               },
+
               image: `${siteUrl}/images/hotel/exterior-hero.jpg`,
               description: HOTEL.seo.defaultDescription,
             }),
