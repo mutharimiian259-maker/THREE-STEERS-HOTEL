@@ -1,23 +1,23 @@
 import { MetadataRoute } from "next";
 import { HOTEL } from "@/lib/config";
-import { rooms } from "@/data/rooms";
+import rooms from "@/data/rooms";
 import { blogPosts } from "@/data/blog";
 
-function getBaseUrl(): string {
+function getBaseUrl(): string | null {
   try {
-    const url = new URL(HOTEL.domain.primary);
-    return url.origin.replace(/\/$/, "");
+    return new URL(HOTEL.domain.primary).origin.replace(/\/$/, "");
   } catch {
     if (process.env.NODE_ENV === "development") {
       console.warn("[SITEMAP] Invalid domain config");
     }
-    return "";
+    return null;
   }
 }
 
-function buildUrl(base: string, path: string): string {
+function normalizeUrl(base: string, path: string): string {
   try {
-    return new URL(path, base).toString().replace(/\/$/, "");
+    const url = new URL(path, base);
+    return url.origin + url.pathname.replace(/\/$/, "");
   } catch {
     return base;
   }
@@ -25,7 +25,10 @@ function buildUrl(base: string, path: string): string {
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = getBaseUrl();
-  if (!baseUrl) return [];
+
+  if (!baseUrl) {
+    return [];
+  }
 
   const now = new Date();
 
@@ -34,16 +37,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: baseUrl,
       lastModified: now,
       changeFrequency: "daily",
-      priority: 1.0,
+      priority: 1,
     },
     {
-      url: buildUrl(baseUrl, "/rooms"),
+      url: normalizeUrl(baseUrl, "/rooms"),
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: buildUrl(baseUrl, "/blog"),
+      url: normalizeUrl(baseUrl, "/blog"),
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.9,
@@ -51,18 +54,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   const roomPages: MetadataRoute.Sitemap = rooms.map((room) => ({
-    url: buildUrl(baseUrl, `/rooms/${room.slug}`),
+    url: normalizeUrl(
+      baseUrl,
+      `/rooms/${room.slug}`
+    ),
     lastModified: now,
     changeFrequency: "weekly",
     priority: 0.8,
   }));
 
   const blogPages: MetadataRoute.Sitemap = blogPosts.map((post) => ({
-    url: buildUrl(baseUrl, `/blog/${post.slug}`),
-    lastModified: new Date(post.updatedAt ?? post.date ?? now),
+    url: normalizeUrl(
+      baseUrl,
+      `/blog/${post.slug}`
+    ),
+    lastModified: now,
     changeFrequency: "weekly",
     priority: 0.8,
   }));
 
-  return [...staticPages, ...roomPages, ...blogPages];
+  return [
+    ...staticPages,
+    ...roomPages,
+    ...blogPages,
+  ];
 }
