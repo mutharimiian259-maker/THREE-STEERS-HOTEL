@@ -38,7 +38,6 @@ export type HotelConfig = {
     range: {
       min: number;
       max: number;
-      display: string;
     };
   };
 
@@ -97,7 +96,6 @@ export const HOTEL: Readonly<HotelConfig> = {
     range: {
       min: 5000,
       max: 40000,
-      display: "KSh 5,000 - 40,000",
     },
   },
 
