@@ -1,28 +1,58 @@
-const DEFAULT_IMAGE = "/images/hotel/exterior-hero.jpg";
+const DEFAULT_IMAGE =
+  "/images/hotel/exterior-hero.jpg";
 
-export function getImage(
+/* ---------------------------------------
+   IMAGE PATH RESOLUTION
+--------------------------------------- */
+
+export function resolveImagePath(
   path?: string,
   fallback: string = DEFAULT_IMAGE
 ): string {
   if (!path) return fallback;
 
-  // external URL validation
-  if (path.startsWith("http")) {
+  const cleaned = path.trim();
+
+  if (!cleaned) return fallback;
+
+  /* -------------------------------------
+     EXTERNAL URL
+  ------------------------------------- */
+
+  if (
+    cleaned.startsWith("http://") ||
+    cleaned.startsWith("https://")
+  ) {
     try {
-      new URL(path);
-      return path;
+      const url = new URL(cleaned);
+
+      if (
+        url.protocol === "http:" ||
+        url.protocol === "https:"
+      ) {
+        return cleaned;
+      }
+
+      return fallback;
     } catch {
       return fallback;
     }
   }
 
-  // internal asset validation
-  if (path.startsWith("/")) {
-    return path;
+  /* -------------------------------------
+     INTERNAL ASSET
+  ------------------------------------- */
+
+  if (cleaned.startsWith("/")) {
+    return cleaned.replace(/\/+/g, "/");
   }
 
+  /* -------------------------------------
+     DEV DEBUGGING
+  ------------------------------------- */
+
   if (process.env.NODE_ENV === "development") {
-    console.warn("[IMAGE INVALID]", path);
+    console.warn("[IMAGE INVALID]", cleaned);
   }
 
   return fallback;
