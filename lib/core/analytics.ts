@@ -4,7 +4,7 @@ import type { EventType, EventPayload, EventSource, StoredEvent } from "./types"
 import { dispatch } from "./router";
 
 /* ─────────────────────────────────────────
-   SESSION (in-memory only — IO removed)
+   SESSION (stable per tab lifecycle)
 ───────────────────────────────────────── */
 
 let _sessionId: string | null = null;
@@ -16,7 +16,7 @@ function getSessionId(): string {
 }
 
 /* ─────────────────────────────────────────
-   NORMALIZATION
+   NORMALIZATION (deterministic payload)
 ───────────────────────────────────────── */
 
 function normalize(value: unknown): unknown {
@@ -37,7 +37,22 @@ function normalize(value: unknown): unknown {
 }
 
 /* ─────────────────────────────────────────
-   SIGNATURE (stable identity)
+   ENRICHMENT (system context injection)
+───────────────────────────────────────── */
+
+function enrich(): Record<string, unknown> {
+  if (typeof window === "undefined") return {};
+
+  return {
+    userAgent: navigator.userAgent,
+    path: window.location.pathname,
+    referrer: document.referrer || null,
+    ts: Date.now(),
+  };
+}
+
+/* ─────────────────────────────────────────
+   SIGNATURE (deduplication identity)
 ───────────────────────────────────────── */
 
 function buildSignature(
@@ -57,7 +72,7 @@ function buildSignature(
 }
 
 /* ─────────────────────────────────────────
-   CORE TRACK FUNCTION
+   EVENT TRACKER (CORE KERNEL)
 ───────────────────────────────────────── */
 
 export function track(
@@ -67,20 +82,37 @@ export function track(
 ): void {
   if (typeof window === "undefined") return;
 
-  const timestamp = Date.now();
-  const session_id = getSessionId();
-  const url = window.location.pathname;
+  try {
+    const timestamp = Date.now();
+    const session_id = getSessionId();
+    const url = window.location.pathname;
 
-  const event: StoredEvent = {
-    id: crypto.randomUUID(),
-    type,
-    payload: normalize(payload),
-    source,
-    timestamp,
-    session_id,
-    url,
-    signature: buildSignature(type, payload, source, session_id, url),
-  };
+    const event: StoredEvent = {
+      id: crypto.randomUUID(),
 
-  dispatch(event);
+      type,
+      payload: normalize(payload),
+      source,
+
+      timestamp,
+      session_id,
+      url,
+
+      version: 1,
+
+      signature: buildSignature(type, payload, source, session_id, url),
+
+      // optional enrichment (non-breaking extension)
+      ...enrich(),
+    } as StoredEvent;
+
+    const result = dispatch(event);
+
+    // optional safety hook (if dispatch ever becomes async-capable later)
+    if (!result) {
+      console.warn("[analytics] event dropped by dispatcher", event);
+    }
+  } catch (err) {
+    console.error("[analytics] tracking failed", err);
+  }
 }
