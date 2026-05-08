@@ -1,7 +1,7 @@
 "use client";
 
 /* =============================================================
-   CORE ANALYTICS
+   CORE ANALYTICS (ENFORCED EVENT GATEWAY)
    ============================================================= */
 
 import {
@@ -18,6 +18,7 @@ import type {
 } from "./types";
 
 import { dispatch } from "./router";
+import { Funnel } from "./Funnel"; // 🔥 ENFORCED OWNERSHIP BOUNDARY
 
 /* =============================================================
    TYPES
@@ -68,16 +69,21 @@ function normalize(value: unknown): unknown {
 }
 
 /* =============================================================
-   DEV LOG
+   SAFE BROWSER CONTEXT
    ============================================================= */
 
-function devLog(message: string, payload?: unknown) {
-  if (process.env.NODE_ENV !== "development") return;
-  console.log(`[analytics] ${message}`, payload ?? "");
+function getBrowserMeta() {
+  if (typeof window === "undefined") return undefined;
+
+  return {
+    pathname: window.location.pathname,
+    referrer: document.referrer,
+    user_agent: navigator.userAgent,
+  };
 }
 
 /* =============================================================
-   TRACK
+   TRACK (SINGLE ENFORCED ENTRY POINT)
    ============================================================= */
 
 export async function track(
@@ -102,14 +108,18 @@ export async function track(
       type,
       source: safeSource,
       payload: normalizedPayload,
-      metadata: {
-        pathname: window.location.pathname,
-        referrer: document.referrer,
-        user_agent: navigator.userAgent,
-      },
+      metadata: getBrowserMeta(),
     });
 
-    devLog("event created", event);
+    /* =============================================================
+       🔥 ENFORCED FUNNEL BOUNDARY
+       ============================================================= */
+
+    Funnel.ingest(event); // ONLY funnel entry point allowed
+
+    /* =============================================================
+       EVENT DISPATCH
+       ============================================================= */
 
     let results: AdapterDispatchResult[];
 
@@ -124,18 +134,6 @@ export async function track(
         error,
       };
     }
-
-    const failed = results.filter((r) => !r.success);
-
-    if (failed.length > 0) {
-      console.warn("[analytics] adapter failures detected", failed);
-    }
-
-    devLog("dispatch completed", {
-      event_id: event.id,
-      adapters: results.length,
-      failed: failed.length,
-    });
 
     return {
       accepted: true,
