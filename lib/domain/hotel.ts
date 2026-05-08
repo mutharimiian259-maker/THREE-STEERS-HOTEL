@@ -1,37 +1,70 @@
 import { HOTEL } from "@/lib/config";
 
+/* =============================================================
+   DOMAIN: HOTEL
+   -------------------------------------------------------------
+   Intent-based access layer over configuration
+   Guarantees:
+   - no raw config leakage
+   - immutable outputs
+   - stable contract for UI
+   ============================================================= */
+
+/* ---------------------------------------
+   DOMAIN HELPERS
+--------------------------------------- */
+
+function freeze<T>(value: T): T {
+  return Object.freeze({ ...value });
+}
+
 /* ---------------------------------------
    CORE DOMAIN ACCESS
 --------------------------------------- */
 
-export const getDomain = () => HOTEL.domain.primary;
-
-export const getIdentity = () => ({
-  name: HOTEL.identity.name,
-  brand: HOTEL.identity.brand,
-});
+export function getDomain(): string {
+  return HOTEL.domain.primary;
+}
 
 /* ---------------------------------------
-   SEO DOMAIN (intent-based, not raw)
+   IDENTITY DOMAIN
 --------------------------------------- */
 
-export const getSEO = () => ({
-  title: HOTEL.seo.defaultTitle,
-  description: HOTEL.seo.defaultDescription,
-});
+export function getIdentity() {
+  return freeze({
+    name: HOTEL.identity.name,
+    brand: HOTEL.identity.brand,
+  });
+}
 
 /* ---------------------------------------
-   LOCATION DOMAIN (intent-based)
+   SEO DOMAIN
 --------------------------------------- */
 
-export const getLocation = () => ({
-  city: HOTEL.location.city,
-  region: HOTEL.location.region,
-  country: HOTEL.location.country,
-  full: HOTEL.location.full,
-});
+export function getSEO() {
+  return freeze({
+    title: HOTEL.seo.defaultTitle,
+    description: HOTEL.seo.defaultDescription,
+  });
+}
 
-export const getCoordinates = () => ({
-  lat: HOTEL.location.coordinates.lat,
-  lng: HOTEL.location.coordinates.lng,
-});
+/* ---------------------------------------
+   LOCATION DOMAIN
+--------------------------------------- */
+
+export function getLocation() {
+  return freeze({
+    city: HOTEL.location.city,
+    region: HOTEL.location.region,
+    country: HOTEL.location.country,
+    full: HOTEL.location.full,
+    timezone: HOTEL.location.timezone,
+  });
+}
+
+export function getCoordinates() {
+  return freeze({
+    lat: HOTEL.location.coordinates.lat,
+    lng: HOTEL.location.coordinates.lng,
+  });
+}
