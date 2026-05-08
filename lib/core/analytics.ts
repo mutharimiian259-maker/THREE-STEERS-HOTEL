@@ -18,7 +18,23 @@ import type {
 } from "./types";
 
 import { dispatch } from "./router";
-import { Funnel } from "./Funnel"; // 🔥 ENFORCED OWNERSHIP BOUNDARY
+import { Funnel } from "./Funnel";
+
+/* =============================================================
+   🔒 SIMPLE EVENT LOCK (FK-STYLE DUPLICATE PREVENTION)
+   ============================================================= */
+
+const EVENT_REGISTRY = new Set<EventType>();
+
+export function registerEventType(type: EventType) {
+  if (EVENT_REGISTRY.has(type)) {
+    console.warn(`[CORE LOCK] Duplicate event type blocked: ${String(type)}`);
+    return false;
+  }
+
+  EVENT_REGISTRY.add(type);
+  return true;
+}
 
 /* =============================================================
    TYPES
@@ -96,7 +112,14 @@ export async function track(
   }
 
   try {
-    invariant(isEventType(type), `Invalid event type "${String(type)}"`);
+    /* =============================================================
+       🔒 HARD GATE: EVENT MUST BE REGISTERED
+       ============================================================= */
+
+    invariant(
+      isEventType(type) && EVENT_REGISTRY.has(type),
+      `Unregistered event type "${String(type)}"`
+    );
 
     const safeSource: EventSource = isEventSource(source)
       ? source
@@ -112,13 +135,7 @@ export async function track(
     });
 
     /* =============================================================
-       🔥 ENFORCED FUNNEL BOUNDARY
-       ============================================================= */
-
-    Funnel.ingest(event); // ONLY funnel entry point allowed
-
-    /* =============================================================
-       EVENT DISPATCH
+       EVENT DISPATCH (EXTERNAL SYSTEMS)
        ============================================================= */
 
     let results: AdapterDispatchResult[];
@@ -133,6 +150,16 @@ export async function track(
         event,
         error,
       };
+    }
+
+    /* =============================================================
+       🔥 FUNNEL (ONLY AFTER SUCCESSFUL DISPATCH)
+       ============================================================= */
+
+    try {
+      Funnel.ingest(event);
+    } catch (error) {
+      console.error("[analytics] funnel ingest failed", error);
     }
 
     return {
