@@ -1,47 +1,102 @@
-import { getIdentity } from "@/lib/domain/hotel";
-import type { EventSource } from "@/lib/core/types";
+/* =============================================================
+   DOMAIN: WHATSAPP
+   -------------------------------------------------------------
+   Responsibilities:
+   - WhatsApp message formatting
+   - WhatsApp link generation
 
-/* ---------------------------------------
-   TYPES
---------------------------------------- */
+   Rules:
+   - No React / DOM usage
+   - No analytics logic
+   - No config structure exposure
+   - No core-layer dependency leakage
+   ============================================================= */
+
+import { getWhatsAppPhone } from "@/lib/config";
+import { sanitizePhone } from "@/lib/utils/phone";
+
+/* =============================================================
+   TYPES (LOCAL DOMAIN ONLY)
+   ============================================================= */
+
+export type WhatsAppSource =
+  | "navbar"
+  | "footer"
+  | "room_card"
+  | "sticky_cta"
+  | "exit_intent"
+  | "call_bar"
+  | "float_button"
+  | "page"
+  | "system"
+  | "unknown";
 
 export type WhatsAppOptions = {
-  source?: EventSource;
+  source?: WhatsAppSource;
   room?: string;
 };
 
-/* ---------------------------------------
-   MESSAGE NORMALIZATION
---------------------------------------- */
-
-function normalizeMessage(message: string): string {
-  return message.trim();
-}
-
-/* ---------------------------------------
-   WHATSAPP MESSAGE FORMATTER
---------------------------------------- */
+/* =============================================================
+   MESSAGE BUILDER
+   ============================================================= */
 
 export function formatWhatsAppMessage(
   message: string,
   options?: WhatsAppOptions
 ): string {
-  const hotel = getIdentity();
+  const cleanMessage =
+    message?.trim() || "Hello";
 
-  const normalized = normalizeMessage(message);
+  const source =
+    options?.source ?? "unknown";
 
-  return [
-    `🏨 ${hotel.name}`,
+  const room =
+    options?.room;
+
+  const lines: Array<string | null> = [
+    `🏨 Three Steers Hotel Meru`,
     "",
-    normalized,
+    cleanMessage,
     "",
     "---",
-    `Source: ${options?.source ?? "unknown"}`,
-    options?.room
-      ? `Room: ${options.room}`
-      : null,
-  ]
-    .filter(Boolean)
+    `Source: ${source}`,
+    room ? `Room: ${room}` : null,
+  ];
+
+  return lines
+    .filter(
+      (line): line is string =>
+        line !== null
+    )
     .join("\n")
     .trim();
+}
+
+/* =============================================================
+   LINK BUILDER
+   ============================================================= */
+
+export function buildWhatsAppLink(
+  message: string
+): string {
+  const rawPhone =
+    getWhatsAppPhone();
+
+  if (!rawPhone) {
+    console.warn(
+      "[whatsapp] missing WhatsApp number"
+    );
+
+    return "https://wa.me/";
+  }
+
+  const phone =
+    sanitizePhone(rawPhone);
+
+  const encoded =
+    encodeURIComponent(
+      message?.trim() || "Hello"
+    );
+
+  return `https://wa.me/${phone}?text=${encoded}`;
 }
