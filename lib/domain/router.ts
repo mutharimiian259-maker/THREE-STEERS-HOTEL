@@ -1,33 +1,35 @@
 import { routes, type Route } from "@/lib/routes";
 
-/* ---------------------------------------
+/* =============================================================
    PATH NORMALIZATION
---------------------------------------- */
+   ============================================================= */
 
 export function normalizePath(path: string): string {
-  const cleaned = path.trim();
+  const cleaned = path?.trim();
 
   if (!cleaned) return "/";
 
-  const normalized = cleaned.replace(/\/+$/, "");
+  const withoutTrailing = cleaned.replace(/\/+$/, "");
 
-  return normalized || "/";
+  return withoutTrailing || "/";
 }
 
-/* ---------------------------------------
-   PATH PARSING
---------------------------------------- */
+/* =============================================================
+   PATH PARSING (SAFE + CONSISTENT)
+   ============================================================= */
 
 export function parseRoutePath(path: string): {
   base: string;
   hash: string | null;
 } {
   try {
-    const url = new URL(path, "http://localhost");
+    const url = new URL(
+      path.startsWith("http") ? path : `http://local${path}`
+    );
 
     return {
       base: normalizePath(url.pathname),
-      hash: url.hash || null,
+      hash: url.hash ? url.hash.toLowerCase() : null,
     };
   } catch {
     return {
@@ -37,23 +39,33 @@ export function parseRoutePath(path: string): {
   }
 }
 
-/* ---------------------------------------
-   ROUTE LOOKUP
---------------------------------------- */
+/* =============================================================
+   PRECOMPUTED ROUTE INDEX (PERFORMANCE FIX)
+   ============================================================= */
 
-export function getRoute(
-  path: string
-): Route | null {
+const ROUTE_INDEX = routes.map((route) => {
+  const parsed = parseRoutePath(route.path);
+
+  return {
+    route,
+    base: parsed.base,
+    hash: parsed.hash,
+  };
+});
+
+/* =============================================================
+   ROUTE LOOKUP (O(1) FILTERED SEARCH)
+   ============================================================= */
+
+export function getRoute(path: string): Route | null {
   const target = parseRoutePath(path);
 
-  return (
-    routes.find((route) => {
-      const current = parseRoutePath(route.path);
+  const match = ROUTE_INDEX.find((r) => {
+    return (
+      r.base === target.base &&
+      r.hash === target.hash
+    );
+  });
 
-      return (
-        current.base === target.base &&
-        current.hash === target.hash
-      );
-    }) ?? null
-  );
+  return match?.route ?? null;
 }
