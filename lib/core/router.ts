@@ -1,109 +1,334 @@
 import type { StoredEvent } from "./types";
 
-/* ─────────────────────────────────────────
+/* =============================================================
+   CORE ROUTER
+   -------------------------------------------------------------
+   Central adapter fanout pipeline.
+
+   Responsibilities:
+   - adapter registration
+   - dispatch orchestration
+   - adapter isolation
+   - dispatch observability
+   - runtime diagnostics
+
+   Forbidden:
+   - business logic
+   - analytics semantics
+   - UI concerns
+   - localStorage ownership
+   ============================================================= */
+
+/* =============================================================
    ADAPTER CONTRACT
-───────────────────────────────────────── */
+   ============================================================= */
 
-export type EventAdapter = {
+export type EventAdapter = Readonly<{
   name: string;
-  handle(event: StoredEvent): void | Promise<void>;
-};
 
-/* ─────────────────────────────────────────
-   REGISTRY
-───────────────────────────────────────── */
+  handle(
+    event: StoredEvent
+  ): void | Promise<void>;
+}>;
 
-const adapters: EventAdapter[] = [];
+/* =============================================================
+   DISPATCH RESULT
+   ============================================================= */
 
-/* ─────────────────────────────────────────
-   DEBUG MODE
-───────────────────────────────────────── */
+export type DispatchResult = Readonly<{
+  success: boolean;
+
+  adapter: string;
+
+  duration_ms: number;
+
+  error?: unknown;
+}>;
+
+/* =============================================================
+   ROUTER STATE
+   ============================================================= */
+
+const adapters = new Map<
+  string,
+  EventAdapter
+>();
 
 let DEBUG = false;
 
-export function setRouterDebug(value: boolean) {
+let LOCKED = false;
+
+/* =============================================================
+   DEBUG CONTROL
+   ============================================================= */
+
+export function setRouterDebug(
+  value: boolean
+): void {
   DEBUG = value;
 }
 
-/* ─────────────────────────────────────────
-   REGISTER ADAPTER
-───────────────────────────────────────── */
+/* =============================================================
+   LOGGER
+   ============================================================= */
 
-export function registerAdapter(adapter: EventAdapter): void {
-  const exists = adapters.some((a) => a.name === adapter.name);
-  if (exists) return;
+function debugLog(
+  message: string,
+  payload?: unknown
+): void {
+  if (!DEBUG) return;
 
-  adapters.push(adapter);
+  console.log(
+    `[ROUTER] ${message}`,
+    payload ?? ""
+  );
+}
 
-  if (DEBUG) {
-    console.log(`[ROUTER] Adapter registered: ${adapter.name}`);
+/* =============================================================
+   INVARIANT
+   ============================================================= */
+
+function invariant(
+  condition: unknown,
+  message: string
+): asserts condition {
+  if (!condition) {
+    throw new Error(`[ROUTER] ${message}`);
   }
 }
 
-/* ─────────────────────────────────────────
-   RESET (DEV ONLY)
-───────────────────────────────────────── */
+/* =============================================================
+   TIMEOUT WRAPPER
+   Prevent hanging adapters
+   ============================================================= */
 
-export function resetAdapters(): void {
-  adapters.length = 0;
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeout_ms = 3000
+): Promise<T> {
+  return await Promise.race([
+    promise,
+
+    new Promise<T>((_, reject) =>
+      setTimeout(() => {
+        reject(
+          new Error(
+            `Adapter timeout after ${timeout_ms}ms`
+          )
+        );
+      }, timeout_ms)
+    ),
+  ]);
 }
 
-/* ─────────────────────────────────────────
-   DISPATCH RESULT CONTRACT
-───────────────────────────────────────── */
+/* =============================================================
+   REGISTER ADAPTER
+   ============================================================= */
 
-export type DispatchResult = {
-  success: boolean;
-  adapter: string;
-  error?: unknown;
-};
+export function registerAdapter(
+  adapter: EventAdapter
+): void {
+  invariant(
+    !LOCKED,
+    `Cannot register adapter "${adapter.name}" after router initialization`
+  );
 
-/* ─────────────────────────────────────────
-   DISPATCH (CONTROLLED FANOUT PIPELINE)
-───────────────────────────────────────── */
+  invariant(
+    adapter &&
+      typeof adapter.name === "string" &&
+      typeof adapter.handle === "function",
+    "Invalid adapter contract"
+  );
+
+  if (adapters.has(adapter.name)) {
+    debugLog(
+      `adapter already registered: ${adapter.name}`
+    );
+
+    return;
+  }
+
+  adapters.set(adapter.name, Object.freeze(adapter));
+
+  debugLog(
+    `adapter registered: ${adapter.name}`
+  );
+}
+
+/* =============================================================
+   INITIALIZE ROUTER
+   Prevent future mutation
+   ============================================================= */
+
+export function initializeRouter(): void {
+  LOCKED = true;
+
+  debugLog("router locked", {
+    adapters: [...adapters.keys()],
+  });
+}
+
+/* =============================================================
+   RESET ROUTER (DEV ONLY)
+   ============================================================= */
+
+export function resetAdapters(): void {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "[ROUTER] resetAdapters() forbidden in production"
+    );
+  }
+
+  adapters.clear();
+
+  LOCKED = false;
+
+  debugLog("router reset");
+}
+
+/* =============================================================
+   DISPATCH
+   Controlled async fanout pipeline
+   ============================================================= */
 
 export async function dispatch(
   event: StoredEvent
-): Promise<DispatchResult[]> {
-  if (!event) return [];
+): Promise<
+  readonly DispatchResult[]
+> {
+  invariant(event, "dispatch requires event");
 
-  if (adapters.length === 0) {
-    console.warn("[ROUTER] No adapters registered — event dropped", event);
-    return [];
+  if (adapters.size === 0) {
+    console.warn(
+      "[ROUTER] no adapters registered — event dropped",
+      event
+    );
+
+    return Object.freeze([]);
   }
 
-  const results: DispatchResult[] = [];
+  const dispatch_id =
+    crypto.randomUUID();
 
-  for (const adapter of adapters) {
-    if (DEBUG) {
-      console.log("[ROUTER DISPATCH]", adapter.name, event.type);
-    }
+  debugLog("dispatch started", {
+    dispatch_id,
+    event_id: event.id,
+    type: event.type,
+    adapters: adapters.size,
+  });
 
-    try {
-      await Promise.resolve(adapter.handle(event));
+  const adapterList = [
+    ...adapters.values(),
+  ];
 
-      results.push({
-        success: true,
-        adapter: adapter.name,
-      });
-    } catch (err) {
-      console.error(`[ROUTER ERROR] ${adapter.name}`, err);
+  const results = await Promise.allSettled(
+    adapterList.map(async (adapter) => {
+      const started = performance.now();
 
-      results.push({
+      try {
+        await withTimeout(
+          Promise.resolve(
+            adapter.handle(event)
+          )
+        );
+
+        const result: DispatchResult =
+          Object.freeze({
+            success: true,
+
+            adapter: adapter.name,
+
+            duration_ms:
+              performance.now() - started,
+          });
+
+        debugLog("adapter success", {
+          dispatch_id,
+          adapter: adapter.name,
+        });
+
+        return result;
+      } catch (error) {
+        console.error(
+          `[ROUTER ERROR] ${adapter.name}`,
+          error
+        );
+
+        const result: DispatchResult =
+          Object.freeze({
+            success: false,
+
+            adapter: adapter.name,
+
+            duration_ms:
+              performance.now() - started,
+
+            error,
+          });
+
+        return result;
+      }
+    })
+  );
+
+  const normalizedResults =
+    results.map((result) => {
+      if (result.status === "fulfilled") {
+        return result.value;
+      }
+
+      return Object.freeze({
         success: false,
-        adapter: adapter.name,
-        error: err,
-      });
-    }
-  }
 
-  return results;
+        adapter: "unknown",
+
+        duration_ms: 0,
+
+        error: result.reason,
+      });
+    });
+
+  debugLog("dispatch completed", {
+    dispatch_id,
+
+    successful:
+      normalizedResults.filter(
+        (r) => r.success
+      ).length,
+
+    failed:
+      normalizedResults.filter(
+        (r) => !r.success
+      ).length,
+  });
+
+  return Object.freeze(
+    normalizedResults
+  );
 }
 
-/* ─────────────────────────────────────────
+/* =============================================================
    INTROSPECTION
-───────────────────────────────────────── */
+   ============================================================= */
 
-export function getAdapters(): string[] {
-  return adapters.map((a) => a.name);
+export function getAdapters(): readonly string[] {
+  return Object.freeze([
+    ...adapters.keys(),
+  ]);
+}
+
+/* =============================================================
+   ROUTER STATUS
+   ============================================================= */
+
+export function getRouterStatus() {
+  return Object.freeze({
+    locked: LOCKED,
+
+    debug: DEBUG,
+
+    adapters: getAdapters(),
+
+    adapter_count: adapters.size,
+  });
 }
