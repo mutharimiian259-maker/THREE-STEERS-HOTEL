@@ -1,98 +1,100 @@
-export const IMAGES = {
-  hotel: {
-    exteriorPrimary: {
-      src: "/images/hotel/exterior-hero.jpg",
-      alt: "Three Steers Hotel exterior",
-    },
+/* =============================================================
+   DOMAIN: IMAGE RESOLUTION
+   -------------------------------------------------------------
+   Responsibilities:
+   - Resolve semantic image keys → asset paths
+   - Provide safe fallback handling
+   - Prevent UI from depending on IMAGES structure
 
-    exteriorNight: {
-      src: "/images/hotel/exterior-night-view.jpg",
-      alt: "Three Steers Hotel at night",
-    },
+   Rules:
+   - No UI logic
+   - No mutation
+   - No business logic
+   ============================================================= */
 
-    lobby: {
-      src: "/images/hotel/lobby-interior.jpg",
-      alt: "Hotel lobby interior",
-    },
+import { IMAGES } from "@/lib/images";
 
-    reception: {
-      src: "/images/hotel/reception-area.jpg",
-      alt: "Hotel reception area",
-    },
+/* =============================================================
+   DEFAULT FALLBACK
+   ============================================================= */
 
-    garden: {
-      src: "/images/hotel/garden-relaxation-area.jpg",
-      alt: "Hotel garden relaxation area",
-    },
-  },
+const DEFAULT_IMAGE =
+  "/images/hotel/exterior-hero.jpg";
 
-  rooms: {
-    batianWing: {
-      honeymoon: {
-        src: "/images/rooms/batian-wing/honeymoon/hero.jpg",
-        alt: "Batian Wing honeymoon suite",
-      },
+/* =============================================================
+   STRICT IMAGE KEY TYPE
+   (prevents silent typos in components/data layer)
+   ============================================================= */
 
-      deluxeTwin: {
-        src: "/images/rooms/batian-wing/deluxe-twin/hero.jpg",
-        alt: "Batian Wing deluxe twin room",
-      },
+export type ImageKey =
+  | "batianWing.deluxeTwin"
+  | "batianWing.executiveSuite"
+  | "batianWing.honeymoon"
+  | "lenanaWing.standardSingle"
+  | "lenanaWing.standardDouble"
+  | "lenanaWing.familyRoom";
 
-      executiveSuite: {
-        src: "/images/rooms/batian-wing/executive-suite/hero.jpg",
-        alt: "Batian Wing executive suite",
-      },
-    },
+/* =============================================================
+   IMMUTABLE IMAGE MAP
+   ============================================================= */
 
-    lenanaWing: {
-      standardSingle: {
-        src: "/images/rooms/lenana-wing/standard-single/hero.jpg",
-        alt: "Lenana Wing standard single room",
-      },
+const IMAGE_KEY_MAP: Record<
+  ImageKey,
+  string
+> = Object.freeze({
+  "batianWing.deluxeTwin":
+    IMAGES.rooms.batianWing.deluxeTwin,
 
-      standardDouble: {
-        src: "/images/rooms/lenana-wing/standard-double/hero.jpg",
-        alt: "Lenana Wing standard double room",
-      },
+  "batianWing.executiveSuite":
+    IMAGES.rooms.batianWing.executiveSuite,
 
-      familyRoom: {
-        src: "/images/rooms/lenana-wing/family-room/hero.jpg",
-        alt: "Lenana Wing family room",
-      },
-    },
-  },
+  "batianWing.honeymoon":
+    IMAGES.rooms.batianWing.honeymoon,
 
-  food: {
-    buffetBreakfast: {
-      src: "/images/food/buffet-breakfast.jpg",
-      alt: "Buffet breakfast selection",
-    },
+  "lenanaWing.standardSingle":
+    IMAGES.rooms.lenanaWing.standardSingle,
 
-    fineDining: {
-      src: "/images/food/fine-dining.jpg",
-      alt: "Fine dining experience",
-    },
+  "lenanaWing.standardDouble":
+    IMAGES.rooms.lenanaWing.standardDouble,
 
-    chefSpecial: {
-      src: "/images/food/chef-special.jpg",
-      alt: "Chef special meal",
-    },
-  },
+  "lenanaWing.familyRoom":
+    IMAGES.rooms.lenanaWing.familyRoom,
+});
 
-  experiences: {
-    safari: {
-      src: "/images/experiences/safari-booking.jpg",
-      alt: "Safari booking experience",
-    },
+/* =============================================================
+   TYPE GUARD
+   ============================================================= */
 
-    sunrise: {
-      src: "/images/experiences/mountain-view-sunrise.jpg",
-      alt: "Mountain sunrise view",
-    },
+function isValidImageKey(
+  key: string
+): key is ImageKey {
+  return key in IMAGE_KEY_MAP;
+}
 
-    natureWalk: {
-      src: "/images/experiences/nature-walk.jpg",
-      alt: "Nature walk experience",
-    },
-  },
-} as const;
+/* =============================================================
+   DOMAIN RESOLVER
+   ============================================================= */
+
+export function getImage(
+  imageKey?: string
+): string {
+  if (!imageKey) {
+    return DEFAULT_IMAGE;
+  }
+
+  if (!isValidImageKey(imageKey)) {
+    if (
+      process.env.NODE_ENV ===
+      "development"
+    ) {
+      console.warn(
+        "[images] Unknown image key:",
+        imageKey
+      );
+    }
+
+    return DEFAULT_IMAGE;
+  }
+
+  return IMAGE_KEY_MAP[imageKey];
+}
