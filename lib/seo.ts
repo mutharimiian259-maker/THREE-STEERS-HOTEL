@@ -1,6 +1,20 @@
-import { HOTEL } from "@/lib/config";
-import { getSeoKeywordsByIntent, getSeoKeywordsByPath } from "@/lib/domain/seoStrategy";
-import { resolveUrl, validateImage } from "@/lib/utils/seoUtils";
+import {
+  getDomain,
+  getIdentity,
+  getSEO,
+} from "@/lib/domain/hotel";
+
+import {
+  getSeoKeywordsByIntent,
+  getSeoKeywordsByPath,
+} from "@/lib/domain/seoStrategy";
+
+import { resolveUrl } from "@/lib/utils/seoUtils";
+import { getImage } from "@/lib/domain/images";
+
+/* =============================================================
+   TYPES
+   ============================================================= */
 
 type SeoIntent =
   | "home"
@@ -18,21 +32,48 @@ type SeoProps = {
   keywords?: string[];
 };
 
-function clamp(text: string, max: number): string {
-  return text.length > max ? text.slice(0, max - 1).trim() + "…" : text;
+/* =============================================================
+   HELPERS
+   ============================================================= */
+
+function clamp(
+  text: string,
+  max: number
+): string {
+  return text.length > max
+    ? text.slice(0, max - 1).trim() + "…"
+    : text;
 }
 
-function dedupe(list: string[]): string[] {
-  return Array.from(new Set(list.map((k) => k.trim().toLowerCase()).filter(Boolean)));
+function dedupe(
+  list: string[]
+): string[] {
+  return Array.from(
+    new Set(
+      list
+        .map((k) =>
+          k.trim().toLowerCase()
+        )
+        .filter(Boolean)
+    )
+  );
 }
 
 function getBaseUrl(): string {
-  try {
-    return new URL(HOTEL.domain.primary).origin;
-  } catch {
-    return "https://example.com";
+  const domain = getDomain();
+
+  if (!domain) {
+    throw new Error(
+      "[seo] Missing domain configuration"
+    );
   }
+
+  return domain;
 }
+
+/* =============================================================
+   MAIN SEO GENERATOR
+   ============================================================= */
 
 export function generateSEO({
   title,
@@ -43,30 +84,50 @@ export function generateSEO({
   keywords,
 }: SeoProps = {}) {
   const baseUrl = getBaseUrl();
-  const siteName = HOTEL.identity.name;
+
+  const identity = getIdentity();
+  const seo = getSEO();
+
+  const siteName = identity.name;
 
   const fullTitle = clamp(
-    title ? `${title} | ${siteName}` : HOTEL.seo.defaultTitle,
+    title
+      ? `${title} | ${siteName}`
+      : seo.title,
     60
   );
 
   const fullDescription = clamp(
-    description ?? HOTEL.seo.defaultDescription,
+    description ?? seo.description,
     160
   );
 
   const url = resolveUrl(baseUrl, path);
 
-  const safeImage = validateImage(image);
-  const finalImage = safeImage.startsWith("http")
-    ? safeImage
-    : resolveUrl(baseUrl, safeImage);
+  /* ---------------------------------------------------------
+     IMAGE PIPELINE — unified via domain layer
+     --------------------------------------------------------- */
+  const imagePath = image
+    ? getImage(image)
+    : getImage(undefined);
 
+  const finalImage = resolveUrl(
+    baseUrl,
+    imagePath
+  );
+
+  /* ---------------------------------------------------------
+     KEYWORDS PIPELINE
+     --------------------------------------------------------- */
   const finalKeywords = dedupe([
     ...getSeoKeywordsByIntent(intent),
     ...getSeoKeywordsByPath(path),
     ...(keywords ?? []),
-  ]);
+  ]).slice(0, 20); // safety cap
+
+  /* ---------------------------------------------------------
+     OUTPUT
+     --------------------------------------------------------- */
 
   return {
     title: fullTitle,
