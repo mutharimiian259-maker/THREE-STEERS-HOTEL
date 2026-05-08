@@ -2,46 +2,17 @@ import type { StoredEvent } from "./types";
 
 /* =============================================================
    CORE ROUTER
-   -------------------------------------------------------------
-   Central adapter fanout pipeline.
-
-   Responsibilities:
-   - adapter registration
-   - dispatch orchestration
-   - adapter isolation
-   - dispatch observability
-   - runtime diagnostics
-
-   Forbidden:
-   - business logic
-   - analytics semantics
-   - UI concerns
-   - localStorage ownership
-   ============================================================= */
-
-/* =============================================================
-   ADAPTER CONTRACT
    ============================================================= */
 
 export type EventAdapter = Readonly<{
   name: string;
-
-  handle(
-    event: StoredEvent
-  ): void | Promise<void>;
+  handle(event: StoredEvent): void | Promise<void>;
 }>;
-
-/* =============================================================
-   DISPATCH RESULT
-   ============================================================= */
 
 export type DispatchResult = Readonly<{
   success: boolean;
-
   adapter: string;
-
   duration_ms: number;
-
   error?: unknown;
 }>;
 
@@ -49,22 +20,16 @@ export type DispatchResult = Readonly<{
    ROUTER STATE
    ============================================================= */
 
-const adapters = new Map<
-  string,
-  EventAdapter
->();
+const adapters = new Map<string, EventAdapter>();
 
 let DEBUG = false;
-
 let LOCKED = false;
 
 /* =============================================================
    DEBUG CONTROL
    ============================================================= */
 
-export function setRouterDebug(
-  value: boolean
-): void {
+export function setRouterDebug(value: boolean): void {
   DEBUG = value;
 }
 
@@ -72,50 +37,52 @@ export function setRouterDebug(
    LOGGER
    ============================================================= */
 
-function debugLog(
-  message: string,
-  payload?: unknown
-): void {
+function debugLog(message: string, payload?: unknown): void {
   if (!DEBUG) return;
-
-  console.log(
-    `[ROUTER] ${message}`,
-    payload ?? ""
-  );
+  console.log(`[ROUTER] ${message}`, payload ?? "");
 }
 
 /* =============================================================
    INVARIANT
    ============================================================= */
 
-function invariant(
-  condition: unknown,
-  message: string
-): asserts condition {
+function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(`[ROUTER] ${message}`);
   }
 }
 
 /* =============================================================
+   ERROR NORMALIZER
+   ============================================================= */
+
+function normalizeError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+
+  return {
+    message: String(error),
+  };
+}
+
+/* =============================================================
    TIMEOUT WRAPPER
-   Prevent hanging adapters
    ============================================================= */
 
 async function withTimeout<T>(
   promise: Promise<T>,
   timeout_ms = 3000
 ): Promise<T> {
-  return await Promise.race([
+  return Promise.race([
     promise,
-
     new Promise<T>((_, reject) =>
       setTimeout(() => {
-        reject(
-          new Error(
-            `Adapter timeout after ${timeout_ms}ms`
-          )
-        );
+        reject(new Error(`Adapter timeout after ${timeout_ms}ms`));
       }, timeout_ms)
     ),
   ]);
@@ -125,13 +92,8 @@ async function withTimeout<T>(
    REGISTER ADAPTER
    ============================================================= */
 
-export function registerAdapter(
-  adapter: EventAdapter
-): void {
-  invariant(
-    !LOCKED,
-    `Cannot register adapter "${adapter.name}" after router initialization`
-  );
+export function registerAdapter(adapter: EventAdapter): void {
+  invariant(!LOCKED, `Cannot register adapter "${adapter.name}" after router initialization`);
 
   invariant(
     adapter &&
@@ -141,23 +103,19 @@ export function registerAdapter(
   );
 
   if (adapters.has(adapter.name)) {
-    debugLog(
-      `adapter already registered: ${adapter.name}`
-    );
-
+    if (process.env.NODE_ENV === "development") {
+      throw new Error(`[ROUTER] duplicate adapter: ${adapter.name}`);
+    }
     return;
   }
 
   adapters.set(adapter.name, Object.freeze(adapter));
 
-  debugLog(
-    `adapter registered: ${adapter.name}`
-  );
+  debugLog(`adapter registered: ${adapter.name}`);
 }
 
 /* =============================================================
    INITIALIZE ROUTER
-   Prevent future mutation
    ============================================================= */
 
 export function initializeRouter(): void {
@@ -174,13 +132,10 @@ export function initializeRouter(): void {
 
 export function resetAdapters(): void {
   if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "[ROUTER] resetAdapters() forbidden in production"
-    );
+    throw new Error("[ROUTER] resetAdapters() forbidden in production");
   }
 
   adapters.clear();
-
   LOCKED = false;
 
   debugLog("router reset");
@@ -188,147 +143,22 @@ export function resetAdapters(): void {
 
 /* =============================================================
    DISPATCH
-   Controlled async fanout pipeline
    ============================================================= */
 
 export async function dispatch(
   event: StoredEvent
-): Promise<
-  readonly DispatchResult[]
-> {
+): Promise<readonly DispatchResult[]> {
+  invariant(LOCKED, "Router must be initialized before dispatch");
   invariant(event, "dispatch requires event");
 
   if (adapters.size === 0) {
-    console.warn(
-      "[ROUTER] no adapters registered — event dropped",
-      event
-    );
-
+    console.warn("[ROUTER] no adapters registered — event dropped", event);
     return Object.freeze([]);
   }
 
   const dispatch_id =
-    crypto.randomUUID();
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `dispatch_${Date.now()}_${Math.random()}`;
 
-  debugLog("dispatch started", {
-    dispatch_id,
-    event_id: event.id,
-    type: event.type,
-    adapters: adapters.size,
-  });
-
-  const adapterList = [
-    ...adapters.values(),
-  ];
-
-  const results = await Promise.allSettled(
-    adapterList.map(async (adapter) => {
-      const started = performance.now();
-
-      try {
-        await withTimeout(
-          Promise.resolve(
-            adapter.handle(event)
-          )
-        );
-
-        const result: DispatchResult =
-          Object.freeze({
-            success: true,
-
-            adapter: adapter.name,
-
-            duration_ms:
-              performance.now() - started,
-          });
-
-        debugLog("adapter success", {
-          dispatch_id,
-          adapter: adapter.name,
-        });
-
-        return result;
-      } catch (error) {
-        console.error(
-          `[ROUTER ERROR] ${adapter.name}`,
-          error
-        );
-
-        const result: DispatchResult =
-          Object.freeze({
-            success: false,
-
-            adapter: adapter.name,
-
-            duration_ms:
-              performance.now() - started,
-
-            error,
-          });
-
-        return result;
-      }
-    })
-  );
-
-  const normalizedResults =
-    results.map((result) => {
-      if (result.status === "fulfilled") {
-        return result.value;
-      }
-
-      return Object.freeze({
-        success: false,
-
-        adapter: "unknown",
-
-        duration_ms: 0,
-
-        error: result.reason,
-      });
-    });
-
-  debugLog("dispatch completed", {
-    dispatch_id,
-
-    successful:
-      normalizedResults.filter(
-        (r) => r.success
-      ).length,
-
-    failed:
-      normalizedResults.filter(
-        (r) => !r.success
-      ).length,
-  });
-
-  return Object.freeze(
-    normalizedResults
-  );
-}
-
-/* =============================================================
-   INTROSPECTION
-   ============================================================= */
-
-export function getAdapters(): readonly string[] {
-  return Object.freeze([
-    ...adapters.keys(),
-  ]);
-}
-
-/* =============================================================
-   ROUTER STATUS
-   ============================================================= */
-
-export function getRouterStatus() {
-  return Object.freeze({
-    locked: LOCKED,
-
-    debug: DEBUG,
-
-    adapters: getAdapters(),
-
-    adapter_count: adapters.size,
-  });
-}
+  const
