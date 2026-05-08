@@ -1,8 +1,8 @@
 import type { SeoIntent } from "@/lib/seoTypes";
 
-/* ---------------------------------------
+/* =============================================================
    SEO KEYWORD REGISTRY
---------------------------------------- */
+   ============================================================= */
 
 const SEO_KEYWORDS: Record<SeoIntent, string[]> = {
   room: [
@@ -27,20 +27,28 @@ const SEO_KEYWORDS: Record<SeoIntent, string[]> = {
   ],
 };
 
-/* ---------------------------------------
-   PATH-BASED SEO REGISTRY
---------------------------------------- */
+/* =============================================================
+   PATH KEYWORDS (NORMALIZED SUPPORT)
+   ============================================================= */
 
 const SEO_PATH_KEYWORDS: Record<string, string[]> = {
-  "/rooms": [
-    "all hotel rooms",
-    "hotel booking page",
-  ],
+  "/rooms": ["all hotel rooms", "hotel booking page"],
 };
 
-/* ---------------------------------------
-   INTENT SEO
---------------------------------------- */
+/* =============================================================
+   PATH NORMALIZATION (SEO SAFE MATCHING)
+   ============================================================= */
+
+function normalizePath(path: string): string {
+  return path
+    .split("?")[0] // remove query params
+    .replace(/\/+$/, "") // remove trailing slash
+    .toLowerCase();
+}
+
+/* =============================================================
+   INTENT KEYWORDS
+   ============================================================= */
 
 export function getSeoKeywordsByIntent(
   intent: SeoIntent
@@ -48,28 +56,31 @@ export function getSeoKeywordsByIntent(
   return SEO_KEYWORDS[intent] ?? [];
 }
 
-/* ---------------------------------------
-   PATH SEO
---------------------------------------- */
+/* =============================================================
+   PATH KEYWORDS (IMPROVED MATCHING)
+   ============================================================= */
 
 export function getSeoKeywordsByPath(
   path?: string
 ): string[] {
   if (!path) return [];
 
-  if (path.startsWith("/rooms/")) {
+  const normalized = normalizePath(path);
+
+  // dynamic route pattern handling
+  if (normalized.startsWith("/rooms")) {
     return [
       "hotel room details",
       "book hotel room Kenya",
     ];
   }
 
-  return SEO_PATH_KEYWORDS[path] ?? [];
+  return SEO_PATH_KEYWORDS[normalized] ?? [];
 }
 
-/* ---------------------------------------
-   DEDUP SAFE MERGER
---------------------------------------- */
+/* =============================================================
+   DEDUP + MERGE
+   ============================================================= */
 
 export function mergeSeoKeywords(
   ...groups: string[][]
