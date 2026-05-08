@@ -5,12 +5,26 @@ type WhatsAppOptions = {
   room?: string;
 };
 
-export function trackWhatsAppClick(options: WhatsAppOptions = {}): void {
-  track(
-    "whatsapp_click",
-    {
-      room: options.room ?? null,
-    },
-    options.source ?? "unknown"
-  );
+/* =============================================================
+   WHATSAPP CLICK TRACKER
+   ============================================================= */
+
+export function trackWhatsAppClick(
+  options: WhatsAppOptions = {}
+): void {
+  try {
+    track(
+      "whatsapp_click",
+      {
+        // avoid null drift → keep schema consistent
+        ...(options.room ? { room: options.room } : {}),
+      },
+      options.source ?? "unknown"
+    );
+  } catch (err) {
+    console.error("[trackWhatsAppClick] failed", {
+      error: err,
+      source: options.source,
+    });
+  }
 }
