@@ -1,17 +1,3 @@
-/* =============================================================
-   ANALYTICS BOOTSTRAP — Adapter Registration Layer
-   -------------------------------------------------------------
-   Responsibilities:
-   - Initialize analytics system once
-   - Register all event adapters
-   - Prevent duplicate initialization
-   - Ensure safe runtime behavior
-
-   Rules:
-   - Adapters must implement EventAdapter contract
-   - No class instantiation (pure objects only)
-   ============================================================= */
-
 import {
   registerAdapter,
   resetAdapters,
@@ -27,28 +13,22 @@ import { FunnelAdapter } from "@/lib/adapters/funnelAdapter";
 import { LeadAdapter } from "@/lib/adapters/leadAdapter";
 
 /* =============================================================
-   INITIALIZATION LOCK
+   INIT STATE (RACE SAFE)
    ============================================================= */
 
-let initialized = false;
+let initPromise: Promise<void> | null = null;
 
 /* =============================================================
-   ADAPTER VALIDATION
+   VALIDATION
    ============================================================= */
 
-function assertAdapter(
-  adapter: EventAdapter
-): void {
+function assertAdapter(adapter: EventAdapter): void {
   if (!adapter?.name) {
-    throw new Error(
-      "[analytics] Invalid adapter: missing name"
-    );
+    throw new Error("[analytics] Invalid adapter: missing name");
   }
 
   if (typeof adapter.handle !== "function") {
-    throw new Error(
-      `[analytics] Invalid adapter: ${adapter.name} missing handle()`
-    );
+    throw new Error(`[analytics] Invalid adapter: ${adapter.name} missing handle()`);
   }
 }
 
@@ -57,51 +37,54 @@ function assertAdapter(
    ============================================================= */
 
 export function initAnalytics(): void {
-  if (initialized) return;
-  initialized = true;
+  if (initPromise) return;
 
-  if (process.env.NODE_ENV === "development") {
-    setRouterDebug(true);
-  }
+  initPromise = (async () => {
+    if (process.env.NODE_ENV === "development") {
+      setRouterDebug(true);
+    }
 
-  resetAdapters();
+    resetAdapters();
 
-  // Fixed deterministic order
-  const adapters: EventAdapter[] = [
-    GAAdapter,
-    LocalStorageAdapter,
-    FunnelAdapter,
-    LeadAdapter,
-  ];
+    const adapters: EventAdapter[] = [
+      GAAdapter,
+      LocalStorageAdapter,
+      FunnelAdapter,
+      LeadAdapter,
+    ];
 
-  for (const adapter of adapters) {
-    assertAdapter(adapter);
-    registerAdapter(adapter);
-  }
+    for (const adapter of adapters) {
+      try {
+        assertAdapter(adapter);
+        registerAdapter(adapter);
+      } catch (error) {
+        console.error(
+          `[analytics] failed to register adapter: ${adapter.name}`,
+          error
+        );
+      }
+    }
 
-  if (process.env.NODE_ENV === "development") {
-    console.log(
-      "[analytics] initialized adapters:",
-      getAdapters()
-    );
-  }
+    if (process.env.NODE_ENV === "development") {
+      console.log("[analytics] initialized adapters:", getAdapters());
+    }
+
+    if (getAdapters().length === 0) {
+      console.warn("[analytics] no adapters registered after init");
+    }
+  })();
 }
 
 /* =============================================================
-   SAFE RESET (DEV ONLY)
+   RESET (DEV ONLY)
    ============================================================= */
 
 export function resetAnalytics(): void {
-  if (
-    process.env.NODE_ENV !==
-    "development"
-  ) {
-    console.warn(
-      "[analytics] resetAnalytics blocked in production"
-    );
+  if (process.env.NODE_ENV !== "development") {
+    console.warn("[analytics] resetAnalytics blocked in production");
     return;
   }
 
-  initialized = false;
+  initPromise = null;
   resetAdapters();
 }
