@@ -1,45 +1,64 @@
-import { HOTEL } from "@/lib/config";
+/* =============================================================
+   DOMAIN: CONTACT RESOLUTION LAYER
 
-/* ---------------------------------------
-   DOMAIN UTIL: PHONE SANITIZATION
---------------------------------------- */
+   Responsibilities:
+   - Provide safe, stable contact API to UI
+   - Hide config structure completely
+   - Prevent direct config coupling in components
 
-function sanitizePhone(phone: string): string {
-  return phone.replace(/[^\d]/g, "");
-}
+   Rules:
+   - NO direct HOTEL access
+   - NO sanitization logic here
+   - NO formatting logic here
+   - ONLY orchestration of config accessors
+   ============================================================= */
 
-/* ---------------------------------------
-   DOMAIN: PHONE RESOLVER
---------------------------------------- */
+import {
+  getPhoneByLabel as _getPhoneByLabel,
+  getWhatsAppPhone as _getWhatsAppPhone,
+  getPrimaryPhone as _getPrimaryPhone,
+} from "@/lib/config";
 
-function resolvePhone(label: "primary" | "secondary" | "whatsapp") {
-  return HOTEL.contact.phones.find((p) => p.label === label);
-}
+import type { PhoneLabel } from "@/lib/config";
 
-/* ---------------------------------------
-   PUBLIC API
---------------------------------------- */
+/* =============================================================
+   CORE CONTACT API (DOMAIN FACADE)
+   ============================================================= */
 
+export type { PhoneLabel };
+
+/**
+ * Returns sanitized phone number by label.
+ */
 export function getPhoneByLabel(
-  label: "primary" | "secondary" | "whatsapp"
+  label: PhoneLabel
 ): string | null {
-  const phone = resolvePhone(label);
-
-  if (!phone) return null;
-
-  const sanitized = sanitizePhone(phone.number);
-
-  return sanitized || null;
+  return _getPhoneByLabel(label);
 }
 
-export function getWhatsAppNumber(): string | null {
-  return getPhoneByLabel("whatsapp");
-}
-
-/* ---------------------------------------
-   OPTIONAL: STRONGER DOMAIN SAFETY LAYER
---------------------------------------- */
-
+/**
+ * Returns primary hotel contact number.
+ */
 export function getPrimaryPhone(): string | null {
-  return getPhoneByLabel("primary");
+  return _getPrimaryPhone();
+}
+
+/**
+ * Returns WhatsApp contact number.
+ */
+export function getWhatsAppPhone(): string | null {
+  return _getWhatsAppPhone();
+}
+
+/* =============================================================
+   LEGACY COMPATIBILITY LAYER
+   ============================================================= */
+
+/**
+ * @deprecated Use getWhatsAppPhone()
+ *
+ * Kept only for legacy components that still import old naming.
+ */
+export function getWhatsAppNumber(): string | null {
+  return getWhatsAppPhone();
 }
