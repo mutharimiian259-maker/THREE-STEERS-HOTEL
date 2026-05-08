@@ -1,100 +1,84 @@
 /* =============================================================
-   DOMAIN: IMAGE RESOLUTION
+   IMAGE REGISTRY — SINGLE SOURCE OF TRUTH
    -------------------------------------------------------------
-   Responsibilities:
-   - Resolve semantic image keys → asset paths
-   - Provide safe fallback handling
-   - Prevent UI from depending on IMAGES structure
-
    Rules:
-   - No UI logic
+   - No duplicate paths
    - No mutation
    - No business logic
+   - UI must NOT rely on structure changes
    ============================================================= */
 
-import { IMAGES } from "@/lib/images";
+export const IMAGES = Object.freeze({
+  hotel: {
+    exteriorHero:  "/images/hotel/exterior-hero.jpg",
+    exteriorNight: "/images/hotel/exterior-night-view.jpg",
+    lobby:         "/images/hotel/lobby-interior.jpg",
+    reception:     "/images/hotel/reception-area.jpg",
+    garden:        "/images/hotel/garden-relaxation-area.jpg",
+    logo:          "/images/hotel/logo.png",
+  },
+
+  rooms: {
+    batianWing: {
+      honeymoon:      "/images/rooms/batian-wing/honeymoon/hero.jpg",
+      deluxeTwin:     "/images/rooms/batian-wing/deluxe-twin/hero.jpg",
+      executiveSuite: "/images/rooms/batian-wing/executive-suite/hero.jpg",
+    },
+
+    /* ---------------------------------------------------------
+       LEGACY COMPATIBILITY LAYER
+       Keep ONLY for migration safety.
+       Marked for removal after refactor completion.
+       --------------------------------------------------------- */
+    batian: {
+      executiveSuite:
+        "/images/rooms/batian-wing/executive-suite/hero.jpg",
+    },
+
+    lenanaWing: {
+      standardSingle:
+        "/images/rooms/lenana-wing/standard-single/hero.jpg",
+      standardDouble:
+        "/images/rooms/lenana-wing/standard-double/hero.jpg",
+      familyRoom:
+        "/images/rooms/lenana-wing/family-room/hero.jpg",
+    },
+
+    /* Legacy alias */
+    lenana: {
+      familyRoom:
+        "/images/rooms/lenana-wing/family-room/hero.jpg",
+    },
+  },
+
+  food: {
+    buffetBreakfast:
+      "/images/food/buffet-breakfast.jpg",
+    fineDining:
+      "/images/food/fine-dining.jpg",
+    chefSpecial:
+      "/images/food/chef-special.jpg",
+  },
+
+  experiences: {
+    safari:
+      "/images/experiences/safari-booking.jpg",
+    sunrise:
+      "/images/experiences/mountain-view-sunrise.jpg",
+    natureWalk:
+      "/images/experiences/nature-walk.jpg",
+  },
+
+  conference: {
+    summitHall:
+      "/images/conference/summit-hall.jpg",
+    boardroom:
+      "/images/conference/boardroom.jpg",
+  },
+} as const);
 
 /* =============================================================
-   DEFAULT FALLBACK
+   TYPES — STRICT ACCESS CONTROL (optional future enforcement)
    ============================================================= */
 
-const DEFAULT_IMAGE =
-  "/images/hotel/exterior-hero.jpg";
-
-/* =============================================================
-   STRICT IMAGE KEY TYPE
-   (prevents silent typos in components/data layer)
-   ============================================================= */
-
-export type ImageKey =
-  | "batianWing.deluxeTwin"
-  | "batianWing.executiveSuite"
-  | "batianWing.honeymoon"
-  | "lenanaWing.standardSingle"
-  | "lenanaWing.standardDouble"
-  | "lenanaWing.familyRoom";
-
-/* =============================================================
-   IMMUTABLE IMAGE MAP
-   ============================================================= */
-
-const IMAGE_KEY_MAP: Record<
-  ImageKey,
-  string
-> = Object.freeze({
-  "batianWing.deluxeTwin":
-    IMAGES.rooms.batianWing.deluxeTwin,
-
-  "batianWing.executiveSuite":
-    IMAGES.rooms.batianWing.executiveSuite,
-
-  "batianWing.honeymoon":
-    IMAGES.rooms.batianWing.honeymoon,
-
-  "lenanaWing.standardSingle":
-    IMAGES.rooms.lenanaWing.standardSingle,
-
-  "lenanaWing.standardDouble":
-    IMAGES.rooms.lenanaWing.standardDouble,
-
-  "lenanaWing.familyRoom":
-    IMAGES.rooms.lenanaWing.familyRoom,
-});
-
-/* =============================================================
-   TYPE GUARD
-   ============================================================= */
-
-function isValidImageKey(
-  key: string
-): key is ImageKey {
-  return key in IMAGE_KEY_MAP;
-}
-
-/* =============================================================
-   DOMAIN RESOLVER
-   ============================================================= */
-
-export function getImage(
-  imageKey?: string
-): string {
-  if (!imageKey) {
-    return DEFAULT_IMAGE;
-  }
-
-  if (!isValidImageKey(imageKey)) {
-    if (
-      process.env.NODE_ENV ===
-      "development"
-    ) {
-      console.warn(
-        "[images] Unknown image key:",
-        imageKey
-      );
-    }
-
-    return DEFAULT_IMAGE;
-  }
-
-  return IMAGE_KEY_MAP[imageKey];
-}
+export type ImageRegistry = typeof IMAGES;
