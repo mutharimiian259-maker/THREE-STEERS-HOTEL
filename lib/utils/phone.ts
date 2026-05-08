@@ -1,56 +1,54 @@
-/* =============================================================
-   PHONE UTILITIES
-   -------------------------------------------------------------
-   Pure utility layer:
-   - no config access
-   - no business logic
-   - no domain assumptions
-   - framework independent
-   ============================================================= */
-
-/**
- * Removes all non-digit characters from a phone number.
- * Safe for international formats like +254..., spaces, dashes, etc.
- *
- * Always returns a clean numeric string.
- */
 export function sanitizePhone(phone?: string | null): string {
   if (!phone) return "";
+
   return phone.replace(/[^\d]/g, "");
 }
 
-/**
- * Backward-compatible alias.
- *
- * NOTE:
- * - Do not use in new code
- * - Kept only to prevent breaking legacy imports
- *
- * @deprecated Use sanitizePhone() instead
- */
+/* =============================================================
+   LEGACY COMPATIBILITY
+   ============================================================= */
+
 export const normalizePhoneDigits = sanitizePhone;
 
 /* =============================================================
-   SAFETY HELPERS (optional but production-safe)
+   VALIDATION (IMPROVED)
    ============================================================= */
 
-/**
- * Checks if a phone string has valid numeric content after sanitization.
- */
 export function isValidPhone(phone?: string | null): boolean {
   const cleaned = sanitizePhone(phone);
-  return cleaned.length >= 9; // generic safety threshold
+
+  // realistic global safety bounds
+  return cleaned.length >= 8 && cleaned.length <= 15;
 }
 
-/**
- * Formats a phone into a readable international style (basic).
- * Does NOT assume country rules — safe fallback formatter.
- */
+/* =============================================================
+   BASIC SAFE FORMATTER (DISPLAY ONLY)
+   -------------------------------------------------------------
+   NOTE: Not country-specific. Only for UI readability.
+   ============================================================= */
+
 export function formatPhone(phone?: string | null): string {
   const cleaned = sanitizePhone(phone);
 
   if (!cleaned) return "";
 
-  // Basic grouping for readability (not country-specific)
-  return cleaned.replace(/(\d{3})(?=\d)/g, "$1 ").trim();
+  // safer grouping: 3–4 digit chunks (less misleading than fixed 3s)
+  return cleaned.replace(/(\d{3,4})(?=\d)/g, "$1 ").trim();
+}
+
+/* =============================================================
+   E.164 GUARD (OPTIONAL BUT HIGH VALUE)
+   ============================================================= */
+
+export function toE164(phone?: string | null, defaultCountryCode = ""): string {
+  const cleaned = sanitizePhone(phone);
+
+  if (!cleaned) return "";
+
+  // if already international
+  if (cleaned.startsWith("+" as any)) {
+    return cleaned;
+  }
+
+  return defaultCountryCode + cleaned;
 }
