@@ -1,32 +1,82 @@
 "use client";
 
-import type { EventType, EventPayload, EventSource, StoredEvent } from "./types";
+/* =============================================================
+   CORE ANALYTICS
+   -------------------------------------------------------------
+   The ONLY public tracking entry point in the application.
+
+   Responsibilities:
+   - validate runtime inputs
+   - normalize payloads
+   - create canonical events
+   - dispatch events to adapters
+   - expose observability hooks
+
+   Forbidden:
+   - direct gtag() usage
+   - localStorage writes
+   - custom event object creation
+   - duplicate event pipelines
+   ============================================================= */
+
+import {
+  createEvent,
+  isEventSource,
+  isEventType,
+  type EventPayload,
+  type EventSource,
+  type EventType,
+  type StoredEvent,
+} from "./types";
+
 import { dispatch } from "./router";
 
-/* ─────────────────────────────────────────
-   SESSION (stable per tab lifecycle)
-───────────────────────────────────────── */
+/* =============================================================
+   TRACK RESULT
+   ============================================================= */
 
-let _sessionId: string | null = null;
+export type AdapterDispatchResult = Readonly<{
+  adapter: string;
+  success: boolean;
+  error?: unknown;
+}>;
 
-function getSessionId(): string {
-  if (_sessionId) return _sessionId;
-  _sessionId = crypto.randomUUID();
-  return _sessionId;
+export type TrackResult = Readonly<{
+  accepted: boolean;
+  event?: StoredEvent;
+  results?: readonly AdapterDispatchResult[];
+  error?: unknown;
+}>;
+
+/* =============================================================
+   INVARIANT
+   ============================================================= */
+
+function invariant(
+  condition: unknown,
+  message: string
+): asserts condition {
+  if (!condition) {
+    throw new Error(`[analytics] ${message}`);
+  }
 }
 
-/* ─────────────────────────────────────────
-   NORMALIZATION (deterministic payload)
-───────────────────────────────────────── */
+/* =============================================================
+   PAYLOAD NORMALIZATION
+   Stable deterministic serialization
+   ============================================================= */
 
 function normalize(value: unknown): unknown {
-  if (value === null || typeof value !== "object") return value;
+  if (value === null || typeof value !== "object") {
+    return value;
+  }
 
   if (Array.isArray(value)) {
     return value.map(normalize);
   }
 
   const obj = value as Record<string, unknown>;
+
   const sorted: Record<string, unknown> = {};
 
   for (const key of Object.keys(obj).sort()) {
@@ -36,83 +86,145 @@ function normalize(value: unknown): unknown {
   return sorted;
 }
 
-/* ─────────────────────────────────────────
-   ENRICHMENT (system context injection)
-───────────────────────────────────────── */
+/* =============================================================
+   DEV LOGGER
+   ============================================================= */
 
-function enrich(): Record<string, unknown> {
-  if (typeof window === "undefined") return {};
+function devLog(
+  message: string,
+  payload?: unknown
+): void {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
 
-  return {
-    userAgent: navigator.userAgent,
-    path: window.location.pathname,
-    referrer: document.referrer || null,
-    ts: Date.now(),
-  };
+  console.log(`[analytics] ${message}`, payload ?? "");
 }
 
-/* ─────────────────────────────────────────
-   SIGNATURE (deduplication identity)
-───────────────────────────────────────── */
+/* =============================================================
+   PUBLIC TRACK API
+   ============================================================= */
 
-function buildSignature(
-  type: EventType,
-  payload: EventPayload,
-  source: EventSource,
-  session_id: string,
-  url: string
-): string {
-  return JSON.stringify({
-    type,
-    payload: normalize(payload),
-    source,
-    session_id,
-    url,
-  });
-}
-
-/* ─────────────────────────────────────────
-   EVENT TRACKER (CORE KERNEL)
-───────────────────────────────────────── */
-
-export function track(
+export async function track(
   type: EventType,
   payload: EventPayload = {},
   source: EventSource = "unknown"
-): void {
-  if (typeof window === "undefined") return;
+): Promise<TrackResult> {
+  if (typeof window === "undefined") {
+    return {
+      accepted: false,
+      error: "track() called on server",
+    };
+  }
 
   try {
-    const timestamp = Date.now();
-    const session_id = getSessionId();
-    const url = window.location.pathname;
+    /* ---------------------------------------------------------
+       VALIDATION
+       --------------------------------------------------------- */
 
-    const event: StoredEvent = {
-      id: crypto.randomUUID(),
+    invariant(
+      isEventType(type),
+      `Invalid event type "${String(type)}"`
+    );
 
+    const safeSource: EventSource = isEventSource(source)
+      ? source
+      : "unknown";
+
+    /* ---------------------------------------------------------
+       NORMALIZATION
+       --------------------------------------------------------- */
+
+    const normalizedPayload = normalize(
+      payload
+    ) as EventPayload;
+
+    /* ---------------------------------------------------------
+       EVENT CREATION
+       --------------------------------------------------------- */
+
+    const event = createEvent({
       type,
-      payload: normalize(payload),
-      source,
+      source: safeSource,
+      payload: normalizedPayload,
 
-      timestamp,
-      session_id,
-      url,
+      metadata: {
+        pathname: window.location.pathname,
+        referrer: document.referrer,
+        user_agent: navigator.userAgent,
+      },
+    });
 
-      version: 1,
+    devLog("event created", event);
 
-      signature: buildSignature(type, payload, source, session_id, url),
+    /* ---------------------------------------------------------
+       DISPATCH
+       --------------------------------------------------------- */
 
-      // optional enrichment (non-breaking extension)
-      ...enrich(),
-    } as StoredEvent;
+    const results = await dispatch(event);
 
-    const result = dispatch(event);
+    /* ---------------------------------------------------------
+       OBSERVABILITY
+       --------------------------------------------------------- */
 
-    // optional safety hook (if dispatch ever becomes async-capable later)
-    if (!result) {
-      console.warn("[analytics] event dropped by dispatcher", event);
+    const failed = results.filter(
+      (result) => !result.success
+    );
+
+    if (failed.length > 0) {
+      console.warn(
+        "[analytics] adapter failures detected",
+        failed
+      );
     }
-  } catch (err) {
-    console.error("[analytics] tracking failed", err);
+
+    devLog("dispatch completed", {
+      event_id: event.id,
+      adapters: results.length,
+      failed: failed.length,
+    });
+
+    /* ---------------------------------------------------------
+       SUCCESS
+       --------------------------------------------------------- */
+
+    return {
+      accepted: true,
+      event,
+      results,
+    };
+  } catch (error) {
+    console.error("[analytics] track() failed", {
+      type,
+      source,
+      error,
+    });
+
+    return {
+      accepted: false,
+      error,
+    };
+  }
+}
+
+/* =============================================================
+   SAFE TRACK
+   -------------------------------------------------------------
+   Never throws.
+   Useful for UI interaction handlers.
+   ============================================================= */
+
+export async function safeTrack(
+  type: EventType,
+  payload: EventPayload = {},
+  source: EventSource = "unknown"
+): Promise<void> {
+  try {
+    await track(type, payload, source);
+  } catch (error) {
+    console.error(
+      "[analytics] safeTrack() swallowed error",
+      error
+    );
   }
 }
