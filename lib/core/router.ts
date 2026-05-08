@@ -161,4 +161,41 @@ export async function dispatch(
       ? crypto.randomUUID()
       : `dispatch_${Date.now()}_${Math.random()}`;
 
-  const
+  debugLog("dispatch start", { dispatch_id, event });
+
+  const results: DispatchResult[] = [];
+
+  for (const adapter of adapters.values()) {
+    const start = Date.now();
+
+    try {
+      await withTimeout(Promise.resolve(adapter.handle(event)));
+
+      const duration_ms = Date.now() - start;
+
+      results.push({
+        success: true,
+        adapter: adapter.name,
+        duration_ms,
+      });
+    } catch (error) {
+      const duration_ms = Date.now() - start;
+
+      results.push({
+        success: false,
+        adapter: adapter.name,
+        duration_ms,
+        error: normalizeError(error),
+      });
+
+      debugLog(`adapter failed: ${adapter.name}`, error);
+    }
+  }
+
+  debugLog("dispatch complete", {
+    dispatch_id,
+    results,
+  });
+
+  return Object.freeze(results);
+}
