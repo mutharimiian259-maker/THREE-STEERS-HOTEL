@@ -1,3 +1,19 @@
+/* =============================================================
+   HOTEL CONFIGURATION (CANONICAL SOURCE OF TRUTH)
+
+   RULES:
+   - This file contains ONLY raw configuration data
+   - NO business logic
+   - NO sanitization logic
+   - NO analytics logic
+   - NO domain decisions
+
+   All access must go through:
+   lib/domain/contact.ts or typed accessors
+   ============================================================= */
+
+export type PhoneLabel = "primary" | "secondary" | "whatsapp";
+
 export type HotelConfig = {
   identity: {
     name: string;
@@ -9,10 +25,10 @@ export type HotelConfig = {
   };
 
   contact: {
-    phones: {
-      label: "primary" | "secondary" | "whatsapp";
+    phones: ReadonlyArray<{
+      label: PhoneLabel;
       number: string;
-    }[];
+    }>;
     email: string;
   };
 
@@ -52,7 +68,11 @@ export type HotelConfig = {
   };
 };
 
-export const HOTEL: Readonly<HotelConfig> = {
+/* =============================================================
+   IMMUTABLE HOTEL CONFIG OBJECT
+   ============================================================= */
+
+export const HOTEL: Readonly<HotelConfig> = Object.freeze({
   identity: {
     name: "Three Steers Hotel Meru",
     brand: "Three Steers Hotel",
@@ -108,4 +128,68 @@ export const HOTEL: Readonly<HotelConfig> = {
       lateCheckout: "subject to availability",
     },
   },
-};
+});
+
+/* =============================================================
+   CONFIG ACCESS HELPERS (ONLY SAFE ENTRY POINTS)
+   ============================================================= */
+
+function sanitizePhone(raw: string): string {
+  return raw.replace(/[^\d]/g, "");
+}
+
+function findPhone(label: PhoneLabel): string | null {
+  const entry = HOTEL.contact.phones.find(
+    (p) => p.label === label
+  );
+
+  if (!entry) return null;
+
+  const cleaned = sanitizePhone(entry.number);
+
+  return cleaned || null;
+}
+
+/* =============================================================
+   PUBLIC ACCESSORS (ONLY ALLOWED WAY TO ACCESS CONTACT DATA)
+   ============================================================= */
+
+export function getPhoneByLabel(
+  label: PhoneLabel
+): string | null {
+  return findPhone(label);
+}
+
+export function getPrimaryPhone(): string | null {
+  return findPhone("primary");
+}
+
+export function getWhatsAppPhone(): string | null {
+  return findPhone("whatsapp");
+}
+
+export function getAllPhones(): ReadonlyArray<{
+  label: PhoneLabel;
+  number: string;
+}> {
+  return HOTEL.contact.phones;
+}
+
+/* =============================================================
+   DOMAIN SAFETY NOTE
+   =============================================================
+
+   UI MUST NEVER DO:
+   HOTEL.contact.phones[x]
+
+   UI MUST ONLY DO:
+   getPrimaryPhone()
+   getPhoneByLabel()
+   getWhatsAppPhone()
+
+   This prevents:
+   - schema drift
+   - runtime crashes
+   - inconsistent formatting
+   - analytics mismatch
+   ============================================================= */
