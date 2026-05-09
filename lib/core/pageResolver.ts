@@ -1,27 +1,32 @@
-// lib/core/pageResolver.ts
 
-import { routes } from "@/lib/routes";
 import { normalizePath } from "./normalizePath";
+import type { Route } from "@/lib/routes";
 
 /* =============================================================
-   CANONICAL ROUTE MAP
-   -------------------------------------------------------------
-   Pre-normalized once to prevent repeated normalization work.
+   ROUTE RESOLUTION LAYER (CORE SAFE)
    ============================================================= */
 
-const ROUTE_MAP = new Map(
-  routes.map((route) => [
-    normalizePath(route.path),
-    route,
-  ])
-);
+/**
+ * NOTE:
+ * ROUTES MUST BE STATIC CONFIG ONLY.
+ * No runtime mutation allowed.
+ */
 
 /* =============================================================
    ROUTE RESOLVER
    ============================================================= */
 
-export function resolveRoute(path: string) {
+export function resolveRoute(
+  path: string,
+  routes: readonly Route[]
+): Route | null {
   const normalized = normalizePath(path);
 
-  return ROUTE_MAP.get(normalized) ?? null;
+  for (const route of routes) {
+    if (normalizePath(route.path) === normalized) {
+      return route;
+    }
+  }
+
+  return null;
 }
