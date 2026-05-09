@@ -1,15 +1,6 @@
-// lib/core/normalizePath.ts
-
-/* =============================================================
-   NORMALIZE PATH
-   -------------------------------------------------------------
-   Canonicalizes browser paths for:
-   - analytics consistency
-   - funnel integrity
-   - route identity stability
-   ============================================================= */
-
 export function normalizePath(path: string): string {
+  if (!path) return "/";
+
   const cleaned = path.trim();
 
   if (!cleaned) return "/";
@@ -22,8 +13,20 @@ export function normalizePath(path: string): string {
   const [withoutHash] = withoutQuery.split("#");
 
   /* =============================================================
+     NORMALIZE CASE (ROUTE STABILITY)
+     ============================================================= */
+
+  const lower = withoutHash.toLowerCase();
+
+  /* =============================================================
      REMOVE TRAILING SLASHES
      ============================================================= */
 
-  return withoutHash.replace(/\/+$/, "") || "/";
+  const normalized = lower.replace(/\/+$/, "");
+
+  /* =============================================================
+     FINAL ROOT SAFETY
+     ============================================================= */
+
+  return normalized === "" ? "/" : normalized;
 }
