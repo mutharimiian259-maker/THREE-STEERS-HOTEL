@@ -1,16 +1,8 @@
 "use client";
 
-/* =============================================================
-   CORE ANALYTICS (SINGLE EVENT AUTHORITY)
-   ============================================================= */
-
 import { createEvent, isEventSource, isEventType } from "./types";
 import type { EventPayload, EventSource, EventType, StoredEvent } from "./types";
 import { dispatch } from "./router";
-
-/* =============================================================
-   TYPES
-   ============================================================= */
 
 export type TrackResult = Readonly<{
   accepted: boolean;
@@ -19,21 +11,7 @@ export type TrackResult = Readonly<{
 }>;
 
 /* =============================================================
-   BROWSER META (OPTIONAL ATTACHMENT ONLY)
-   ============================================================= */
-
-function getBrowserMeta() {
-  if (typeof window === "undefined") return undefined;
-
-  return {
-    pathname: window.location.pathname,
-    referrer: document.referrer,
-    user_agent: navigator.userAgent,
-  };
-}
-
-/* =============================================================
-   TRACK (SINGLE CORE ENTRY POINT)
+   CORE TRACK (STRICT BRAIN ENTRY POINT)
    ============================================================= */
 
 export function track(
@@ -42,28 +20,32 @@ export function track(
   source: EventSource = "ui"
 ): TrackResult {
   try {
-    /* =========================================================
-       STRICT TYPE GUARD ONLY (NO REGISTRY)
-       ========================================================= */
+    /* -----------------------------
+       STRICT VALIDATION (NO FALLBACKS)
+       ----------------------------- */
 
     if (!isEventType(type)) {
       throw new Error(`[CORE] Invalid event type: ${String(type)}`);
     }
 
-    const safeSource: EventSource = isEventSource(source)
-      ? source
-      : "ui";
+    if (!isEventSource(source)) {
+      throw new Error(`[CORE] Invalid event source: ${String(source)}`);
+    }
+
+    /* -----------------------------
+       PURE EVENT CREATION
+       (NO BROWSER COUPLING HERE)
+       ----------------------------- */
 
     const event = createEvent({
       type,
-      source: safeSource,
+      source,
       payload,
-      metadata: getBrowserMeta(),
     });
 
-    /* =========================================================
-       DISPATCH TO ADAPTER LAYER ONLY
-       ========================================================= */
+    /* -----------------------------
+       DISPATCH ONLY (BRAIN OUTPUT)
+       ----------------------------- */
 
     dispatch(event);
 
@@ -72,7 +54,11 @@ export function track(
       event,
     };
   } catch (error) {
-    console.error("[CORE] track() failed", { type, source, error });
+    console.error("[CORE] track() failed", {
+      type,
+      source,
+      error,
+    });
 
     return {
       accepted: false,
