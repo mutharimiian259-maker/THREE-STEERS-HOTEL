@@ -6,7 +6,7 @@ import { routes } from "@/lib/routes";
 import { HOTEL } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
 import { IMAGES } from "@/lib/images";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   buildWhatsAppLink,
   formatWhatsAppMessage,
@@ -16,22 +16,23 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   /**
-   * NAVIGATION EVENT (FIXED)
+   * NAVIGATION EVENT
    */
-  const handleNavClick = (routeName: string) => {
+  const handleNavClick = useCallback((routeName: string) => {
     track(
       "navigation",
       {
         destination: routeName,
+        context: "navbar",
       },
       "navbar"
     );
 
     setOpen(false);
-  };
+  }, []);
 
   /**
-   * CENTRALIZED WHATSAPP LINK
+   * WHATSAPP LINK (stable)
    */
   const whatsappLink = useMemo(() => {
     const message = formatWhatsAppMessage(
@@ -43,13 +44,30 @@ export default function Navbar() {
   }, []);
 
   /**
-   * WHATSAPP CLICK EVENT
+   * WHATSAPP EVENT
    */
-  const handleWhatsAppClick = (variant: "desktop" | "mobile") => {
+  const handleWhatsAppClick = useCallback((variant: "desktop" | "mobile") => {
     track(
       "whatsapp_click",
       {
         variant,
+        context: "navbar",
+      },
+      "navbar"
+    );
+  }, []);
+
+  /**
+   * MOBILE TOGGLE EVENT (optional analytics clarity)
+   */
+  const toggleMenu = () => {
+    setOpen((prev) => !prev);
+
+    track(
+      "navigation",
+      {
+        action: "menu_toggle",
+        state: !open ? "open" : "close",
       },
       "navbar"
     );
@@ -89,10 +107,10 @@ export default function Navbar() {
         ))}
       </div>
 
-      {/* MOBILE MENU BUTTON */}
+      {/* MOBILE BUTTON */}
       <button
         className="md:hidden text-white text-xl"
-        onClick={() => setOpen(!open)}
+        onClick={toggleMenu}
         aria-label="Toggle navigation menu"
       >
         ☰
@@ -105,6 +123,7 @@ export default function Navbar() {
           <button
             className="text-white text-right text-xl"
             onClick={() => setOpen(false)}
+            aria-label="Close menu"
           >
             ✕
           </button>
