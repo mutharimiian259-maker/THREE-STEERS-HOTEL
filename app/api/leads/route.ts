@@ -1,22 +1,5 @@
 import { NextResponse } from "next/server";
-
-type EventType =
-  | "page_view"
-  | "room_view"
-  | "whatsapp_click"
-  | "call_click"
-  | "booking_intent";
-
-type EventPayload = {
-  source?: string;
-  room?: string;
-  value?: number;
-  url?: string;
-  ts?: number;
-  session_id?: string;
-  user_id?: string;
-  [key: string]: unknown;
-};
+import type { EventType, EventPayload } from "@/lib/core/types";
 
 function isValidType(type: string): type is EventType {
   return [
@@ -25,29 +8,34 @@ function isValidType(type: string): type is EventType {
     "whatsapp_click",
     "call_click",
     "booking_intent",
-  ].includes(type);
+    "navigation",
+    "system_error",
+    "blog_view",
+  ].includes(type as EventType);
 }
 
-/**
- * SAFE PAYLOAD SANITIZER
- */
+/* =============================================================
+   PAYLOAD SANITIZER (CORE ALIGNED)
+   ============================================================= */
+
 function sanitizePayload(payload: any): EventPayload {
   if (!payload || typeof payload !== "object") return {};
 
   return {
     source: payload.source ?? "unknown",
-    room: payload.room ?? null,
-    value: payload.value ?? null,
-    url: payload.url ?? null,
+    room: payload.room,
+    value: payload.value,
+    url: payload.url,
     ts: payload.ts ?? Date.now(),
-    session_id: payload.session_id ?? null,
-    user_id: payload.user_id ?? null,
+    sessionId: payload.sessionId,
+    userId: payload.userId,
   };
 }
 
-/**
- * EVENT INGESTION LAYER (NOT CRM)
- */
+/* =============================================================
+   EVENT INGESTION (CORE-ALIGNED CONTRACT)
+   ============================================================= */
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -56,48 +44,46 @@ export async function POST(req: Request) {
 
     if (!isValidType(type)) {
       return NextResponse.json(
-        { success: false, error: "Invalid event type" },
+        { success: false, error: "INVALID_EVENT_TYPE" },
         { status: 400 }
       );
     }
 
     const payload = sanitizePayload(body?.payload);
 
-    /**
-     * EVENT OBJECT (IMMUTABLE RECORD)
-     */
+    /* =========================================================
+       CORE-COMPATIBLE EVENT SHAPE
+       ========================================================= */
+
     const event = {
       id: crypto.randomUUID(),
-      type,
+      type: type as EventType,
       source: String(body?.source || "website"),
       payload,
-      createdAt: new Date().toISOString(),
+      timestamp: Date.now(),
     };
 
-    /**
-     * DEV OBSERVABILITY ONLY
-     */
+    /* =========================================================
+       OBSERVABILITY
+       ========================================================= */
+
     if (process.env.NODE_ENV !== "production") {
       console.log("[EVENT INGEST]", event);
     }
 
-    /**
-     * FUTURE: IDEMPOTENT STORAGE LAYER
-     *
-     * IMPORTANT:
-     * Add unique constraint on:
-     * - id OR (session_id + type + ts bucket)
-     *
-     * await supabase.from("events").insert(event);
-     */
-
     return NextResponse.json(
-      { success: true, event },
+      {
+        success: true,
+        event,
+      },
       { status: 200 }
     );
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: "Invalid request body" },
+      {
+        success: false,
+        error: "INVALID_REQUEST",
+      },
       { status: 500 }
     );
   }
