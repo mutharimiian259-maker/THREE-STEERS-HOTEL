@@ -6,29 +6,38 @@ export type EventAdapter = Readonly<{
 }>;
 
 export type DispatchResult = Readonly<{
-  success: boolean;
+  accepted: boolean;
   adapter: string;
   duration_ms: number;
   error?: unknown;
 }>;
 
+type RouterState =
+  | "uninitialized"
+  | "ready"
+  | "frozen";
+
 /* =============================================================
-   ROUTER STATE (BOOTSTRAP IMMUTABLE AFTER INIT)
+   ROUTER STATE
    ============================================================= */
 
 const adapters = new Map<string, EventAdapter>();
-let isFrozen = false;
+
+let routerState: RouterState = "uninitialized";
+
+let routerDebug = process.env.NODE_ENV === "development";
 
 /* =============================================================
-   DEBUG (ENV-BASED ONLY)
+   DEBUG
    ============================================================= */
 
-function isDebugEnabled(): boolean {
-  return process.env.NODE_ENV === "development";
+export function setRouterDebug(enabled: boolean): void {
+  routerDebug = enabled;
 }
 
 function debugLog(message: string, payload?: unknown): void {
-  if (!isDebugEnabled()) return;
+  if (!routerDebug) return;
+
   console.log(`[ROUTER] ${message}`, payload ?? "");
 }
 
@@ -51,44 +60,79 @@ function normalizeError(error: unknown) {
 }
 
 /* =============================================================
-   REGISTER ADAPTER (ONLY BEFORE FREEZE)
+   REGISTER ADAPTER
    ============================================================= */
 
-export function registerAdapter(adapter: EventAdapter): void {
-  if (isFrozen) {
-    throw new Error("[ROUTER] Cannot register adapter after freeze");
+export function registerAdapter(
+  adapter: EventAdapter
+): void {
+  if (routerState === "frozen") {
+    throw new Error(
+      "[ROUTER] Cannot register adapter after freeze"
+    );
   }
 
   if (!adapter?.name || typeof adapter.handle !== "function") {
-    throw new Error("[ROUTER] Invalid adapter contract");
+    throw new Error(
+      "[ROUTER] Invalid adapter contract"
+    );
   }
 
   if (adapters.has(adapter.name)) {
-    throw new Error(`[ROUTER] duplicate adapter: ${adapter.name}`);
+    throw new Error(
+      `[ROUTER] Duplicate adapter: ${adapter.name}`
+    );
   }
 
   adapters.set(adapter.name, adapter);
+
+  routerState = "ready";
 
   debugLog("adapter registered", adapter.name);
 }
 
 /* =============================================================
-   FREEZE REGISTRY (CALLED DURING BOOTSTRAP)
+   FREEZE ROUTER
    ============================================================= */
 
 export function freezeRouter(): void {
-  isFrozen = true;
+  if (routerState === "uninitialized") {
+    throw new Error(
+      "[ROUTER] Cannot freeze empty router"
+    );
+  }
+
+  routerState = "frozen";
+
+  debugLog("router frozen");
 }
 
 /* =============================================================
-   DISPATCH (SYNCHRONIZED EVENT FAN-OUT)
+   DISPATCH
    ============================================================= */
 
 export async function dispatch(
   event: StoredEvent
 ): Promise<readonly DispatchResult[]> {
   if (!event) {
-    throw new Error("[ROUTER] dispatch requires event");
+    throw new Error(
+      "[ROUTER] dispatch requires event"
+    );
+  }
+
+  if (
+    routerState !== "ready" &&
+    routerState !== "frozen"
+  ) {
+    throw new Error(
+      "[ROUTER] Router not initialized"
+    );
+  }
+
+  if (adapters.size === 0) {
+    throw new Error(
+      "[ROUTER] No registered adapters"
+    );
   }
 
   debugLog("dispatch start", event);
@@ -96,28 +140,33 @@ export async function dispatch(
   const results: DispatchResult[] = [];
 
   for (const adapter of adapters.values()) {
-    const start = Date.now();
+    const start = performance.now();
 
     try {
-      // IMPORTANT: preserve natural sync/async behavior
       await adapter.handle(event);
 
       results.push({
-        success: true,
+        accepted: true,
         adapter: adapter.name,
-        duration_ms: Date.now() - start,
+        duration_ms: Number(
+          (performance.now() - start).toFixed(2)
+        ),
       });
     } catch (error) {
+      const normalized = normalizeError(error);
+
       results.push({
-        success: false,
+        accepted: false,
         adapter: adapter.name,
-        duration_ms: Date.now() - start,
-        error: normalizeError(error),
+        duration_ms: Number(
+          (performance.now() - start).toFixed(2)
+        ),
+        error: normalized,
       });
 
       debugLog("adapter failed", {
         adapter: adapter.name,
-        error,
+        error: normalized,
       });
     }
   }
@@ -132,5 +181,9 @@ export async function dispatch(
    ============================================================= */
 
 export function getRegisteredAdapters(): string[] {
-  return Array.from(adapters.keys());
+  return [...adapters.keys()];
+}
+
+export function getRouterState(): RouterState {
+  return routerState;
 }
