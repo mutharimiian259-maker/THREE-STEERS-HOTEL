@@ -8,9 +8,6 @@ import {
 } from "@/lib/whatsapp";
 
 export default function StickyCTA() {
-  /**
-   * ✅ CENTRALIZED WhatsApp link
-   */
   const whatsappLink = buildWhatsAppLink(
     formatWhatsAppMessage(
       "Hello, I would like to book a room. Please share availability and pricing.",
@@ -18,32 +15,22 @@ export default function StickyCTA() {
     )
   );
 
-  /**
-   * ✅ WhatsApp tracking (clean + consistent)
-   */
+  /* =========================================================
+     WHATSAPP CLICK
+     ========================================================= */
+
   const handleWhatsAppClick = () => {
-    track(
-      "whatsapp_click",
-      {
-        action: "cta_click",
-      },
-      "sticky_cta"
-    );
+    track("whatsapp_click", {}, "sticky_cta");
 
     window.open(whatsappLink, "_blank", "noopener,noreferrer");
   };
 
-  /**
-   * ✅ Call tracking (clean)
-   */
+  /* =========================================================
+     CALL CLICK
+     ========================================================= */
+
   const handleCallClick = () => {
-    track(
-      "call_click",
-      {
-        action: "cta_click",
-      },
-      "sticky_cta"
-    );
+    track("call_click", {}, "sticky_cta");
 
     window.location.href = `tel:${getPrimaryPhone()}`;
   };
@@ -51,12 +38,10 @@ export default function StickyCTA() {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-black text-white flex justify-between items-center p-3 z-50">
 
-      {/* MESSAGE */}
       <p className="text-sm hidden md:block">
         Book direct for best rates at {HOTEL.identity.name}
       </p>
 
-      {/* ACTIONS */}
       <div className="flex gap-3">
 
         <button
