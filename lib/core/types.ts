@@ -1,8 +1,3 @@
-
-/* =============================================================
-   CORE EVENT CONTRACTS (CANONICAL LAYER)
-   ============================================================= */
-
 export type EventId = string & { readonly __brand: "EventId" };
 export type SessionId = string & { readonly __brand: "SessionId" };
 
@@ -60,7 +55,7 @@ export type FunnelStage =
   | "CONVERSION";
 
 /* =============================================================
-   FUNNEL MAP (SINGLE SOURCE OF TRUTH)
+   FUNNEL MAP
    ============================================================= */
 
 export const FUNNEL_STAGE_MAP: Partial<Record<EventType, FunnelStage>> = {
@@ -75,16 +70,6 @@ export const FUNNEL_STAGE_MAP: Partial<Record<EventType, FunnelStage>> = {
 
   booking_intent: "CONVERSION",
 };
-
-/* =============================================================
-   INTENT EVENTS
-   ============================================================= */
-
-export const INTENT_EVENT_TYPES = new Set<EventType>([
-  "whatsapp_click",
-  "call_click",
-  "booking_intent",
-]);
 
 /* =============================================================
    VALIDATION SETS
@@ -115,7 +100,7 @@ export const VALID_EVENT_SOURCES = new Set<EventSource>([
 ]);
 
 /* =============================================================
-   SESSION ID (SINGLE SOURCE)
+   SESSION ID (UNCHANGED BUT STANDARDIZED NAME)
    ============================================================= */
 
 const SESSION_KEY = "hotel_session_id";
@@ -137,65 +122,65 @@ export function getSessionId(): SessionId {
 }
 
 /* =============================================================
-   EVENT FACTORY (FIXED: SELF-CONTAINED CREATION)
+   EVENT FACTORY (PURE CORE CONSTRUCTION ONLY)
    ============================================================= */
 
+export type StoredEvent = {
+  id: EventId;
+  type: EventType;
+  source: EventSource;
+  payload: EventPayload;
+  metadata?: EventMetadata;
+  timestamp: number;
+  url: string;
+  sessionId: SessionId;
+  version: number;
+  signature: string;
+};
+
 export function createEvent(input: {
+  id: EventId;
   type: EventType;
   source: EventSource;
   payload: EventPayload;
   url: string;
+  sessionId: SessionId;
   metadata?: EventMetadata;
 }): StoredEvent {
   const timestamp = Date.now();
 
-  const session_id = getSessionId();
-
-  const id = crypto.randomUUID() as EventId;
-
-  const event = {
-    id,
-    type: input.type,
-    source: input.source,
-    payload: input.payload,
-    metadata: input.metadata,
+  const event: StoredEvent = {
+    ...input,
     timestamp,
-    url: input.url,
-    session_id,
     version: 2,
-  };
-
-  return Object.freeze({
-    ...event,
     signature: createEventSignature(
       input.type,
       input.source,
-      input.payload,
-      session_id,
+      input.sessionId,
       input.url,
-      timestamp
+      input.payload
     ),
-  });
+  };
+
+  return Object.freeze(event);
 }
 
 /* =============================================================
-   SIGNATURE (SIMPLIFIED + STABLE)
+   DETERMINISTIC SIGNATURE (FIXED)
    ============================================================= */
 
 export function createEventSignature(
   type: EventType,
   source: EventSource,
-  payload: EventPayload,
-  session_id: SessionId,
+  sessionId: SessionId,
   url: string,
-  timestamp: number
+  payload: EventPayload
 ): string {
   return [
     type,
     source,
-    session_id,
+    sessionId,
     url,
-    timestamp,
     JSON.stringify(payload),
   ].join("|");
 }
@@ -223,7 +208,7 @@ export function isStoredEvent(value: unknown): value is StoredEvent {
     isEventSource(v.source) &&
     typeof v.timestamp === "number" &&
     typeof v.url === "string" &&
-    typeof v.session_id === "string" &&
+    typeof v.sessionId === "string" &&
     typeof v.signature === "string"
   );
 }
