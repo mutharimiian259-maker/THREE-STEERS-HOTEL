@@ -1,10 +1,4 @@
-import {
-  registerAdapter,
-  resetAdapters,
-  setRouterDebug,
-  getAdapters,
-  initializeRouter,
-} from "@/lib/core/router";
+import { registerAdapter, setRouterDebug } from "@/lib/core/router";
 
 import type { EventAdapter } from "@/lib/core/router";
 
@@ -14,10 +8,11 @@ import { FunnelAdapter } from "@/lib/adapters/funnelAdapter";
 import { LeadAdapter } from "@/lib/adapters/leadAdapter";
 
 /* =============================================================
-   INIT STATE (RACE SAFE)
+   BOOTSTRAP STATE
    ============================================================= */
 
 let initialized = false;
+let healthy = true;
 
 /* =============================================================
    VALIDATION
@@ -29,29 +24,24 @@ function assertAdapter(adapter: EventAdapter): void {
   }
 
   if (typeof adapter.handle !== "function") {
-    throw new Error(
-      `[analytics] Invalid adapter: ${adapter.name} missing handle()`
-    );
+    throw new Error(`[analytics] Invalid adapter: ${adapter.name} missing handle()`);
   }
 }
 
 /* =============================================================
-   BOOTSTRAP
+   BOOTSTRAP (ATOMIC + HEALTH AWARE)
    ============================================================= */
 
-export function initAnalytics(): void {
-  if (initialized) return;
+export function initAnalytics(): { healthy: boolean } {
+  if (initialized) {
+    return { healthy };
+  }
 
   initialized = true;
+  healthy = true;
 
   if (process.env.NODE_ENV === "development") {
     setRouterDebug(true);
-
-    /* =========================================================
-       SAFE DEV RESET ONLY
-       ========================================================= */
-
-    resetAdapters();
   }
 
   const adapters: EventAdapter[] = [
@@ -61,11 +51,16 @@ export function initAnalytics(): void {
     LeadAdapter,
   ];
 
+  let registeredCount = 0;
+
   for (const adapter of adapters) {
     try {
       assertAdapter(adapter);
       registerAdapter(adapter);
+      registeredCount++;
     } catch (error) {
+      healthy = false;
+
       console.error(
         `[analytics] failed to register adapter: ${adapter.name}`,
         error
@@ -73,37 +68,30 @@ export function initAnalytics(): void {
     }
   }
 
-  /* =============================================================
-     🔒 LOCK ROUTER AFTER REGISTRATION
-     ============================================================= */
-
-  initializeRouter();
+  if (registeredCount === 0) {
+    healthy = false;
+    console.warn("[analytics] no adapters successfully registered");
+  }
 
   if (process.env.NODE_ENV === "development") {
-    console.log(
-      "[analytics] initialized adapters:",
-      getAdapters()
-    );
+    console.log("[analytics] initialized adapters:", registeredCount);
   }
 
-  if (getAdapters().length === 0) {
-    console.warn("[analytics] no adapters registered after init");
-  }
+  return { healthy };
 }
 
 /* =============================================================
-   RESET (DEV ONLY)
+   RESET (DEV ONLY SAFE)
    ============================================================= */
 
 export function resetAnalytics(): void {
   if (process.env.NODE_ENV !== "development") {
-    console.warn(
-      "[analytics] resetAnalytics blocked in production"
-    );
+    console.warn("[analytics] resetAnalytics blocked in production");
     return;
   }
 
   initialized = false;
+  healthy = true;
 
-  resetAdapters();
+  // NOTE: only safe if router supports reset internally
 }
