@@ -12,10 +12,11 @@ export default function Accommodation() {
     `Hello, I would like to book accommodation at ${HOTEL.identity.name} in ${HOTEL.location.city}. Please assist with availability and room options.`
   );
 
+  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${message}`;
+
   return (
     <section className="p-6 bg-zinc-900">
 
-      {/* TITLE */}
       <h2 className="text-xl font-bold text-yellow-500">
         Hotel Accommodation in Meru, Kenya
       </h2>
@@ -25,18 +26,20 @@ export default function Accommodation() {
         designed for business travelers, tourists, and families visiting {HOTEL.location.city}.
       </p>
 
-      {/* WINGS */}
       <div className="grid md:grid-cols-2 gap-4 mt-6">
 
         {/* BATIAN WING */}
         <div
           className="relative h-64 rounded-lg overflow-hidden cursor-pointer"
-          onClick={() => {
-            track("room_view", {
-              source: "accommodation",
-              entity: "batian_wing",
-            });
-          }}
+          onClick={() =>
+            track(
+              "room_view",
+              {
+                wing: "batian",
+              },
+              "page"
+            )
+          }
         >
           <Image
             src={IMAGES.rooms?.batian?.executiveSuite || "/images/placeholder.jpg"}
@@ -58,12 +61,15 @@ export default function Accommodation() {
         {/* LENANA WING */}
         <div
           className="relative h-64 rounded-lg overflow-hidden cursor-pointer"
-          onClick={() => {
-            track("room_view", {
-              source: "accommodation",
-              entity: "lenana_wing",
-            });
-          }}
+          onClick={() =>
+            track(
+              "room_view",
+              {
+                wing: "lenana",
+              },
+              "page"
+            )
+          }
         >
           <Image
             src={IMAGES.rooms?.lenana?.familyRoom || "/images/placeholder.jpg"}
@@ -84,7 +90,6 @@ export default function Accommodation() {
 
       </div>
 
-      {/* SUPPORT TEXT */}
       <p className="text-gray-400 mt-6 text-sm">
         With multiple room categories, guests can choose between luxury business stays
         and affordable comfort options tailored to their needs.
@@ -92,14 +97,17 @@ export default function Accommodation() {
 
       {/* CTA */}
       <a
-        href={`https://wa.me/${whatsappNumber}?text=${message}`}
+        href={whatsappLink}
         className="mt-5 inline-block px-6 py-3 bg-green-600 text-white rounded-lg"
-        onClick={() => {
-          track("whatsapp_click", {
-            source: "accommodation_cta",
-            context: "intent",
-          });
-        }}
+        onClick={() =>
+          track(
+            "whatsapp_click",
+            {
+              action: "accommodation_booking",
+            },
+            "page"
+          )
+        }
       >
         Book Your Room
       </a>
