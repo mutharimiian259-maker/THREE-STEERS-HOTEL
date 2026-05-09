@@ -1,28 +1,13 @@
+
 /* =============================================================
    CORE EVENT CONTRACTS (CANONICAL LAYER)
-   -------------------------------------------------------------
-   This is the SINGLE source of truth for:
-   - event types
-   - event sources
-   - stored event schema
-   - funnel logic
-   - storage contracts
-   - intent classification
-
-   RULE:
-   Nothing outside this file may redefine:
-   EventType, EventSource, StoredEvent, FunnelStage
-   ============================================================= */
-
-/* =============================================================
-   BRANDED IDS (prevent cross-system misuse)
    ============================================================= */
 
 export type EventId = string & { readonly __brand: "EventId" };
 export type SessionId = string & { readonly __brand: "SessionId" };
 
 /* =============================================================
-   EVENT TYPES (business-level contract)
+   EVENT TYPES
    ============================================================= */
 
 export type EventType =
@@ -36,7 +21,7 @@ export type EventType =
   | "system_error";
 
 /* =============================================================
-   EVENT SOURCES (origin authority)
+   EVENT SOURCES
    ============================================================= */
 
 export type EventSource =
@@ -52,14 +37,10 @@ export type EventSource =
   | "unknown";
 
 /* =============================================================
-   CORE PAYLOAD
+   CORE PAYLOAD + METADATA
    ============================================================= */
 
 export type EventPayload = Record<string, unknown>;
-
-/* =============================================================
-   EVENT METADATA (non-business context only)
-   ============================================================= */
 
 export type EventMetadata = Readonly<{
   pathname?: string;
@@ -69,51 +50,7 @@ export type EventMetadata = Readonly<{
 }>;
 
 /* =============================================================
-   DELIVERY STATE (future replay / retry system)
-   ============================================================= */
-
-export type EventDeliveryState = Readonly<{
-  dispatched: boolean;
-  failed_adapters?: string[];
-}>;
-
-/* =============================================================
-   STORED EVENT (CANONICAL IMMUTABLE RECORD)
-   ============================================================= */
-
-export type StoredEvent = Readonly<{
-  id: EventId;
-  type: EventType;
-  source: EventSource;
-
-  payload: EventPayload;
-  metadata?: EventMetadata;
-
-  timestamp: number;
-  url: string;
-
-  session_id: SessionId;
-
-  signature: string;
-
-  version: typeof STORAGE_SCHEMA_VERSION;
-
-  delivery?: EventDeliveryState;
-}>;
-
-/* =============================================================
-   STORAGE CONTRACTS
-   ============================================================= */
-
-export const STORAGE_SCHEMA_VERSION = 2 as const;
-
-export const STORAGE_KEY_EVENTS = "hotel_events_v2" as const;
-export const STORAGE_KEY_FUNNEL = "hotel_funnel_v2" as const;
-
-export const STORAGE_MAX_EVENTS = 500 as const;
-
-/* =============================================================
-   FUNNEL STAGES (business progression model)
+   FUNNEL STAGES
    ============================================================= */
 
 export type FunnelStage =
@@ -123,25 +60,24 @@ export type FunnelStage =
   | "CONVERSION";
 
 /* =============================================================
-   EVENT → FUNNEL MAPPING (single authority)
+   FUNNEL MAP (SINGLE SOURCE OF TRUTH)
    ============================================================= */
 
-export const FUNNEL_STAGE_MAP: Partial<Record<EventType, FunnelStage>> =
-  {
-    page_view: "VISIT",
+export const FUNNEL_STAGE_MAP: Partial<Record<EventType, FunnelStage>> = {
+  page_view: "VISIT",
 
-    room_view: "ENGAGEMENT",
-    blog_view: "ENGAGEMENT",
-    navigation: "ENGAGEMENT",
+  room_view: "ENGAGEMENT",
+  blog_view: "ENGAGEMENT",
+  navigation: "ENGAGEMENT",
 
-    whatsapp_click: "INTENT",
-    call_click: "INTENT",
+  whatsapp_click: "INTENT",
+  call_click: "INTENT",
 
-    booking_intent: "CONVERSION",
-  };
+  booking_intent: "CONVERSION",
+};
 
 /* =============================================================
-   INTENT CLASSIFICATION (revenue-sensitive events)
+   INTENT EVENTS
    ============================================================= */
 
 export const INTENT_EVENT_TYPES = new Set<EventType>([
@@ -151,7 +87,7 @@ export const INTENT_EVENT_TYPES = new Set<EventType>([
 ]);
 
 /* =============================================================
-   VALIDATION SETS (runtime safety layer)
+   VALIDATION SETS
    ============================================================= */
 
 export const VALID_EVENT_TYPES = new Set<EventType>([
@@ -179,29 +115,7 @@ export const VALID_EVENT_SOURCES = new Set<EventSource>([
 ]);
 
 /* =============================================================
-   EVENT SIGNATURE HELPERS (dedupe + integrity)
-   ============================================================= */
-
-export function createEventSignature(
-  type: EventType,
-  source: EventSource,
-  payload: EventPayload,
-  session_id: SessionId,
-  url: string,
-  timestamp: number
-): string {
-  return JSON.stringify({
-    type,
-    source,
-    payload,
-    session_id,
-    url,
-    timestamp,
-  });
-}
-
-/* =============================================================
-   SESSION ID (browser-scoped identity)
+   SESSION ID (SINGLE SOURCE)
    ============================================================= */
 
 const SESSION_KEY = "hotel_session_id";
@@ -223,38 +137,71 @@ export function getSessionId(): SessionId {
 }
 
 /* =============================================================
-   EVENT FACTORY (ONLY AUTHORIZED CREATOR)
+   EVENT FACTORY (FIXED: SELF-CONTAINED CREATION)
    ============================================================= */
 
 export function createEvent(input: {
-  id: EventId;
   type: EventType;
   source: EventSource;
   payload: EventPayload;
   url: string;
-  timestamp: number;
-  session_id: SessionId;
   metadata?: EventMetadata;
 }): StoredEvent {
+  const timestamp = Date.now();
+
+  const session_id = getSessionId();
+
+  const id = crypto.randomUUID() as EventId;
+
+  const event = {
+    id,
+    type: input.type,
+    source: input.source,
+    payload: input.payload,
+    metadata: input.metadata,
+    timestamp,
+    url: input.url,
+    session_id,
+    version: 2,
+  };
+
   return Object.freeze({
-    ...input,
-    version: STORAGE_SCHEMA_VERSION,
+    ...event,
     signature: createEventSignature(
       input.type,
       input.source,
       input.payload,
-      input.session_id,
+      session_id,
       input.url,
-      input.timestamp
+      timestamp
     ),
-    delivery: {
-      dispatched: false,
-    },
   });
 }
 
 /* =============================================================
-   TYPE GUARDS (runtime safety enforcement)
+   SIGNATURE (SIMPLIFIED + STABLE)
+   ============================================================= */
+
+export function createEventSignature(
+  type: EventType,
+  source: EventSource,
+  payload: EventPayload,
+  session_id: SessionId,
+  url: string,
+  timestamp: number
+): string {
+  return [
+    type,
+    source,
+    session_id,
+    url,
+    timestamp,
+    JSON.stringify(payload),
+  ].join("|");
+}
+
+/* =============================================================
+   TYPE GUARDS
    ============================================================= */
 
 export function isEventType(value: unknown): value is EventType {
@@ -277,8 +224,7 @@ export function isStoredEvent(value: unknown): value is StoredEvent {
     typeof v.timestamp === "number" &&
     typeof v.url === "string" &&
     typeof v.session_id === "string" &&
-    typeof v.signature === "string" &&
-    v.version === STORAGE_SCHEMA_VERSION
+    typeof v.signature === "string"
   );
 }
 
