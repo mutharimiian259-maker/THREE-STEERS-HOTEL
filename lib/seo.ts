@@ -1,80 +1,3 @@
-import {
-  getDomain,
-  getIdentity,
-  getSEO,
-} from "@/lib/domain/hotel";
-
-import {
-  getSeoKeywordsByIntent,
-  getSeoKeywordsByPath,
-} from "@/lib/domain/seoStrategy";
-
-import { resolveUrl } from "@/lib/utils/seoUtils";
-import { getImage } from "@/lib/domain/images";
-
-/* =============================================================
-   TYPES
-   ============================================================= */
-
-type SeoIntent =
-  | "home"
-  | "room"
-  | "blog"
-  | "conference"
-  | "dining";
-
-type SeoProps = {
-  title?: string;
-  description?: string;
-  path?: string;
-  image?: string;
-  intent?: SeoIntent;
-  keywords?: string[];
-};
-
-/* =============================================================
-   HELPERS
-   ============================================================= */
-
-function clamp(
-  text: string,
-  max: number
-): string {
-  return text.length > max
-    ? text.slice(0, max - 1).trim() + "…"
-    : text;
-}
-
-function dedupe(
-  list: string[]
-): string[] {
-  return Array.from(
-    new Set(
-      list
-        .map((k) =>
-          k.trim().toLowerCase()
-        )
-        .filter(Boolean)
-    )
-  );
-}
-
-function getBaseUrl(): string {
-  const domain = getDomain();
-
-  if (!domain) {
-    throw new Error(
-      "[seo] Missing domain configuration"
-    );
-  }
-
-  return domain;
-}
-
-/* =============================================================
-   MAIN SEO GENERATOR
-   ============================================================= */
-
 export function generateSEO({
   title,
   description,
@@ -88,46 +11,27 @@ export function generateSEO({
   const identity = getIdentity();
   const seo = getSEO();
 
-  const siteName = identity.name;
+  const siteName = identity?.name ?? "Hotel";
 
-  const fullTitle = clamp(
-    title
-      ? `${title} | ${siteName}`
-      : seo.title,
-    60
-  );
+  const resolvedTitle =
+    title ? `${title} | ${siteName}` : seo?.title ?? siteName;
 
-  const fullDescription = clamp(
-    description ?? seo.description,
-    160
-  );
+  const resolvedDescription =
+    description ?? seo?.description ?? "";
+
+  const fullTitle = clamp(resolvedTitle, 60);
+  const fullDescription = clamp(resolvedDescription, 160);
 
   const url = resolveUrl(baseUrl, path);
 
-  /* ---------------------------------------------------------
-     IMAGE PIPELINE — unified via domain layer
-     --------------------------------------------------------- */
-  const imagePath = image
-    ? getImage(image)
-    : getImage(undefined);
+  const imagePath = getImage(image ?? "default");
+  const finalImage = resolveUrl(baseUrl, imagePath);
 
-  const finalImage = resolveUrl(
-    baseUrl,
-    imagePath
-  );
-
-  /* ---------------------------------------------------------
-     KEYWORDS PIPELINE
-     --------------------------------------------------------- */
   const finalKeywords = dedupe([
     ...getSeoKeywordsByIntent(intent),
     ...getSeoKeywordsByPath(path),
     ...(keywords ?? []),
-  ]).slice(0, 20); // safety cap
-
-  /* ---------------------------------------------------------
-     OUTPUT
-     --------------------------------------------------------- */
+  ]).slice(0, 20);
 
   return {
     title: fullTitle,
