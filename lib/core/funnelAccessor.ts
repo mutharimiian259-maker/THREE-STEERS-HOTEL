@@ -9,17 +9,19 @@ import type { EventType, FunnelStage } from "@/lib/core/types";
  * Returns funnel stage for a given event type
  * Single source of truth: FUNNEL_STAGE_MAP
  */
-export function getFunnelStage(eventType: EventType): FunnelStage {
-  return FUNNEL_STAGE_MAP[eventType] ?? "VISITOR";
+export function getFunnelStage(
+  eventType: EventType
+): FunnelStage | undefined {
+  return FUNNEL_STAGE_MAP[eventType];
 }
 
 /* =============================================================
-   INTENT DETECTION (DERIVED ONLY, NO DUPLICATE TRUTH)
+   INTENT DETECTION (DERIVED ONLY)
    ============================================================= */
 
 /**
  * Intent is defined purely by funnel stage
- * NOT by hardcoded event lists
+ * Only valid mapped events qualify
  */
 export function isIntentEventType(eventType: EventType): boolean {
   return getFunnelStage(eventType) === "INTENT";
