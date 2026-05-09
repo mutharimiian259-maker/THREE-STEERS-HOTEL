@@ -4,7 +4,7 @@ import Image from "next/image";
 import { HOTEL } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
 import { IMAGES } from "@/lib/images";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useRef } from "react";
 
 type Room = {
   id: string | number;
@@ -28,6 +28,8 @@ export default function RoomCard({ room }: { room: Room }) {
     );
   }, [room.name]);
 
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+
   const price =
     typeof room.price === "number" && room.currency
       ? `${room.currency} ${room.price.toLocaleString()}`
@@ -35,42 +37,54 @@ export default function RoomCard({ room }: { room: Room }) {
 
   const roomImage = getRoomImage(room.slug);
 
-  const urgencyText =
-    room.price
-      ? "High demand — book early to secure this room"
-      : "Limited availability";
+  const urgencyText = room.price
+    ? "High demand — book early to secure this room"
+    : "Limited availability";
 
-  /* ---------------- TRACK VIEW (FIXED SEMANTICS) ---------------- */
+  /**
+   * FIX: prevent repeated hover spam tracking
+   */
+  const hasTrackedImpression = useRef(false);
+
   const handleRoomImpression = useCallback(() => {
-    track("room_view", {
-      room_id: room.id, // FIX: stable identifier
-      room_name: room.name,
-      source: "room_card",
-    });
+    if (hasTrackedImpression.current) return;
+
+    hasTrackedImpression.current = true;
+
+    track(
+      "room_view",
+      {
+        room_id: room.id,
+        room_name: room.name,
+        source: "room_card",
+        context: "impression",
+      },
+      "room_card"
+    );
   }, [room.id, room.name]);
 
-  /* ---------------- WHATSAPP CLICK (SAFE + RELIABLE) ---------------- */
+  /**
+   * FIX: direct navigation (no timeout hack)
+   */
   const handleWhatsAppClick = useCallback(() => {
-    track("whatsapp_click", {
-      room_id: room.id,
-      room_name: room.name,
-      source: "room_card",
-    });
+    track(
+      "whatsapp_click",
+      {
+        room_id: room.id,
+        room_name: room.name,
+        source: "room_card",
+        context: "intent",
+      },
+      "room_card"
+    );
 
-    const url = `https://wa.me/${whatsappNumber}?text=${message}`;
-
-    /**
-     * FIX: allow event dispatch before navigation
-     */
-    setTimeout(() => {
-      window.location.href = url;
-    }, 50);
-  }, [room.id, room.name, whatsappNumber, message]);
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+  }, [room.id, room.name, whatsappUrl]);
 
   return (
     <div
       className="card relative overflow-hidden bg-white"
-      onMouseEnter={handleRoomImpression} // FIX: real “view intent”
+      onMouseEnter={handleRoomImpression}
     >
 
       {room.tag && (
