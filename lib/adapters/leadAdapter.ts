@@ -1,3 +1,4 @@
+
 import type { EventAdapter } from "@/lib/core/router";
 import type { StoredEvent } from "@/lib/core/types";
 
@@ -46,7 +47,7 @@ function classifyResponse(status: number): string {
 }
 
 /* =============================================================
-   ADAPTER (PURE TRANSPORT LAYER)
+   LEAD ADAPTER (PURE TRANSPORT ONLY)
    ============================================================= */
 
 export const LeadAdapter: EventAdapter = {
