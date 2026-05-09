@@ -4,16 +4,34 @@ import { sanitizePhone } from "@/lib/domain/phone";
 
 /* =============================================================
    WHATSAPP LINK BUILDER
+   -------------------------------------------------------------
+   PURE FUNCTION + SIDE EFFECT ISOLATION
+   ============================================================= */
+
+/* =============================================================
+   SAFE TRACK WRAPPER
+   ============================================================= */
+
+function safeTrack() {
+  void track;
+}
+
+/* =============================================================
+   WHATSAPP LINK BUILDER
    ============================================================= */
 
 export function buildWhatsAppLink(message: string): string {
   const rawPhone = getPhoneByLabel("whatsapp");
   const phone = sanitizePhone(rawPhone || "");
 
+  /* =============================================================
+     MISSING PHONE HANDLING
+     ============================================================= */
+
   if (!phone) {
     console.warn("[WHATSAPP] Missing WhatsApp phone number");
 
-    track(
+    void track(
       "system_error",
       {
         context: "whatsapp_missing_phone",
@@ -23,16 +41,14 @@ export function buildWhatsAppLink(message: string): string {
       "system"
     );
 
-    // safer fallback (prevents broken CTA)
     return "https://wa.me";
   }
 
   /* =============================================================
-     IMPORTANT: ensure tracking is not lost on navigation
+     ANALYTICS SIDE EFFECT (NON-BLOCKING)
      ============================================================= */
 
-  try {
-    // fire-and-forget but stabilized
+  queueMicrotask(() => {
     void track(
       "whatsapp_click",
       {
@@ -41,9 +57,13 @@ export function buildWhatsAppLink(message: string): string {
       },
       "sticky_cta"
     );
-  } catch (err) {
-    console.error("[WHATSAPP] tracking failed", err);
-  }
+  });
 
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  /* =============================================================
+     SAFE URL ENCODING
+     ============================================================= */
+
+  const encodedMessage = encodeURIComponent(message);
+
+  return `https://wa.me/${phone}?text=${encodedMessage}`;
 }
