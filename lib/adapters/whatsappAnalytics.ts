@@ -1,22 +1,28 @@
 import { track } from "@/lib/core/analytics";
+import type { EventSource } from "@/lib/core/types";
 
 type WhatsAppOptions = {
-  source?: "navbar" | "footer" | "room_card" | "sticky_cta" | "exit_intent" | "unknown";
+  source?: EventSource;
   room?: string;
 };
 
 /* =============================================================
    WHATSAPP CLICK TRACKER
+   -------------------------------------------------------------
+   SAFE ANALYTICS WRAPPER (NON-BLOCKING)
    ============================================================= */
 
 export function trackWhatsAppClick(
   options: WhatsAppOptions = {}
 ): void {
   try {
-    track(
+    /* =========================================================
+       FIRE-AND-FORGET (EXPLICIT)
+       ========================================================= */
+
+    void track(
       "whatsapp_click",
       {
-        // avoid null drift → keep schema consistent
         ...(options.room ? { room: options.room } : {}),
       },
       options.source ?? "unknown"
