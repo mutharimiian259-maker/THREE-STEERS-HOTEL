@@ -8,48 +8,37 @@ import {
 } from "@/lib/whatsapp";
 
 export default function Footer() {
-  /**
-   * CENTRALIZED WHATSAPP LINK
-   */
   const whatsappLink = buildWhatsAppLink(
     formatWhatsAppMessage(
-      "Hello, I would like to book a room. Please share availability and pricing.",
-      { source: "footer" }
+      "Hello, I would like to book a room. Please share availability and pricing."
     )
   );
 
-  /**
-   * WHATSAPP CLICK
-   */
-  const handleWhatsAppClick = () => {
-    track(
-      "whatsapp_click",
-      {
-        action: "footer_cta",
-      },
-      "footer"
-    );
+  /* =========================================================
+     WHATSAPP CLICK (PURE EVENT EMISSION)
+     ========================================================= */
 
+  const handleWhatsAppClick = () => {
+    track("whatsapp_click", {}, "footer");
     window.open(whatsappLink, "_blank", "noopener,noreferrer");
   };
 
-  /**
-   * CONTACT TRACKING (FIXED SEMANTICS)
-   */
+  /* =========================================================
+     CONTACT CLICK (NO BUSINESS LOGIC IN UI)
+     ========================================================= */
+
   const handleContactClick = (type: "location" | "phone" | "email") => {
-    track(
-      "call_click",
-      {
-        action: "footer_contact",
-        contact_type: type,
-      },
-      "footer"
-    );
+    const eventMap = {
+      location: "navigation",
+      phone: "call_click",
+      email: "email_click",
+    } as const;
+
+    track(eventMap[type], {}, "footer");
   };
 
   return (
     <footer className="bg-black text-white border-t border-zinc-800 mt-20">
-
       <div className="max-w-7xl mx-auto px-6 py-10 grid md:grid-cols-3 gap-8">
 
         {/* BRAND */}
@@ -98,7 +87,6 @@ export default function Footer() {
           >
             WhatsApp Booking
           </button>
-
         </div>
 
       </div>
@@ -106,7 +94,6 @@ export default function Footer() {
       <div className="text-center text-xs text-zinc-500 pb-6">
         © {new Date().getFullYear()} {HOTEL.identity.name}. All rights reserved.
       </div>
-
     </footer>
   );
 }
