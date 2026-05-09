@@ -1,7 +1,8 @@
 import type { SeoIntent } from "@/lib/seoTypes";
+import { normalizePath } from "@/lib/core/normalizePath";
 
 /* =============================================================
-   SEO KEYWORD REGISTRY
+   SEO KEYWORD REGISTRY (CONFIG ONLY)
    ============================================================= */
 
 const SEO_KEYWORDS: Record<SeoIntent, string[]> = {
@@ -28,62 +29,39 @@ const SEO_KEYWORDS: Record<SeoIntent, string[]> = {
 };
 
 /* =============================================================
-   PATH KEYWORDS (NORMALIZED SUPPORT)
+   PATH KEYWORDS (CONFIG ONLY)
    ============================================================= */
 
 const SEO_PATH_KEYWORDS: Record<string, string[]> = {
-  "/rooms": ["all hotel rooms", "hotel booking page"],
+  "/rooms": ["hotel rooms", "hotel booking"],
 };
-
-/* =============================================================
-   PATH NORMALIZATION (SEO SAFE MATCHING)
-   ============================================================= */
-
-function normalizePath(path: string): string {
-  return path
-    .split("?")[0] // remove query params
-    .replace(/\/+$/, "") // remove trailing slash
-    .toLowerCase();
-}
 
 /* =============================================================
    INTENT KEYWORDS
    ============================================================= */
 
-export function getSeoKeywordsByIntent(
-  intent: SeoIntent
-): string[] {
+export function getSeoKeywordsByIntent(intent: SeoIntent): string[] {
   return SEO_KEYWORDS[intent] ?? [];
 }
 
 /* =============================================================
-   PATH KEYWORDS (IMPROVED MATCHING)
+   PATH KEYWORDS (CLEAN MATCHING ONLY)
    ============================================================= */
 
-export function getSeoKeywordsByPath(
-  path?: string
-): string[] {
+export function getSeoKeywordsByPath(path?: string): string[] {
   if (!path) return [];
 
   const normalized = normalizePath(path);
-
-  // dynamic route pattern handling
-  if (normalized.startsWith("/rooms")) {
-    return [
-      "hotel room details",
-      "book hotel room Kenya",
-    ];
-  }
 
   return SEO_PATH_KEYWORDS[normalized] ?? [];
 }
 
 /* =============================================================
-   DEDUP + MERGE
+   MERGE UTILITY (PURE)
    ============================================================= */
 
 export function mergeSeoKeywords(
   ...groups: string[][]
 ): string[] {
-  return [...new Set(groups.flat())];
+  return Array.from(new Set(groups.flat()));
 }
