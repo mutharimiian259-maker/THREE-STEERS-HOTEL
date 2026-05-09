@@ -1,9 +1,5 @@
 import type { StoredEvent } from "./types";
 
-/* =============================================================
-   CORE ROUTER (EVENT FAN-OUT SYSTEM)
-   ============================================================= */
-
 export type EventAdapter = Readonly<{
   name: string;
   handle(event: StoredEvent): void | Promise<void>;
@@ -17,27 +13,22 @@ export type DispatchResult = Readonly<{
 }>;
 
 /* =============================================================
-   ROUTER STATE
+   ROUTER STATE (BOOTSTRAP IMMUTABLE AFTER INIT)
    ============================================================= */
 
 const adapters = new Map<string, EventAdapter>();
-
-let DEBUG = false;
+let isFrozen = false;
 
 /* =============================================================
-   DEBUG CONTROL
+   DEBUG (ENV-BASED ONLY)
    ============================================================= */
 
-export function setRouterDebug(value: boolean): void {
-  DEBUG = value;
+function isDebugEnabled(): boolean {
+  return process.env.NODE_ENV === "development";
 }
 
-/* =============================================================
-   LOGGER
-   ============================================================= */
-
 function debugLog(message: string, payload?: unknown): void {
-  if (!DEBUG) return;
+  if (!isDebugEnabled()) return;
   console.log(`[ROUTER] ${message}`, payload ?? "");
 }
 
@@ -60,44 +51,37 @@ function normalizeError(error: unknown) {
 }
 
 /* =============================================================
-   TIMEOUT WRAPPER
-   ============================================================= */
-
-async function withTimeout<T>(
-  promise: Promise<T>,
-  timeout_ms = 3000
-): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Adapter timeout ${timeout_ms}ms`)), timeout_ms)
-    ),
-  ]);
-}
-
-/* =============================================================
-   REGISTER ADAPTER
+   REGISTER ADAPTER (ONLY BEFORE FREEZE)
    ============================================================= */
 
 export function registerAdapter(adapter: EventAdapter): void {
+  if (isFrozen) {
+    throw new Error("[ROUTER] Cannot register adapter after freeze");
+  }
+
   if (!adapter?.name || typeof adapter.handle !== "function") {
     throw new Error("[ROUTER] Invalid adapter contract");
   }
 
   if (adapters.has(adapter.name)) {
-    if (process.env.NODE_ENV === "development") {
-      throw new Error(`[ROUTER] duplicate adapter: ${adapter.name}`);
-    }
-    return;
+    throw new Error(`[ROUTER] duplicate adapter: ${adapter.name}`);
   }
 
-  adapters.set(adapter.name, Object.freeze(adapter));
+  adapters.set(adapter.name, adapter);
 
   debugLog("adapter registered", adapter.name);
 }
 
 /* =============================================================
-   DISPATCH (CORE EVENT FAN-OUT)
+   FREEZE REGISTRY (CALLED DURING BOOTSTRAP)
+   ============================================================= */
+
+export function freezeRouter(): void {
+  isFrozen = true;
+}
+
+/* =============================================================
+   DISPATCH (SYNCHRONIZED EVENT FAN-OUT)
    ============================================================= */
 
 export async function dispatch(
@@ -107,15 +91,16 @@ export async function dispatch(
     throw new Error("[ROUTER] dispatch requires event");
   }
 
-  const results: DispatchResult[] = [];
-
   debugLog("dispatch start", event);
+
+  const results: DispatchResult[] = [];
 
   for (const adapter of adapters.values()) {
     const start = Date.now();
 
     try {
-      await withTimeout(Promise.resolve(adapter.handle(event)));
+      // IMPORTANT: preserve natural sync/async behavior
+      await adapter.handle(event);
 
       results.push({
         success: true,
@@ -139,13 +124,13 @@ export async function dispatch(
 
   debugLog("dispatch complete", results);
 
-  return Object.freeze(results);
+  return results;
 }
 
 /* =============================================================
-   ROUTER INTROSPECTION (SAFE)
+   INTROSPECTION
    ============================================================= */
 
 export function getRegisteredAdapters(): string[] {
-  return [...adapters.keys()];
+  return Array.from(adapters.keys());
 }
