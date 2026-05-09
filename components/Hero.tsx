@@ -8,7 +8,6 @@ export default function Facilities() {
   return (
     <section className="p-6 bg-zinc-900">
 
-      {/* TITLE */}
       <h2 className="text-2xl font-bold text-yellow-500 text-center">
         Premium Facilities at {HOTEL.identity.name}
       </h2>
@@ -18,7 +17,6 @@ export default function Facilities() {
         designed for both business and leisure guests in {HOTEL.location.city}.
       </p>
 
-      {/* IMAGE TRUST STRIP */}
       <div className="grid md:grid-cols-3 gap-4 mt-8">
 
         <div className="relative h-56 rounded-lg overflow-hidden">
@@ -65,7 +63,6 @@ export default function Facilities() {
 
       </div>
 
-      {/* FACILITIES LIST */}
       <ul className="grid md:grid-cols-4 gap-4 mt-10 list-none">
 
         {[
