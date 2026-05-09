@@ -41,10 +41,15 @@ export default function Conference() {
         <div
           className="relative h-60 rounded-lg overflow-hidden cursor-pointer"
           onClick={() =>
-            track("room_view", {
-              source: "conference",
-              entity: "Summit Hall",
-            })
+            track(
+              "navigation",
+              {
+                action: "conference_view",
+                entity: "Summit Hall",
+                section: "conference",
+              },
+              "conference"
+            )
           }
         >
           <Image
@@ -68,10 +73,15 @@ export default function Conference() {
         <div
           className="relative h-60 rounded-lg overflow-hidden cursor-pointer"
           onClick={() =>
-            track("room_view", {
-              source: "conference",
-              entity: "Conference Room 2",
-            })
+            track(
+              "navigation",
+              {
+                action: "conference_view",
+                entity: "Conference Room 2",
+                section: "conference",
+              },
+              "conference"
+            )
           }
         >
           <Image
@@ -98,10 +108,14 @@ export default function Conference() {
         href={`https://wa.me/${whatsappNumber}?text=${enquiryMessage}`}
         className="mt-6 inline-block px-6 py-3 bg-green-600 text-white rounded-lg"
         onClick={() => {
-          track("whatsapp_click", {
-            source: "conference_cta",
-            context: "intent",
-          });
+          track(
+            "whatsapp_click",
+            {
+              action: "conference_cta",
+              section: "conference",
+            },
+            "conference"
+          );
         }}
       >
         Make Enquiry
