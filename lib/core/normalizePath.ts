@@ -18,10 +18,18 @@ export function normalizePath(path: string): string {
   const noQuery = noHash.split("?")[0];
 
   /* =============================================================
+     ENSURE LEADING SLASH (CRITICAL FIX)
+     ============================================================= */
+
+  const withLeadingSlash = noQuery.startsWith("/")
+    ? noQuery
+    : `/${noQuery}`;
+
+  /* =============================================================
      COLLAPSE MULTIPLE SLASHES
      ============================================================= */
 
-  const collapsed = noQuery.replace(/\/+/g, "/");
+  const collapsed = withLeadingSlash.replace(/\/+/g, "/");
 
   /* =============================================================
      REMOVE TRAILING SLASHES (EXCEPT ROOT)
