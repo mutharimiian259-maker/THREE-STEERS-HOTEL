@@ -1,49 +1,62 @@
 import { normalizePath } from "./normalizePath";
 import { routes } from "@/lib/routes";
 
-/* =============================================================
-   ROUTE VALIDATION (STRUCTURED + CI SAFE)
-   ============================================================= */
-
-export type RouteValidationReport = {
+export type RouteValidationReport = Readonly<{
   duplicates: Array<{
     path: string;
     normalized: string;
-    first: unknown;
-    duplicate: unknown;
+    first: RouteLike;
+    duplicate: RouteLike;
   }>;
   invalid: unknown[];
-};
+}>;
+
+type RouteLike = Readonly<{
+  path: string;
+}>;
+
+function isRouteLike(value: unknown): value is RouteLike {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "path" in value &&
+    typeof value.path === "string"
+  );
+}
 
 /* =============================================================
    ROUTE VALIDATION
    ============================================================= */
 
 export function validateRoutes(): RouteValidationReport {
-  const seen = new Map<string, unknown>();
+  const seen = new Map<string, RouteLike>();
+
   const duplicates: RouteValidationReport["duplicates"] = [];
+
   const invalid: unknown[] = [];
 
   for (const route of routes) {
-    if (!route || typeof (route as any).path !== "string") {
+    if (!isRouteLike(route)) {
       invalid.push(route);
       continue;
     }
 
-    const normalized = normalizePath((route as any).path);
+    const normalized = normalizePath(route.path);
 
     const existing = seen.get(normalized);
 
     if (existing) {
       duplicates.push({
-        path: (route as any).path,
+        path: route.path,
         normalized,
         first: existing,
         duplicate: route,
       });
-    } else {
-      seen.set(normalized, route);
+
+      continue;
     }
+
+    seen.set(normalized, route);
   }
 
   return {
