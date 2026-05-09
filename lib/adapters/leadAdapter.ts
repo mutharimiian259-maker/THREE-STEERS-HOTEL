@@ -1,9 +1,22 @@
-
 import type { EventAdapter } from "@/lib/core/router";
-import type { StoredEvent } from "@/lib/core/types";
+import type { StoredEvent, EventType } from "@/lib/core/types";
 
 /* =============================================================
-   FETCH WITH TIMEOUT
+   INTENT FILTER (LEAD-GRADE EVENTS ONLY)
+   ============================================================= */
+
+const LEAD_EVENTS = new Set<EventType>([
+  "whatsapp_click",
+  "call_click",
+  "booking_intent",
+]);
+
+function isLeadEvent(event: StoredEvent): boolean {
+  return LEAD_EVENTS.has(event.type);
+}
+
+/* =============================================================
+   FETCH WITH TIMEOUT (SHOULD EVENTUALLY MOVE TO /lib/core/net)
    ============================================================= */
 
 function fetchWithTimeout(
@@ -12,38 +25,12 @@ function fetchWithTimeout(
   timeout = 4000
 ): Promise<Response> {
   const controller = new AbortController();
-
   const timer = setTimeout(() => controller.abort(), timeout);
 
   return fetch(url, {
     ...options,
     signal: controller.signal,
   }).finally(() => clearTimeout(timer));
-}
-
-/* =============================================================
-   ERROR CLASSIFIER
-   ============================================================= */
-
-function classifyError(error: unknown) {
-  if (error instanceof DOMException && error.name === "AbortError") {
-    return "timeout";
-  }
-
-  if (error instanceof Error) return "network_error";
-
-  return "unknown_error";
-}
-
-/* =============================================================
-   RESPONSE CLASSIFIER
-   ============================================================= */
-
-function classifyResponse(status: number): string {
-  if (status >= 500) return "server_error";
-  if (status === 429) return "rate_limited";
-  if (status >= 400) return "client_error";
-  return "unknown";
 }
 
 /* =============================================================
@@ -56,6 +43,12 @@ export const LeadAdapter: EventAdapter = {
   async handle(event: StoredEvent) {
     if (typeof window === "undefined") return;
 
+    /* =========================================================
+       DOMAIN FILTERING (CRITICAL FIX)
+       ========================================================= */
+
+    if (!isLeadEvent(event)) return;
+
     try {
       const response = await fetchWithTimeout("/api/leads", {
         method: "POST",
@@ -63,30 +56,20 @@ export const LeadAdapter: EventAdapter = {
           "Content-Type": "application/json",
         },
 
-        body: JSON.stringify({
-          event_id: event.id,
-          type: event.type,
-          source: event.source,
-          timestamp: event.timestamp,
-          session_id: event.session_id,
-          url: event.url,
-          payload: event.payload,
-        }),
+        /* =====================================================
+           SEND FULL CANONICAL EVENT (NO RECONSTRUCTION)
+           ===================================================== */
+        body: JSON.stringify(event),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-
         console.error("[LeadAdapter] API rejected lead", {
-          category: classifyResponse(response.status),
           status: response.status,
-          error: errorText,
           event_id: event.id,
         });
       }
     } catch (err) {
       console.error("[LeadAdapter] failure", {
-        type: classifyError(err),
         error: err,
         event_id: event.id,
       });
