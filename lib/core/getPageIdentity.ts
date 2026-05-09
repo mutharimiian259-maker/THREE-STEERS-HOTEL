@@ -1,8 +1,5 @@
-// lib/core/getPageIdentity.ts
-
 import { resolveRoute } from "./pageResolver";
 import { normalizePath } from "./normalizePath";
-import { getSeoKeywordsByPath } from "@/lib/seo/keywords";
 
 import { getFunnelStage } from "@/lib/core/funnelAccessor";
 
@@ -10,31 +7,36 @@ import type { PageIdentity } from "./pageIdentity";
 import type { EventType } from "@/lib/core/types";
 
 /* =============================================================
-   PAGE IDENTITY DERIVATION LAYER
-   -------------------------------------------------------------
-   NO BUSINESS LOGIC
-   ONLY CONTEXT PROJECTION FROM CANONICAL PATHS
+   PAGE IDENTITY DERIVATION LAYER (CORE SAFE)
    ============================================================= */
 
 export function getPageIdentity(
   path: string,
   lastEventType?: EventType
 ): PageIdentity {
-  /* =============================================================
-     CANONICAL PATH FIRST
-     ============================================================= */
+  /* =========================================================
+     NORMALIZATION (SINGLE SOURCE OF TRUTH)
+     ========================================================= */
 
   const normalizedPath = normalizePath(path);
 
-  /* =============================================================
-     ALL DERIVATIONS MUST USE NORMALIZED PATH
-     ============================================================= */
+  /* =========================================================
+     ROUTE RESOLUTION (CORE ONLY)
+     ========================================================= */
 
   const route = resolveRoute(normalizedPath);
 
-  const seoKeywords = getSeoKeywordsByPath(normalizedPath);
+  /* =========================================================
+     FUNNEL DERIVATION (SAFE FALLBACK)
+     ========================================================= */
 
-  const funnelStage = getFunnelStage(lastEventType);
+  const funnelStage = lastEventType
+    ? getFunnelStage(lastEventType)
+    : "VISIT";
+
+  /* =========================================================
+     FINAL IDENTITY OBJECT
+     ========================================================= */
 
   return Object.freeze({
     path,
@@ -42,12 +44,10 @@ export function getPageIdentity(
 
     route,
 
-    seoIntent: null, // reserved for future derived config only
-
     funnelStage,
 
-    keywords: seoKeywords,
+    keywords: [], // intentionally decoupled from SEO layer
 
-    isNavigation: route?.type === "navigation",
+    isNavigation: Boolean(route && (route.kind === "navigation" || route.type === "navigation")),
   });
 }
