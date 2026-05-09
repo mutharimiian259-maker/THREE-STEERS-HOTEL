@@ -4,9 +4,6 @@ import { track } from "@/lib/core/analytics";
 import { buildWhatsAppLink, formatWhatsAppMessage } from "@/lib/whatsapp";
 
 export default function WhatsAppFloat() {
-  /**
-   * CENTRALIZED WHATSAPP LINK
-   */
   const whatsappLink = buildWhatsAppLink(
     formatWhatsAppMessage(
       "Hello, I would like to book a room. Please share availability and pricing.",
@@ -14,17 +11,12 @@ export default function WhatsAppFloat() {
     )
   );
 
-  /**
-   * TRACK + ACTION
-   */
+  /* =========================================================
+     WHATSAPP CLICK (PURE EVENT EMISSION)
+     ========================================================= */
+
   const handleClick = () => {
-    track(
-      "whatsapp_click",
-      {
-        action: "float_click",
-      },
-      "float_button"
-    );
+    track("whatsapp_click", {}, "float_button");
 
     window.open(whatsappLink, "_blank", "noopener,noreferrer");
   };
