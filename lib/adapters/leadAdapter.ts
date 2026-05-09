@@ -1,18 +1,15 @@
+
 import type { EventAdapter } from "@/lib/core/router";
 import type { StoredEvent } from "@/lib/core/types";
 
-import { isIntentEventType } from "@/lib/core/funnelAccessor";
-
 /* =============================================================
-   INTENT CHECK
+   LEAD ADAPTER (PASSIVE TRANSPORT LAYER)
    ============================================================= */
 
-function isIntentEvent(event: StoredEvent): boolean {
-  return isIntentEventType(event.type);
-}
+const sentLeadEvents = new Set<string>();
 
 /* =============================================================
-   FETCH WITH TIMEOUT (ABORT SAFE)
+   FETCH WITH TIMEOUT
    ============================================================= */
 
 function fetchWithTimeout(
@@ -22,16 +19,12 @@ function fetchWithTimeout(
 ): Promise<Response> {
   const controller = new AbortController();
 
-  const timer = setTimeout(() => {
-    controller.abort();
-  }, timeout);
+  const timer = setTimeout(() => controller.abort(), timeout);
 
   return fetch(url, {
     ...options,
     signal: controller.signal,
-  }).finally(() => {
-    clearTimeout(timer);
-  });
+  }).finally(() => clearTimeout(timer));
 }
 
 /* =============================================================
@@ -39,16 +32,11 @@ function fetchWithTimeout(
    ============================================================= */
 
 function classifyError(error: unknown) {
-  if (
-    error instanceof DOMException &&
-    error.name === "AbortError"
-  ) {
+  if (error instanceof DOMException && error.name === "AbortError") {
     return "timeout";
   }
 
-  if (error instanceof Error) {
-    return "network_error";
-  }
+  if (error instanceof Error) return "network_error";
 
   return "unknown_error";
 }
@@ -59,19 +47,10 @@ function classifyError(error: unknown) {
 
 function classifyResponse(status: number): string {
   if (status >= 500) return "server_error";
-
   if (status === 429) return "rate_limited";
-
   if (status >= 400) return "client_error";
-
   return "unknown";
 }
-
-/* =============================================================
-   DEDUPE CACHE
-   ============================================================= */
-
-const sentLeadEvents = new Set<string>();
 
 /* =============================================================
    ADAPTER
@@ -83,86 +62,49 @@ export const LeadAdapter: EventAdapter = {
   async handle(event: StoredEvent) {
     if (typeof window === "undefined") return;
 
-    if (!isIntentEvent(event)) return;
+    /**
+     * NOTE:
+     * No business logic filtering here.
+     * Core decides what reaches this adapter.
+     */
 
-    /* =========================================================
-       DEDUPE PROTECTION
-       ========================================================= */
-
-    if (sentLeadEvents.has(event.signature)) {
-      return;
-    }
-
+    if (sentLeadEvents.has(event.signature)) return;
     sentLeadEvents.add(event.signature);
 
     try {
-      const payload =
-        typeof event.payload === "object" &&
-        event.payload !== null
-          ? event.payload
-          : {};
+      const response = await fetchWithTimeout("/api/leads", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
 
-      const response = await fetchWithTimeout(
-        "/api/leads",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            event_id: event.id,
-
-            type: event.type,
-            source: event.source,
-
-            timestamp: event.timestamp,
-
-            session_id: event.session_id,
-
-            url: event.url,
-
-            payload: {
-              label:
-                typeof payload.label === "string"
-                  ? payload.label
-                  : undefined,
-
-              value:
-                typeof payload.value === "number"
-                  ? payload.value
-                  : undefined,
-            },
-          }),
-        }
-      );
+        body: JSON.stringify({
+          event_id: event.id,
+          type: event.type,
+          source: event.source,
+          timestamp: event.timestamp,
+          session_id: event.session_id,
+          url: event.url,
+          payload: event.payload,
+        }),
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
 
         console.error("[LeadAdapter] API rejected lead", {
           category: classifyResponse(response.status),
-
           status: response.status,
-
           error: errorText,
-
           event_id: event.id,
         });
-
-        return;
       }
     } catch (err) {
       console.error("[LeadAdapter] failure", {
         type: classifyError(err),
-
         error: err,
-
         event_id: event.id,
       });
-
-      return;
     }
   },
 };
