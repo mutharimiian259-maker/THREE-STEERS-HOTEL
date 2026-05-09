@@ -1,12 +1,5 @@
-
 import type { EventAdapter } from "@/lib/core/router";
 import type { StoredEvent } from "@/lib/core/types";
-
-/* =============================================================
-   LEAD ADAPTER (PASSIVE TRANSPORT LAYER)
-   ============================================================= */
-
-const sentLeadEvents = new Set<string>();
 
 /* =============================================================
    FETCH WITH TIMEOUT
@@ -53,7 +46,7 @@ function classifyResponse(status: number): string {
 }
 
 /* =============================================================
-   ADAPTER
+   ADAPTER (PURE TRANSPORT LAYER)
    ============================================================= */
 
 export const LeadAdapter: EventAdapter = {
@@ -61,15 +54,6 @@ export const LeadAdapter: EventAdapter = {
 
   async handle(event: StoredEvent) {
     if (typeof window === "undefined") return;
-
-    /**
-     * NOTE:
-     * No business logic filtering here.
-     * Core decides what reaches this adapter.
-     */
-
-    if (sentLeadEvents.has(event.signature)) return;
-    sentLeadEvents.add(event.signature);
 
     try {
       const response = await fetchWithTimeout("/api/leads", {
