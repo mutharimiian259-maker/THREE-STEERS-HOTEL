@@ -2,30 +2,52 @@ import { normalizePath } from "./normalizePath";
 import { routes } from "@/lib/routes";
 
 /* =============================================================
-   ROUTE VALIDATION (DEV TOOL ONLY)
+   ROUTE VALIDATION (STRUCTURED + CI SAFE)
    ============================================================= */
 
-export function validateRoutes(): void {
-  if (process.env.NODE_ENV !== "development") return;
+export type RouteValidationReport = {
+  duplicates: Array<{
+    path: string;
+    normalized: string;
+    first: unknown;
+    duplicate: unknown;
+  }>;
+  invalid: unknown[];
+};
 
+/* =============================================================
+   ROUTE VALIDATION
+   ============================================================= */
+
+export function validateRoutes(): RouteValidationReport {
   const seen = new Map<string, unknown>();
+  const duplicates: RouteValidationReport["duplicates"] = [];
+  const invalid: unknown[] = [];
 
   for (const route of routes) {
-    if (!route || typeof route.path !== "string") {
-      console.error("[ROUTE INVALID]", route);
+    if (!route || typeof (route as any).path !== "string") {
+      invalid.push(route);
       continue;
     }
 
-    const key = normalizePath(route.path);
+    const normalized = normalizePath((route as any).path);
 
-    if (seen.has(key)) {
-      console.warn("[ROUTE DUPLICATE]", {
-        normalized_path: key,
-        first: seen.get(key),
+    const existing = seen.get(normalized);
+
+    if (existing) {
+      duplicates.push({
+        path: (route as any).path,
+        normalized,
+        first: existing,
         duplicate: route,
       });
     } else {
-      seen.set(key, route);
+      seen.set(normalized, route);
     }
   }
+
+  return {
+    duplicates,
+    invalid,
+  };
 }
