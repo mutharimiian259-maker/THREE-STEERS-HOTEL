@@ -1,11 +1,6 @@
 import { HOTEL } from "@/lib/config";
 
-type SeoIntent =
-  | "home"
-  | "room"
-  | "blog"
-  | "conference"
-  | "dining";
+type SeoIntent = "home" | "room" | "blog" | "conference" | "dining";
 
 type SeoProps = {
   title?: string;
@@ -16,6 +11,10 @@ type SeoProps = {
   keywords?: string[];
 };
 
+/* =============================================================
+   URL UTIL
+   ============================================================= */
+
 function joinUrl(base: string, path: string = ""): string {
   const cleanBase = base.replace(/\/$/, "");
   const cleanPath = path
@@ -23,40 +22,45 @@ function joinUrl(base: string, path: string = ""): string {
       ? path
       : `/${path}`
     : "";
+
   return `${cleanBase}${cleanPath}`;
 }
 
-/**
- * FIX: Keep SEO intent separate from funnel logic
- * (prevents semantic coupling across systems)
- */
-function getIntentKeywords(intent?: SeoIntent): string[] {
-  const map: Record<SeoIntent, string[]> = {
-    home: [],
-    room: [
-      "hotel rooms in Meru",
-      "luxury accommodation Kenya",
-      "book hotel room Meru",
-    ],
-    conference: [
-      "conference venues Meru",
-      "meeting rooms Kenya hotel",
-      "corporate events Meru",
-    ],
-    dining: [
-      "restaurants in Meru hotel",
-      "fine dining Meru Kenya",
-      "hotel food Meru",
-    ],
-    blog: [
-      "travel Meru Kenya",
-      "hotels near Mt Kenya",
-      "Meru tourism guide",
-    ],
-  };
+/* =============================================================
+   INTENT KEYWORDS (SEO CONTEXT ONLY)
+   ============================================================= */
 
-  return map[intent || "home"];
+const INTENT_KEYWORDS: Record<SeoIntent, string[]> = {
+  home: [],
+  room: [
+    "hotel rooms in Meru",
+    "luxury accommodation Kenya",
+    "book hotel room Meru",
+  ],
+  conference: [
+    "conference venues Meru",
+    "meeting rooms Kenya hotel",
+    "corporate events Meru",
+  ],
+  dining: [
+    "restaurants in Meru hotel",
+    "fine dining Meru Kenya",
+    "hotel food Meru",
+  ],
+  blog: [
+    "travel Meru Kenya",
+    "hotels near Mt Kenya",
+    "Meru tourism guide",
+  ],
+};
+
+function getIntentKeywords(intent: SeoIntent = "home"): string[] {
+  return INTENT_KEYWORDS[intent] ?? [];
 }
+
+/* =============================================================
+   SAFE HELPERS
+   ============================================================= */
 
 function dedupe(arr: string[]) {
   return Array.from(new Set(arr.filter(Boolean)));
@@ -65,11 +69,8 @@ function dedupe(arr: string[]) {
 function validateImage(image?: string): string {
   const fallback = "/images/hotel/og/default.jpg";
 
-  if (typeof image !== "string" || !image.trim()) {
-    return fallback;
-  }
+  if (!image || typeof image !== "string") return fallback;
 
-  // FIX: basic safety guard
   const isValid =
     image.startsWith("/") ||
     image.startsWith("http://") ||
@@ -77,6 +78,10 @@ function validateImage(image?: string): string {
 
   return isValid ? image : fallback;
 }
+
+/* =============================================================
+   SEO GENERATOR
+   ============================================================= */
 
 export function generateSEO({
   title,
@@ -86,15 +91,16 @@ export function generateSEO({
   intent = "home",
   keywords = [],
 }: SeoProps = {}) {
+  const baseUrl = HOTEL.domain.primary.replace(/\/$/, "");
+
+  const url = joinUrl(baseUrl, path);
+
   const fullTitle = title
     ? `${title} | ${HOTEL.identity.name}`
     : HOTEL.seo.defaultTitle;
 
   const fullDescription =
     description || HOTEL.seo.defaultDescription;
-
-  const baseUrl = HOTEL.domain.primary;
-  const url = joinUrl(baseUrl, path);
 
   const safeImage = validateImage(image);
 
@@ -103,7 +109,7 @@ export function generateSEO({
     : joinUrl(baseUrl, safeImage);
 
   const finalKeywords = dedupe([
-    ...HOTEL.seo.keywords,
+    ...(HOTEL.seo.keywords || []),
     ...getIntentKeywords(intent),
     ...keywords,
   ]);
