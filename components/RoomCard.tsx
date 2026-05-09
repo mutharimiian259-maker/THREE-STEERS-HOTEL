@@ -4,7 +4,8 @@ import Image from "next/image";
 import { HOTEL } from "@/lib/config";
 import { track } from "@/lib/core/analytics";
 import { IMAGES } from "@/lib/images";
-import { useMemo, useCallback, useRef } from "react";
+import { useCallback, useRef } from "react";
+import { buildWhatsAppLink, formatWhatsAppMessage } from "@/lib/whatsapp";
 
 type Room = {
   id: string | number;
@@ -20,73 +21,64 @@ type Room = {
 export default function RoomCard({ room }: { room: Room }) {
   if (!room) return null;
 
-  const whatsappNumber = HOTEL.contact.phone.whatsapp.replace(/[^\d]/g, "");
+  const hasTrackedImpression = useRef(false);
 
-  const message = useMemo(() => {
-    return encodeURIComponent(
-      `Hello, I would like to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability and pricing.`
-    );
-  }, [room.name]);
+  /* =============================================================
+     MESSAGE (DOMAIN OWNED)
+     ============================================================= */
 
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+  const message = formatWhatsAppMessage(
+    `Hello, I would like to book the ${room.name} at ${HOTEL.identity.name}. Please confirm availability and pricing.`,
+    {
+      source: "room_card",
+      room: room.name,
+    }
+  );
+
+  const whatsappUrl = buildWhatsAppLink(message);
 
   const price =
     typeof room.price === "number" && room.currency
       ? `${room.currency} ${room.price.toLocaleString()}`
       : "Price on request";
 
-  const roomImage = getRoomImage(room.slug);
-
   const urgencyText = room.price
     ? "High demand — book early to secure this room"
     : "Limited availability";
 
-  /**
-   * FIX: prevent repeated hover spam tracking
-   */
-  const hasTrackedImpression = useRef(false);
+  /* =============================================================
+     EVENTS (PURE TRIGGERS ONLY)
+     ============================================================= */
 
   const handleRoomImpression = useCallback(() => {
     if (hasTrackedImpression.current) return;
 
     hasTrackedImpression.current = true;
 
-    track(
-      "room_view",
-      {
-        room_id: room.id,
-        room_name: room.name,
-        source: "room_card",
-        context: "impression",
-      },
-      "room_card"
-    );
+    track("room_view", {
+      room_id: room.id,
+      room_name: room.name,
+    });
   }, [room.id, room.name]);
 
-  /**
-   * FIX: direct navigation (no timeout hack)
-   */
   const handleWhatsAppClick = useCallback(() => {
-    track(
-      "whatsapp_click",
-      {
-        room_id: room.id,
-        room_name: room.name,
-        source: "room_card",
-        context: "intent",
-      },
-      "room_card"
-    );
+    track("whatsapp_click", {
+      room_id: room.id,
+      room_name: room.name,
+    });
 
     window.open(whatsappUrl, "_blank", "noopener,noreferrer");
   }, [room.id, room.name, whatsappUrl]);
+
+  /* =============================================================
+     UI
+     ============================================================= */
 
   return (
     <div
       className="card relative overflow-hidden bg-white"
       onMouseEnter={handleRoomImpression}
     >
-
       {room.tag && (
         <span className="absolute top-3 right-3 bg-yellow-500 text-black text-xs px-2 py-1 rounded z-10">
           {room.tag}
@@ -95,7 +87,7 @@ export default function RoomCard({ room }: { room: Room }) {
 
       <div className="relative w-full h-48">
         <Image
-          src={roomImage}
+          src={getRoomImage(room.slug)}
           alt={`${room.name} at ${HOTEL.identity.name}`}
           fill
           className="object-cover"
@@ -103,22 +95,15 @@ export default function RoomCard({ room }: { room: Room }) {
       </div>
 
       <div className="p-4">
+        <h3 className="text-lg font-bold text-gray-900">{room.name}</h3>
 
-        <h3 className="text-lg font-bold text-gray-900">
-          {room.name}
-        </h3>
-
-        <p className="text-sm text-gray-500 mt-1">
-          {room.desc}
-        </p>
+        <p className="text-sm text-gray-500 mt-1">{room.desc}</p>
 
         <p className="mt-2 font-bold text-yellow-600 text-lg">
           {price} / night
         </p>
 
-        <p className="text-xs text-red-500 mt-1">
-          {urgencyText}
-        </p>
+        <p className="text-xs text-red-500 mt-1">{urgencyText}</p>
 
         <button
           onClick={handleWhatsAppClick}
@@ -126,15 +111,15 @@ export default function RoomCard({ room }: { room: Room }) {
         >
           Book This Room via WhatsApp
         </button>
-
       </div>
     </div>
   );
 }
 
-/**
- * PURE mapping function (unchanged)
- */
+/* =============================================================
+   IMAGE MAPPING (UNCHANGED PURE FUNCTION)
+   ============================================================= */
+
 function getRoomImage(slug?: string) {
   switch (slug) {
     case "deluxe-room":
