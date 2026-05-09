@@ -1,8 +1,9 @@
+
 import type { EventAdapter } from "@/lib/core/router";
 import type { StoredEvent } from "@/lib/core/types";
 
 /* =============================================================
-   GA EVENT MAPPING
+   GA EVENT MAPPING (MUST MOVE TO CORE IN FUTURE IF EXPANDS)
    ============================================================= */
 
 function mapGAEventName(type: StoredEvent["type"]): string {
@@ -28,7 +29,7 @@ function mapGAEventName(type: StoredEvent["type"]): string {
 }
 
 /* =============================================================
-   GTAG TYPE
+   SAFE GTAG ACCESS
    ============================================================= */
 
 type GtagFunction = (
@@ -36,10 +37,6 @@ type GtagFunction = (
   eventName: string,
   params?: Record<string, unknown>
 ) => void;
-
-/* =============================================================
-   SAFE GTAG ACCESS
-   ============================================================= */
 
 function getGtag(): GtagFunction | null {
   if (typeof window === "undefined") return null;
@@ -52,13 +49,7 @@ function getGtag(): GtagFunction | null {
 }
 
 /* =============================================================
-   DEDUPE CACHE
-   ============================================================= */
-
-const sentEvents = new Set<string>();
-
-/* =============================================================
-   ADAPTER
+   ADAPTER (PURE TRANSPORT LAYER)
    ============================================================= */
 
 export const GAAdapter: EventAdapter = {
@@ -66,16 +57,6 @@ export const GAAdapter: EventAdapter = {
 
   handle(event: StoredEvent) {
     try {
-      /* =========================================================
-         DEDUPE PROTECTION
-         ========================================================= */
-
-      if (sentEvents.has(event.signature)) {
-        return;
-      }
-
-      sentEvents.add(event.signature);
-
       const gtag = getGtag();
 
       if (!gtag) {
@@ -83,35 +64,22 @@ export const GAAdapter: EventAdapter = {
           event_id: event.id,
           type: event.type,
         });
-
         return;
       }
 
-      const payload =
-        typeof event.payload === "object" &&
-        event.payload !== null
-          ? event.payload
-          : {};
-
-      const label =
-        typeof payload.label === "string"
-          ? payload.label
-          : event.type;
-
-      const value =
-        typeof payload.value === "number"
-          ? payload.value
-          : undefined;
-
       gtag("event", mapGAEventName(event.type), {
         event_category: event.source,
+        event_label:
+          typeof event.payload?.label === "string"
+            ? event.payload.label
+            : event.type,
 
-        event_label: label,
-
-        ...(value !== undefined ? { value } : {}),
+        value:
+          typeof event.payload?.value === "number"
+            ? event.payload.value
+            : undefined,
 
         page_location: event.url,
-
         session_id: event.session_id,
       });
     } catch (err) {
