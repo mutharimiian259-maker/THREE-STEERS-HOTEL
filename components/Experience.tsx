@@ -26,17 +26,26 @@ const experiences = [
 export default function Experience() {
 
   const handleExperienceClick = (experience: string) => {
-    track("room_view", {
-      experience,
-      source: "experience_section",
-    });
+    track(
+      "navigation",
+      {
+        action: "experience_view",
+        experience,
+        source: "experience_section",
+      },
+      "experience_section"
+    );
   };
 
   const handleCTA = () => {
-    track("whatsapp_click", {
-      source: "experience_cta",
-      context: "intent",
-    });
+    track(
+      "whatsapp_click",
+      {
+        action: "experience_cta",
+        source: "experience_section",
+      },
+      "experience_section"
+    );
   };
 
   return (
