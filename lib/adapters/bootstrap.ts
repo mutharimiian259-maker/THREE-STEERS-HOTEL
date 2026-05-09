@@ -3,6 +3,7 @@ import {
   resetAdapters,
   setRouterDebug,
   getAdapters,
+  initializeRouter,
 } from "@/lib/core/router";
 
 import type { EventAdapter } from "@/lib/core/router";
@@ -16,7 +17,7 @@ import { LeadAdapter } from "@/lib/adapters/leadAdapter";
    INIT STATE (RACE SAFE)
    ============================================================= */
 
-let initPromise: Promise<void> | null = null;
+let initialized = false;
 
 /* =============================================================
    VALIDATION
@@ -28,7 +29,9 @@ function assertAdapter(adapter: EventAdapter): void {
   }
 
   if (typeof adapter.handle !== "function") {
-    throw new Error(`[analytics] Invalid adapter: ${adapter.name} missing handle()`);
+    throw new Error(
+      `[analytics] Invalid adapter: ${adapter.name} missing handle()`
+    );
   }
 }
 
@@ -37,42 +40,55 @@ function assertAdapter(adapter: EventAdapter): void {
    ============================================================= */
 
 export function initAnalytics(): void {
-  if (initPromise) return;
+  if (initialized) return;
 
-  initPromise = (async () => {
-    if (process.env.NODE_ENV === "development") {
-      setRouterDebug(true);
-    }
+  initialized = true;
+
+  if (process.env.NODE_ENV === "development") {
+    setRouterDebug(true);
+
+    /* =========================================================
+       SAFE DEV RESET ONLY
+       ========================================================= */
 
     resetAdapters();
+  }
 
-    const adapters: EventAdapter[] = [
-      GAAdapter,
-      LocalStorageAdapter,
-      FunnelAdapter,
-      LeadAdapter,
-    ];
+  const adapters: EventAdapter[] = [
+    GAAdapter,
+    LocalStorageAdapter,
+    FunnelAdapter,
+    LeadAdapter,
+  ];
 
-    for (const adapter of adapters) {
-      try {
-        assertAdapter(adapter);
-        registerAdapter(adapter);
-      } catch (error) {
-        console.error(
-          `[analytics] failed to register adapter: ${adapter.name}`,
-          error
-        );
-      }
+  for (const adapter of adapters) {
+    try {
+      assertAdapter(adapter);
+      registerAdapter(adapter);
+    } catch (error) {
+      console.error(
+        `[analytics] failed to register adapter: ${adapter.name}`,
+        error
+      );
     }
+  }
 
-    if (process.env.NODE_ENV === "development") {
-      console.log("[analytics] initialized adapters:", getAdapters());
-    }
+  /* =============================================================
+     🔒 LOCK ROUTER AFTER REGISTRATION
+     ============================================================= */
 
-    if (getAdapters().length === 0) {
-      console.warn("[analytics] no adapters registered after init");
-    }
-  })();
+  initializeRouter();
+
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      "[analytics] initialized adapters:",
+      getAdapters()
+    );
+  }
+
+  if (getAdapters().length === 0) {
+    console.warn("[analytics] no adapters registered after init");
+  }
 }
 
 /* =============================================================
@@ -81,10 +97,13 @@ export function initAnalytics(): void {
 
 export function resetAnalytics(): void {
   if (process.env.NODE_ENV !== "development") {
-    console.warn("[analytics] resetAnalytics blocked in production");
+    console.warn(
+      "[analytics] resetAnalytics blocked in production"
+    );
     return;
   }
 
-  initPromise = null;
+  initialized = false;
+
   resetAdapters();
 }
