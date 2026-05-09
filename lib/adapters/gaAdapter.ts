@@ -1,12 +1,11 @@
-
 import type { EventAdapter } from "@/lib/core/router";
-import type { StoredEvent } from "@/lib/core/types";
+import type { StoredEvent, EventType } from "@/lib/core/types";
 
 /* =============================================================
-   GA EVENT MAPPING (MUST MOVE TO CORE IN FUTURE IF EXPANDS)
+   GA EVENT MAPPING (SHOULD EVENTUALLY MOVE TO CORE DOMAIN MAP)
    ============================================================= */
 
-function mapGAEventName(type: StoredEvent["type"]): string {
+function mapGAEventName(type: EventType): string {
   switch (type) {
     case "page_view":
       return "page_view";
@@ -24,7 +23,7 @@ function mapGAEventName(type: StoredEvent["type"]): string {
       return "begin_checkout";
 
     default:
-      return type;
+      return "unknown_event";
   }
 }
 
@@ -49,6 +48,45 @@ function getGtag(): GtagFunction | null {
 }
 
 /* =============================================================
+   SAFE PAYLOAD EXTRACTOR
+   ============================================================= */
+
+function getPayloadValue(
+  payload: Record<string, unknown> | undefined,
+  key: string
+): unknown {
+  if (!payload || typeof payload !== "object") return undefined;
+  return payload[key];
+}
+
+/* =============================================================
+   CLEAN PARAM BUILDER
+   ============================================================= */
+
+function buildGAParams(event: StoredEvent) {
+  const params: Record<string, unknown> = {
+    event_category: event.source,
+    page_location: event.url,
+    session_id: event.session_id,
+  };
+
+  const label = getPayloadValue(event.payload, "label");
+  const value = getPayloadValue(event.payload, "value");
+
+  if (typeof label === "string") {
+    params.event_label = label;
+  } else {
+    params.event_label = event.type;
+  }
+
+  if (typeof value === "number") {
+    params.value = value;
+  }
+
+  return params;
+}
+
+/* =============================================================
    ADAPTER (PURE TRANSPORT LAYER)
    ============================================================= */
 
@@ -56,32 +94,18 @@ export const GAAdapter: EventAdapter = {
   name: "ga",
 
   handle(event: StoredEvent) {
-    try {
-      const gtag = getGtag();
+    const gtag = getGtag();
 
-      if (!gtag) {
-        console.warn("[GAAdapter] gtag not available", {
-          event_id: event.id,
-          type: event.type,
-        });
-        return;
-      }
-
-      gtag("event", mapGAEventName(event.type), {
-        event_category: event.source,
-        event_label:
-          typeof event.payload?.label === "string"
-            ? event.payload.label
-            : event.type,
-
-        value:
-          typeof event.payload?.value === "number"
-            ? event.payload.value
-            : undefined,
-
-        page_location: event.url,
-        session_id: event.session_id,
+    if (!gtag) {
+      console.warn("[GAAdapter] gtag not available", {
+        event_id: event.id,
+        type: event.type,
       });
+      return;
+    }
+
+    try {
+      gtag("event", mapGAEventName(event.type), buildGAParams(event));
     } catch (err) {
       console.error("[GAAdapter] failed", {
         error: err,
