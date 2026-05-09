@@ -3,14 +3,20 @@
 import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 import Image from "next/image";
-import { trackEvent } from "@/lib/analytics/trackEvent";
-import { setFunnelStep } from "@/lib/analytics/funnel";
+import { track } from "@/lib/core/analytics";
 
 export default function Dining() {
+  const whatsappNumber = HOTEL.contact.phone.whatsapp;
+
+  const whatsappMessage = encodeURIComponent(
+    `Hello, I would like to reserve a dining table at ${HOTEL.identity.name} in ${HOTEL.location.city}`
+  );
+
+  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+
   return (
     <section className="p-6">
 
-      {/* TITLE */}
       <h2 className="text-xl font-bold text-yellow-500">
         Restaurants & Dining at {HOTEL.identity.name}, {HOTEL.location.city}
       </h2>
@@ -20,17 +26,20 @@ export default function Dining() {
         dishes, premium service, and relaxing dining environments in {HOTEL.location.full}.
       </p>
 
-      {/* GRID */}
       <div className="grid md:grid-cols-3 gap-4 mt-6">
 
         {/* Aberdares Restaurant */}
         <div
           className="relative h-56 rounded-lg overflow-hidden cursor-pointer"
           onClick={() =>
-            trackEvent("blog_click", {
-              source: "dining",
-              restaurant: "Aberdares Restaurant",
-            })
+            track(
+              "navigation",
+              {
+                section: "dining",
+                target: "Aberdares Restaurant",
+              },
+              "page"
+            )
           }
         >
           <Image
@@ -39,7 +48,6 @@ export default function Dining() {
             fill
             className="object-cover"
           />
-
           <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-3">
             <h3 className="font-bold text-yellow-400">
               Aberdares Restaurant
@@ -54,10 +62,14 @@ export default function Dining() {
         <div
           className="relative h-56 rounded-lg overflow-hidden cursor-pointer"
           onClick={() =>
-            trackEvent("blog_click", {
-              source: "dining",
-              restaurant: "Nyambene Restaurant",
-            })
+            track(
+              "navigation",
+              {
+                section: "dining",
+                target: "Nyambene Restaurant",
+              },
+              "page"
+            )
           }
         >
           <Image
@@ -66,7 +78,6 @@ export default function Dining() {
             fill
             className="object-cover"
           />
-
           <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-3">
             <h3 className="font-bold text-yellow-400">
               Nyambene Restaurant
@@ -81,10 +92,14 @@ export default function Dining() {
         <div
           className="relative h-56 rounded-lg overflow-hidden cursor-pointer"
           onClick={() =>
-            trackEvent("blog_click", {
-              source: "dining",
-              restaurant: "Master’s Lounge",
-            })
+            track(
+              "navigation",
+              {
+                section: "dining",
+                target: "Master’s Lounge",
+              },
+              "page"
+            )
           }
         >
           <Image
@@ -93,7 +108,6 @@ export default function Dining() {
             fill
             className="object-cover"
           />
-
           <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-3">
             <h3 className="font-bold text-yellow-400">
               Master’s Lounge
@@ -110,20 +124,17 @@ export default function Dining() {
       <div className="mt-6 text-center">
 
         <a
-          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
-            "Hello, I would like to reserve a dining table at " +
-              HOTEL.identity.name +
-              " in " +
-              HOTEL.location.city
-          )}`}
+          href={whatsappLink}
           className="px-6 py-3 bg-green-600 text-white rounded-lg inline-block"
-          onClick={() => {
-            trackEvent("whatsapp_click", {
-              source: "dining_cta",
-            });
-
-            setFunnelStep("INTENT");
-          }}
+          onClick={() =>
+            track(
+              "whatsapp_click",
+              {
+                action: "dining_reservation",
+              },
+              "page"
+            )
+          }
         >
           Reserve a Table
         </a>
