@@ -19,10 +19,15 @@ export default function ContactInfo() {
         href={`mailto:${HOTEL.contact.email}`}
         className="block mt-2 text-gray-400 hover:text-white"
         onClick={() => {
-          track("whatsapp_click", {
-            source: "contact_section",
-            action: "email_click",
-          });
+          track(
+            "navigation",
+            {
+              action: "email_click",
+              source: "contact_section",
+              destination: "email",
+            },
+            "contact_section"
+          );
         }}
       >
         {HOTEL.contact.email}
@@ -41,10 +46,14 @@ export default function ContactInfo() {
           href={`tel:${phone}`}
           className="px-6 py-3 bg-yellow-500 text-black rounded-lg"
           onClick={() => {
-            track("call_click", {
-              source: "contact_section",
-              context: "intent",
-            });
+            track(
+              "call_click",
+              {
+                action: "contact_call",
+                source: "contact_section",
+              },
+              "contact_section"
+            );
           }}
         >
           Call Now
@@ -59,10 +68,14 @@ export default function ContactInfo() {
           )}`}
           className="px-6 py-3 bg-green-600 text-white rounded-lg"
           onClick={() => {
-            track("whatsapp_click", {
-              source: "contact_section",
-              context: "intent",
-            });
+            track(
+              "whatsapp_click",
+              {
+                action: "contact_whatsapp",
+                source: "contact_section",
+              },
+              "contact_section"
+            );
           }}
         >
           WhatsApp Booking
