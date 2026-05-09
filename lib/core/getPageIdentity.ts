@@ -1,8 +1,6 @@
 import { resolveRoute } from "./pageResolver";
 import { normalizePath } from "./normalizePath";
 
-import { getFunnelStage } from "@/lib/core/funnelAccessor";
-
 import type { PageIdentity } from "./pageIdentity";
 import type { EventType } from "@/lib/core/types";
 
@@ -10,29 +8,24 @@ import type { EventType } from "@/lib/core/types";
    PAGE IDENTITY DERIVATION LAYER (CORE SAFE)
    ============================================================= */
 
-export function getPageIdentity(
-  path: string,
-  lastEventType?: EventType
-): PageIdentity {
+export function getPageIdentity(path: string): PageIdentity {
   /* =========================================================
-     NORMALIZATION (SINGLE SOURCE OF TRUTH)
+     NORMALIZATION
      ========================================================= */
 
   const normalizedPath = normalizePath(path);
 
   /* =========================================================
-     ROUTE RESOLUTION (CORE ONLY)
+     ROUTE RESOLUTION
      ========================================================= */
 
   const route = resolveRoute(normalizedPath);
 
   /* =========================================================
-     FUNNEL DERIVATION (SAFE FALLBACK)
+     SAFE FUNNEL DERIVATION (OPTIONAL CONTEXT ONLY)
      ========================================================= */
 
-  const funnelStage = lastEventType
-    ? getFunnelStage(lastEventType)
-    : "VISIT";
+  const funnelStage: "VISIT" | undefined = "VISIT";
 
   /* =========================================================
      FINAL IDENTITY OBJECT
@@ -46,8 +39,8 @@ export function getPageIdentity(
 
     funnelStage,
 
-    keywords: [], // intentionally decoupled from SEO layer
+    keywords: undefined,
 
-    isNavigation: Boolean(route && (route.kind === "navigation" || route.type === "navigation")),
+    isNavigation: Boolean(route?.kind === "navigation"),
   });
 }
