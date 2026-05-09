@@ -1,4 +1,3 @@
-
 import type { Route } from "@/lib/routes";
 import type { FunnelStage } from "@/lib/core/types";
 
@@ -23,19 +22,11 @@ export type PageIdentity = Readonly<{
      ROUTE RESOLUTION
      ========================================================= */
 
-  route: Route | null;
+  route?: Route;
 
   /* =========================================================
      CORE DERIVED CONTEXT
      ========================================================= */
 
-  funnelStage: FunnelStage | null;
-
-  keywords: readonly string[];
-
-  /* =========================================================
-     CLASSIFICATION FLAGS
-     ========================================================= */
-
-  isNavigation: boolean;
+  funnelStage?: FunnelStage;
 }>;
