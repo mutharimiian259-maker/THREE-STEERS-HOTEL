@@ -1,8 +1,18 @@
 import type { EventAdapter } from "@/lib/core/router";
-import type { StoredEvent } from "@/lib/core/types";
-import { isStoredEvent } from "@/lib/core/types";
 
-const KEY = "hotel_events";
+import type { StoredEvent } from "@/lib/core/types";
+
+import {
+  isStoredEvent,
+  STORAGE_KEY_EVENTS,
+  STORAGE_MAX_EVENTS,
+} from "@/lib/core/types";
+
+/* =============================================================
+   STORAGE KEY
+   ============================================================= */
+
+const KEY = STORAGE_KEY_EVENTS;
 
 /* =============================================================
    SAFE PARSER
@@ -13,6 +23,7 @@ function safeParse(value: string | null): unknown[] {
 
   try {
     const parsed = JSON.parse(value);
+
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
@@ -27,7 +38,11 @@ function isDuplicate(
   existing: StoredEvent[],
   event: StoredEvent
 ): boolean {
-  return existing.some((e) => e.id === event.id);
+  return existing.some(
+    (e) =>
+      e.id === event.id ||
+      e.signature === event.signature
+  );
 }
 
 /* =============================================================
@@ -45,22 +60,44 @@ export const LocalStorageAdapter: EventAdapter = {
 
       const parsed = safeParse(existingRaw);
 
-      // validate stored events strictly
-      const existing: StoredEvent[] = parsed.filter(isStoredEvent);
+      /* =========================================================
+         STRICT VALIDATION
+         ========================================================= */
 
-      // prevent duplicate writes (critical for analytics accuracy)
-      if (isDuplicate(existing, event)) return;
+      const existing: StoredEvent[] =
+        parsed.filter(isStoredEvent);
 
-      const updated = [...existing, event].slice(-500);
+      /* =========================================================
+         DEDUPE PROTECTION
+         ========================================================= */
 
-      localStorage.setItem(KEY, JSON.stringify(updated));
+      if (isDuplicate(existing, event)) {
+        return;
+      }
+
+      /* =========================================================
+         BOUNDED STORAGE
+         ========================================================= */
+
+      const updated = [
+        ...existing,
+        event,
+      ].slice(-STORAGE_MAX_EVENTS);
+
+      localStorage.setItem(
+        KEY,
+        JSON.stringify(updated)
+      );
     } catch (err) {
       console.error("[LocalStorageAdapter] failed", {
         error: err,
+
         event_id: event.id,
       });
 
-      // optional: graceful degradation point (could trigger fallback later)
+      /* =========================================================
+         FUTURE FALLBACK POINT
+         ========================================================= */
     }
   },
 };
