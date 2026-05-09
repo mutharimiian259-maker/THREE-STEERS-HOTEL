@@ -1,9 +1,9 @@
-import { HOTEL, getPhoneByLabel } from "@/lib/config";
-import { track } from "@/lib/core/analytics";
+import { getPhoneByLabel } from "@/lib/config";
 
-/**
- * ORIGIN TYPES (SAFE ENUM ONLY)
- */
+/* =============================================================
+   TYPES (DOMAIN ONLY)
+   ============================================================= */
+
 type WhatsAppSource =
   | "navbar"
   | "footer"
@@ -17,66 +17,35 @@ type WhatsAppOptions = {
   room?: string;
 };
 
-/* ---------------------------------------
-   PHONE SANITIZER (PURE)
---------------------------------------- */
-
-function sanitizePhone(phone?: string): string {
-  if (!phone) return "";
-  return phone.replace(/[^\d]/g, "");
-}
-
-/* ---------------------------------------
-   MESSAGE FORMATTER (PURE DOMAIN)
---------------------------------------- */
+/* =============================================================
+   PURE MESSAGE TEMPLATE (NO UI / NO CONFIG COUPLING)
+   ============================================================= */
 
 export function formatWhatsAppMessage(
   message: string,
   options?: WhatsAppOptions
 ): string {
-  return [
-    `🏨 ${HOTEL.identity.name}`,
-    "",
+  const lines: string[] = [
     message,
-    "",
-    "---",
-    `Source: ${options?.source ?? "unknown"}`,
-    options?.room ? `Room: ${options.room}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n")
-    .trim();
+    options?.source ? `source=${options.source}` : "",
+    options?.room ? `room=${options.room}` : "",
+  ];
+
+  return lines.filter(Boolean).join("\n");
 }
 
-/* ---------------------------------------
-   LINK BUILDER (ADAPTER LAYER)
---------------------------------------- */
+/* =============================================================
+   LINK BUILDER (PURE FUNCTION)
+   ============================================================= */
 
 export function buildWhatsAppLink(message: string): string {
   const rawPhone = getPhoneByLabel("whatsapp");
-  const phone = sanitizePhone(rawPhone || undefined);
 
-  if (!phone) {
-    console.warn("[WHATSAPP] Missing phone number");
-    return "https://wa.me/";
+  if (!rawPhone) {
+    throw new Error("[WHATSAPP] Missing WhatsApp phone configuration");
   }
 
+  const phone = rawPhone.replace(/[^\d]/g, "");
+
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-}
-
-/* ---------------------------------------
-   ANALYTICS ONLY (NO STATE / NO STORAGE)
---------------------------------------- */
-
-export function trackWhatsAppClick(options?: WhatsAppOptions): void {
-  if (typeof window === "undefined") return;
-
-  track(
-    "whatsapp_click",
-    {
-      room: options?.room ?? null,
-      source: options?.source ?? "unknown",
-    },
-    options?.source ?? "unknown"
-  );
 }
