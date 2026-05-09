@@ -1,13 +1,14 @@
 import type { EventAdapter } from "@/lib/core/router";
 import type { StoredEvent } from "@/lib/core/types";
-import { INTENT_EVENT_TYPES } from "@/lib/core/types";
+
+import { isIntentEventType } from "@/lib/core/funnelAccessor";
 
 /* =============================================================
    INTENT CHECK
    ============================================================= */
 
 function isIntentEvent(event: StoredEvent): boolean {
-  return INTENT_EVENT_TYPES.has(event.type);
+  return isIntentEventType(event.type);
 }
 
 /* =============================================================
@@ -38,7 +39,10 @@ function fetchWithTimeout(
    ============================================================= */
 
 function classifyError(error: unknown) {
-  if (error instanceof DOMException && error.name === "AbortError") {
+  if (
+    error instanceof DOMException &&
+    error.name === "AbortError"
+  ) {
     return "timeout";
   }
 
@@ -48,6 +52,26 @@ function classifyError(error: unknown) {
 
   return "unknown_error";
 }
+
+/* =============================================================
+   RESPONSE CLASSIFIER
+   ============================================================= */
+
+function classifyResponse(status: number): string {
+  if (status >= 500) return "server_error";
+
+  if (status === 429) return "rate_limited";
+
+  if (status >= 400) return "client_error";
+
+  return "unknown";
+}
+
+/* =============================================================
+   DEDUPE CACHE
+   ============================================================= */
+
+const sentLeadEvents = new Set<string>();
 
 /* =============================================================
    ADAPTER
@@ -61,46 +85,80 @@ export const LeadAdapter: EventAdapter = {
 
     if (!isIntentEvent(event)) return;
 
+    /* =========================================================
+       DEDUPE PROTECTION
+       ========================================================= */
+
+    if (sentLeadEvents.has(event.signature)) {
+      return;
+    }
+
+    sentLeadEvents.add(event.signature);
+
     try {
-      const response = await fetchWithTimeout("/api/leads", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const payload =
+        typeof event.payload === "object" &&
+        event.payload !== null
+          ? event.payload
+          : {};
 
-        body: JSON.stringify({
-          event_id: event.id,
+      const response = await fetchWithTimeout(
+        "/api/leads",
+        {
+          method: "POST",
 
-          type: event.type,
-          source: event.source,
-          timestamp: event.timestamp,
-          session_id: event.session_id,
-          url: event.url,
-
-          payload: {
-            label: event.payload?.label,
-            value: event.payload?.value,
+          headers: {
+            "Content-Type": "application/json",
           },
-        }),
-      });
+
+          body: JSON.stringify({
+            event_id: event.id,
+
+            type: event.type,
+            source: event.source,
+
+            timestamp: event.timestamp,
+
+            session_id: event.session_id,
+
+            url: event.url,
+
+            payload: {
+              label:
+                typeof payload.label === "string"
+                  ? payload.label
+                  : undefined,
+
+              value:
+                typeof payload.value === "number"
+                  ? payload.value
+                  : undefined,
+            },
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
 
         console.error("[LeadAdapter] API rejected lead", {
+          category: classifyResponse(response.status),
+
           status: response.status,
+
           error: errorText,
+
           event_id: event.id,
         });
 
         return;
       }
-
-      return;
     } catch (err) {
       console.error("[LeadAdapter] failure", {
         type: classifyError(err),
+
         error: err,
+
         event_id: event.id,
       });
 
