@@ -1,8 +1,23 @@
-"use client";
+import {
+  createEvent,
+  isEventSource,
+  isEventType,
+} from "./types";
 
-import { createEvent, isEventSource, isEventType } from "./types";
-import type { EventPayload, EventSource, EventType, StoredEvent } from "./types";
+import type {
+  EventPayload,
+  EventSource,
+  EventType,
+  StoredEvent,
+} from "./types";
+
 import { dispatch } from "./router";
+
+export type TrackParams = Readonly<{
+  type: EventType;
+  source: EventSource;
+  payload?: EventPayload;
+}>;
 
 export type TrackResult = Readonly<{
   accepted: boolean;
@@ -11,30 +26,35 @@ export type TrackResult = Readonly<{
 }>;
 
 /* =============================================================
-   CORE TRACK (STRICT BRAIN ENTRY POINT)
+   CORE TRACK
+   STRICT SYSTEM ENTRY POINT
    ============================================================= */
 
-export function track(
-  type: EventType,
-  payload: EventPayload = {},
-  source: EventSource = "ui"
-): TrackResult {
+export async function track({
+  type,
+  source,
+  payload = {},
+}: TrackParams): Promise<TrackResult> {
   try {
     /* -----------------------------
-       STRICT VALIDATION (NO FALLBACKS)
+       STRICT TYPE VALIDATION
        ----------------------------- */
 
     if (!isEventType(type)) {
-      throw new Error(`[CORE] Invalid event type: ${String(type)}`);
+      throw new Error(
+        `[CORE] Invalid event type: ${String(type)}`
+      );
     }
 
     if (!isEventSource(source)) {
-      throw new Error(`[CORE] Invalid event source: ${String(source)}`);
+      throw new Error(
+        `[CORE] Invalid event source: ${String(source)}`
+      );
     }
 
     /* -----------------------------
-       PURE EVENT CREATION
-       (NO BROWSER COUPLING HERE)
+       EVENT CREATION
+       CORE OWNS INFRASTRUCTURE
        ----------------------------- */
 
     const event = createEvent({
@@ -44,13 +64,18 @@ export function track(
     });
 
     /* -----------------------------
-       DISPATCH ONLY (BRAIN OUTPUT)
+       DISPATCH
+       MUST COMPLETE BEFORE SUCCESS
        ----------------------------- */
 
-    dispatch(event);
+    const results = await dispatch(event);
+
+    const accepted = results.every(
+      (result) => result.accepted
+    );
 
     return {
-      accepted: true,
+      accepted,
       event,
     };
   } catch (error) {
