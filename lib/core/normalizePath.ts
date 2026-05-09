@@ -1,32 +1,37 @@
 export function normalizePath(path: string): string {
-  if (!path) return "/";
+  if (typeof path !== "string") return "/";
 
-  const cleaned = path.trim();
+  const trimmed = path.trim();
 
-  if (!cleaned) return "/";
-
-  /* =============================================================
-     REMOVE QUERY STRING + HASH
-     ============================================================= */
-
-  const [withoutQuery] = cleaned.split("?");
-  const [withoutHash] = withoutQuery.split("#");
+  if (!trimmed) return "/";
 
   /* =============================================================
-     NORMALIZE CASE (ROUTE STABILITY)
+     REMOVE HASH FIRST (FRAGMENT NEVER AFFECTS ROUTING)
      ============================================================= */
 
-  const lower = withoutHash.toLowerCase();
+  const noHash = trimmed.split("#")[0];
 
   /* =============================================================
-     REMOVE TRAILING SLASHES
+     REMOVE QUERY STRING
      ============================================================= */
 
-  const normalized = lower.replace(/\/+$/, "");
+  const noQuery = noHash.split("?")[0];
 
   /* =============================================================
-     FINAL ROOT SAFETY
+     COLLAPSE MULTIPLE SLASHES
      ============================================================= */
 
-  return normalized === "" ? "/" : normalized;
+  const collapsed = noQuery.replace(/\/+/g, "/");
+
+  /* =============================================================
+     REMOVE TRAILING SLASHES (EXCEPT ROOT)
+     ============================================================= */
+
+  const withoutTrailing = collapsed.replace(/\/+$/, "");
+
+  /* =============================================================
+     FINAL SAFETY
+     ============================================================= */
+
+  return withoutTrailing === "" ? "/" : withoutTrailing;
 }
