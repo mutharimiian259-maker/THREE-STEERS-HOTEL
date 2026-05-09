@@ -3,6 +3,7 @@
 import { HOTEL } from "@/lib/config";
 import { IMAGES } from "@/lib/images";
 import Image from "next/image";
+import { track } from "@/lib/core/analytics";
 
 export default function Facilities() {
   return (
@@ -80,7 +81,17 @@ export default function Facilities() {
         ].map((item) => (
           <li
             key={item}
-            className="bg-black border border-zinc-800 p-4 rounded-lg text-center hover:border-yellow-500 transition"
+            className="bg-black border border-zinc-800 p-4 rounded-lg text-center hover:border-yellow-500 transition cursor-pointer"
+            onClick={() =>
+              track(
+                "amenity_view",
+                {
+                  label: item,
+                  context: "facilities_section",
+                },
+                "page"
+              )
+            }
           >
             <p className="text-white text-sm">{item}</p>
           </li>
