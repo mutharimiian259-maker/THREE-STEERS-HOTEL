@@ -19,30 +19,40 @@ export default function About() {
 
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
+  /**
+   * FIXED: event source moved to CORE LAYER
+   */
   const handleWhatsAppClick = () => {
-    track("whatsapp_click", {
-      source: "about_section",
-      context: "about_page",
-    });
+    track(
+      "whatsapp_click",
+      {
+        action: "about_page_cta",
+      },
+      "page"
+    );
   };
 
-  const handleNavEvent = (source: string) => {
-    track("room_view", {
-      source: "navigation",
-      destination: source,
-      context: "about_page",
-    });
+  /**
+   * FIXED: correct event type = navigation
+   */
+  const handleNavEvent = (destination: string) => {
+    track(
+      "navigation",
+      {
+        destination,
+        page: "about_page",
+      },
+      "page"
+    );
   };
 
   return (
     <section className="p-6">
 
-      {/* TITLE */}
       <h2 className="text-2xl font-bold text-yellow-500">
         About {HOTEL.identity.name} – {HOTEL.location.city}, Kenya
       </h2>
 
-      {/* HERO IMAGE */}
       <div className="relative h-64 mt-4 rounded-lg overflow-hidden">
         <Image
           src={IMAGES.hotel.lobby}
@@ -53,14 +63,12 @@ export default function About() {
         <div className="absolute inset-0 bg-black/40" />
       </div>
 
-      {/* DESCRIPTION */}
       <p className="text-gray-300 mt-4 leading-relaxed">
         {HOTEL.identity.name} is a leading hotel in {HOTEL.location.city}, Kenya,
         offering premium accommodation, modern conference facilities,
         and exceptional hospitality near Mt Kenya.
       </p>
 
-      {/* ROOMS */}
       <h3 className="text-lg font-semibold text-yellow-400 mt-4">
         Accommodation Experience
       </h3>
@@ -70,7 +78,6 @@ export default function About() {
         and leisure travelers in {HOTEL.location.city}.
       </p>
 
-      {/* FACILITIES IMAGE */}
       <div className="relative h-56 mt-4 rounded-lg overflow-hidden">
         <Image
           src={IMAGES.hotel.garden}
@@ -81,7 +88,6 @@ export default function About() {
         <div className="absolute inset-0 bg-black/40" />
       </div>
 
-      {/* FACILITIES */}
       <h3 className="text-lg font-semibold text-yellow-400 mt-4">
         Facilities & Services
       </h3>
@@ -90,7 +96,6 @@ export default function About() {
         Restaurants, conference halls, gardens, parking, and premium hospitality services.
       </p>
 
-      {/* NAVIGATION */}
       <div className="mt-6 flex gap-4 flex-wrap">
 
         <Link
@@ -111,7 +116,6 @@ export default function About() {
 
       </div>
 
-      {/* CTA */}
       <div className="mt-6">
         <a
           href={whatsappLink}
