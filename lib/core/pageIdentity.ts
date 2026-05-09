@@ -19,10 +19,10 @@ export type PageIdentity = Readonly<{
   normalizedPath: string;
 
   /* =========================================================
-     ROUTE RESOLUTION
+     ROUTE RESOLUTION (IMMUTABLE SNAPSHOT)
      ========================================================= */
 
-  route?: Route;
+  route?: Readonly<Route>;
 
   /* =========================================================
      CORE DERIVED CONTEXT
