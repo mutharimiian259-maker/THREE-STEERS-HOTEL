@@ -5,8 +5,35 @@ import { track } from "@/lib/core/analytics";
 
 export default function Location() {
   const locationQuery = encodeURIComponent(
-    HOTEL.identity.name + " " + HOTEL.location.city
+    `${HOTEL.identity.name} ${HOTEL.location.city}`
   );
+
+  const whatsappMessage = encodeURIComponent(
+    `Hello, I would like directions and booking information for ${HOTEL.identity.name} in ${HOTEL.location.city}.`
+  );
+
+  const whatsappLink = `https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${whatsappMessage}`;
+
+  const handleDirectionsClick = () => {
+    track(
+      "navigation",
+      {
+        action: "get_directions",
+        source: "location",
+      },
+      "location"
+    );
+  };
+
+  const handleWhatsAppClick = () => {
+    track(
+      "whatsapp_click",
+      {
+        action: "location_booking",
+      },
+      "location"
+    );
+  };
 
   return (
     <section className="p-6">
@@ -32,35 +59,20 @@ export default function Location() {
 
         {/* DIRECTIONS */}
         <a
-          className="px-6 py-3 bg-yellow-500 text-black rounded-lg inline-block text-center"
+          className="px-6 py-3 bg-yellow-500 text-black rounded-lg text-center"
           href={`https://www.google.com/maps/dir/?api=1&destination=${locationQuery}`}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => {
-            track("room_view", {
-              source: "directions",
-              context: "location",
-            });
-          }}
+          onClick={handleDirectionsClick}
         >
           📍 Get Directions
         </a>
 
         {/* WHATSAPP */}
         <a
-          className="px-6 py-3 bg-green-600 text-white rounded-lg inline-block text-center"
-          href={`https://wa.me/${HOTEL.contact.phone.whatsapp}?text=${encodeURIComponent(
-            "Hello, I would like directions and booking information for " +
-              HOTEL.identity.name +
-              " " +
-              HOTEL.location.city
-          )}`}
-          onClick={() => {
-            track("whatsapp_click", {
-              source: "location",
-              context: "intent",
-            });
-          }}
+          className="px-6 py-3 bg-green-600 text-white rounded-lg text-center"
+          href={whatsappLink}
+          onClick={handleWhatsAppClick}
         >
           💬 Book via WhatsApp
         </a>
