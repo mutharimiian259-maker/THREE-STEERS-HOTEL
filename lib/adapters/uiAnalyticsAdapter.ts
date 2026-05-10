@@ -1,14 +1,20 @@
 import { track as coreTrack } from "@/lib/core/analytics";
 
+/* =============================================================
+   UI TRACK ALIAS (PURE PASS-THROUGH CONTRACT BOUNDARY)
+   ============================================================= */
+
 /**
- * UI TRACK ALIAS (NO LOGIC LAYER)
+ * This is a STRICT pass-through boundary.
  *
  * RULES:
- * - NO side effects
- * - NO imports of event types
- * - NO transformations
- * - NO future extensions allowed
+ * - No logic
+ * - No transformation
+ * - No extensions
+ * - No fallback behavior
  *
- * This exists ONLY for ergonomic imports.
+ * PURPOSE:
+ * Enforces a single controlled entry point into Core Analytics.
  */
+
 export const track = coreTrack;
