@@ -1,12 +1,22 @@
-export function normalizePath(path: string): string {
-  if (typeof path !== "string") return "/";
+export function normalizePath(path: unknown): string {
+  /* =============================================================
+     CONTRACT SAFETY CHECK (FAIL LOUD OPTION)
+     ============================================================= */
+
+  if (typeof path !== "string") {
+    console.warn(
+      "[normalizePath] invalid input type",
+      path
+    );
+    return "/";
+  }
 
   const trimmed = path.trim();
 
   if (!trimmed) return "/";
 
   /* =============================================================
-     REMOVE HASH FIRST (FRAGMENT NEVER AFFECTS ROUTING)
+     REMOVE HASH (FRAGMENT IS NEVER ROUTE IDENTITY)
      ============================================================= */
 
   const noHash = trimmed.split("#")[0];
@@ -18,7 +28,7 @@ export function normalizePath(path: string): string {
   const noQuery = noHash.split("?")[0];
 
   /* =============================================================
-     ENSURE LEADING SLASH (CRITICAL FIX)
+     ENSURE LEADING SLASH
      ============================================================= */
 
   const withLeadingSlash = noQuery.startsWith("/")
@@ -26,10 +36,13 @@ export function normalizePath(path: string): string {
     : `/${noQuery}`;
 
   /* =============================================================
-     COLLAPSE MULTIPLE SLASHES
+     COLLAPSE MULTIPLE SLASHES (SAFE MODE)
      ============================================================= */
 
-  const collapsed = withLeadingSlash.replace(/\/+/g, "/");
+  const collapsed = withLeadingSlash.replace(
+    /\/{2,}/g,
+    "/"
+  );
 
   /* =============================================================
      REMOVE TRAILING SLASHES (EXCEPT ROOT)
@@ -38,7 +51,7 @@ export function normalizePath(path: string): string {
   const withoutTrailing = collapsed.replace(/\/+$/, "");
 
   /* =============================================================
-     FINAL SAFETY
+     FINAL CANONICAL OUTPUT
      ============================================================= */
 
   return withoutTrailing === "" ? "/" : withoutTrailing;
