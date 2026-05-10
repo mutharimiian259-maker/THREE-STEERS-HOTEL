@@ -1,9 +1,19 @@
 import type { StoredEvent } from "./types";
 
+/* =============================================================
+   ADAPTER CONTRACT (MISSING LAYER FIX)
+   ============================================================= */
+
+export type AdapterEvent = Readonly<StoredEvent>;
+
 export type EventAdapter = Readonly<{
   name: string;
-  handle(event: StoredEvent): void | Promise<void>;
+  handle(event: AdapterEvent): void | Promise<void>;
 }>;
+
+/* =============================================================
+   DISPATCH RESULT
+   ============================================================= */
 
 export type DispatchResult = Readonly<{
   accepted: boolean;
@@ -12,20 +22,21 @@ export type DispatchResult = Readonly<{
   error?: unknown;
 }>;
 
+/* =============================================================
+   ROUTER STATE
+   ============================================================= */
+
 type RouterState =
   | "uninitialized"
   | "ready"
   | "frozen";
 
-/* =============================================================
-   ROUTER STATE
-   ============================================================= */
-
 const adapters = new Map<string, EventAdapter>();
 
 let routerState: RouterState = "uninitialized";
 
-let routerDebug = process.env.NODE_ENV === "development";
+let routerDebug =
+  process.env.NODE_ENV === "development";
 
 /* =============================================================
    DEBUG
@@ -35,7 +46,10 @@ export function setRouterDebug(enabled: boolean): void {
   routerDebug = enabled;
 }
 
-function debugLog(message: string, payload?: unknown): void {
+function debugLog(
+  message: string,
+  payload?: unknown
+): void {
   if (!routerDebug) return;
 
   console.log(`[ROUTER] ${message}`, payload ?? "");
@@ -72,7 +86,10 @@ export function registerAdapter(
     );
   }
 
-  if (!adapter?.name || typeof adapter.handle !== "function") {
+  if (
+    !adapter?.name ||
+    typeof adapter.handle !== "function"
+  ) {
     throw new Error(
       "[ROUTER] Invalid adapter contract"
     );
@@ -140,7 +157,7 @@ export async function dispatch(
   const results: DispatchResult[] = [];
 
   for (const adapter of adapters.values()) {
-    const start = performance.now();
+    const start = Date.now();
 
     try {
       await adapter.handle(event);
@@ -148,9 +165,7 @@ export async function dispatch(
       results.push({
         accepted: true,
         adapter: adapter.name,
-        duration_ms: Number(
-          (performance.now() - start).toFixed(2)
-        ),
+        duration_ms: Date.now() - start,
       });
     } catch (error) {
       const normalized = normalizeError(error);
@@ -158,9 +173,7 @@ export async function dispatch(
       results.push({
         accepted: false,
         adapter: adapter.name,
-        duration_ms: Number(
-          (performance.now() - start).toFixed(2)
-        ),
+        duration_ms: Date.now() - start,
         error: normalized,
       });
 
