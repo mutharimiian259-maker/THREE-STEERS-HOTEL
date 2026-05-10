@@ -1,9 +1,43 @@
-import type { EventAdapter } from "@/lib/core/router";
-import type { StoredEvent } from "@/lib/core/types";
+import type {
+  EventAdapter,
+} from "@/lib/core/router";
+
+import type {
+  StoredEvent,
+} from "@/lib/core/types";
+
 import { getFunnelStage } from "@/lib/core/funnelAccessor";
 
 /* =============================================================
-   FUNNEL ADAPTER (OBSERVABILITY LAYER)
+   FUNNEL TRACE RECORD (PURE OBSERVABILITY CONTRACT)
+   ============================================================= */
+
+type FunnelTraceRecord = Readonly<{
+  eventId: string;
+  type: string;
+  stage: string;
+  sessionId: string;
+  timestamp: number;
+  url: string;
+}>;
+
+/* =============================================================
+   SAFE STORAGE ACCESS
+   ============================================================= */
+
+function safeParse<T>(value: string | null): T[] {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/* =============================================================
+   FUNNEL ADAPTER (OBSERVABILITY LAYER ONLY)
    ============================================================= */
 
 export const FunnelAdapter: EventAdapter = {
@@ -14,33 +48,43 @@ export const FunnelAdapter: EventAdapter = {
 
     if (!stage) return;
 
-    /**
-     * Funnel is treated as a derived event stream.
-     * We emit a lightweight trace record for observability.
-     */
-
-    const record = {
-      event_id: event.id,
+    const record: FunnelTraceRecord = {
+      eventId: event.id,
       type: event.type,
       stage,
-      session_id: event.sessionId,
+      sessionId: event.sessionId,
       timestamp: event.timestamp,
       url: event.url,
     };
 
-    // Lightweight observability sink (non-blocking)
     try {
-      const existing = localStorage.getItem("funnel_trace_log");
-      const log = existing ? JSON.parse(existing) : [];
+      const existing =
+        typeof window !== "undefined"
+          ? localStorage.getItem(
+              "funnel_trace_log"
+            )
+          : null;
+
+      const log = safeParse<FunnelTraceRecord>(
+        existing
+      );
 
       log.push(record);
 
-      // keep bounded history
+      // bounded history
       if (log.length > 200) log.shift();
 
-      localStorage.setItem("funnel_trace_log", JSON.stringify(log));
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "funnel_trace_log",
+          JSON.stringify(log)
+        );
+      }
     } catch (error) {
-      console.warn("[FUNNEL] failed to persist trace", error);
+      console.warn(
+        "[FUNNEL] failed to persist trace",
+        error
+      );
     }
   },
 };
