@@ -1,5 +1,8 @@
 export type EventId = string & { readonly __brand: "EventId" };
-export type SessionId = string & { readonly __brand: "SessionId" };
+
+export type SessionId = string & {
+  readonly __brand: "SessionId";
+};
 
 /* =============================================================
    EVENT TYPES
@@ -40,8 +43,20 @@ export type EventPayload = Record<string, unknown>;
 export type EventMetadata = Readonly<{
   pathname?: string;
   referrer?: string;
-  user_agent?: string;
+  userAgent?: string;
   device?: "mobile" | "desktop" | "tablet";
+}>;
+
+/* =============================================================
+   TRACKING INPUT CONTRACT
+   UI → CORE
+   ============================================================= */
+
+export type TrackingRequest = Readonly<{
+  type: EventType;
+  source?: EventSource;
+  payload?: EventPayload;
+  metadata?: EventMetadata;
 }>;
 
 /* =============================================================
@@ -58,7 +73,9 @@ export type FunnelStage =
    FUNNEL MAP
    ============================================================= */
 
-export const FUNNEL_STAGE_MAP: Partial<Record<EventType, FunnelStage>> = {
+export const FUNNEL_STAGE_MAP: Partial<
+  Record<EventType, FunnelStage>
+> = {
   page_view: "VISIT",
 
   room_view: "ENGAGEMENT",
@@ -100,7 +117,7 @@ export const VALID_EVENT_SOURCES = new Set<EventSource>([
 ]);
 
 /* =============================================================
-   SESSION ID (UNCHANGED BUT STANDARDIZED NAME)
+   SESSION CONTRACT
    ============================================================= */
 
 const SESSION_KEY = "hotel_session_id";
@@ -110,9 +127,13 @@ export function getSessionId(): SessionId {
     return crypto.randomUUID() as SessionId;
   }
 
-  const existing = window.sessionStorage.getItem(SESSION_KEY);
+  const existing = window.sessionStorage.getItem(
+    SESSION_KEY
+  );
 
-  if (existing) return existing as SessionId;
+  if (existing) {
+    return existing as SessionId;
+  }
 
   const id = crypto.randomUUID() as SessionId;
 
@@ -122,10 +143,11 @@ export function getSessionId(): SessionId {
 }
 
 /* =============================================================
-   EVENT FACTORY (PURE CORE CONSTRUCTION ONLY)
+   STORED EVENT
+   CORE → ADAPTERS
    ============================================================= */
 
-export type StoredEvent = {
+export type StoredEvent = Readonly<{
   id: EventId;
   type: EventType;
   source: EventSource;
@@ -136,29 +158,52 @@ export type StoredEvent = {
   sessionId: SessionId;
   version: number;
   signature: string;
-};
+}>;
 
-export function createEvent(input: {
-  id: EventId;
-  type: EventType;
-  source: EventSource;
-  payload: EventPayload;
-  url: string;
-  sessionId: SessionId;
-  metadata?: EventMetadata;
-}): StoredEvent {
+/* =============================================================
+   EVENT SCHEMA VERSION
+   ============================================================= */
+
+export const EVENT_SCHEMA_VERSION = 2;
+
+/* =============================================================
+   EVENT FACTORY
+   ============================================================= */
+
+export function createEvent(
+  input: TrackingRequest & {
+    id: EventId;
+    url: string;
+    sessionId: SessionId;
+  }
+): StoredEvent {
   const timestamp = Date.now();
 
+  const source: EventSource =
+    input.source ?? "unknown";
+
+  const payload: EventPayload =
+    input.payload ?? {};
+
   const event: StoredEvent = {
-    ...input,
+    id: input.id,
+    type: input.type,
+    source,
+    payload,
+    metadata: input.metadata,
+    url: input.url,
+    sessionId: input.sessionId,
+
     timestamp,
-    version: 2,
+
+    version: EVENT_SCHEMA_VERSION,
+
     signature: createEventSignature(
       input.type,
-      input.source,
+      source,
       input.sessionId,
       input.url,
-      input.payload
+      payload
     ),
   };
 
@@ -166,7 +211,7 @@ export function createEvent(input: {
 }
 
 /* =============================================================
-   DETERMINISTIC SIGNATURE (FIXED)
+   DETERMINISTIC SIGNATURE
    ============================================================= */
 
 export function createEventSignature(
@@ -189,16 +234,30 @@ export function createEventSignature(
    TYPE GUARDS
    ============================================================= */
 
-export function isEventType(value: unknown): value is EventType {
-  return typeof value === "string" && VALID_EVENT_TYPES.has(value as EventType);
+export function isEventType(
+  value: unknown
+): value is EventType {
+  return (
+    typeof value === "string" &&
+    VALID_EVENT_TYPES.has(value as EventType)
+  );
 }
 
-export function isEventSource(value: unknown): value is EventSource {
-  return typeof value === "string" && VALID_EVENT_SOURCES.has(value as EventSource);
+export function isEventSource(
+  value: unknown
+): value is EventSource {
+  return (
+    typeof value === "string" &&
+    VALID_EVENT_SOURCES.has(value as EventSource)
+  );
 }
 
-export function isStoredEvent(value: unknown): value is StoredEvent {
-  if (!value || typeof value !== "object") return false;
+export function isStoredEvent(
+  value: unknown
+): value is StoredEvent {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
 
   const v = value as StoredEvent;
 
@@ -217,6 +276,10 @@ export function isStoredEvent(value: unknown): value is StoredEvent {
    SAFETY UTIL
    ============================================================= */
 
-export function assertNever(value: never): never {
-  throw new Error(`Unhandled case: ${String(value)}`);
+export function assertNever(
+  value: never
+): never {
+  throw new Error(
+    `Unhandled case: ${String(value)}`
+  );
 }
