@@ -1,18 +1,3 @@
-/* =============================================================
-   DOMAIN: CONTACT RESOLUTION LAYER
-
-   Responsibilities:
-   - Provide safe, stable contact API to UI
-   - Hide config structure completely
-   - Prevent direct config coupling in components
-
-   Rules:
-   - NO direct HOTEL access
-   - NO sanitization logic here
-   - NO formatting logic here
-   - ONLY orchestration of config accessors
-   ============================================================= */
-
 import {
   getPhoneByLabel as _getPhoneByLabel,
   getWhatsAppPhone as _getWhatsAppPhone,
@@ -22,30 +7,34 @@ import {
 import type { PhoneLabel } from "@/lib/config";
 
 /* =============================================================
-   CORE CONTACT API (DOMAIN FACADE)
+   DOMAIN: CONTACT RESOLUTION LAYER
    ============================================================= */
+
+/**
+ * Domain facade for contact resolution.
+ *
+ * RULES:
+ * - No direct config usage outside this module
+ * - No formatting or sanitization logic here
+ * - Pure delegation layer (for now)
+ */
 
 export type { PhoneLabel };
 
-/**
- * Returns sanitized phone number by label.
- */
+/* =============================================================
+   CORE CONTACT API
+   ============================================================= */
+
 export function getPhoneByLabel(
   label: PhoneLabel
 ): string | null {
   return _getPhoneByLabel(label);
 }
 
-/**
- * Returns primary hotel contact number.
- */
 export function getPrimaryPhone(): string | null {
   return _getPrimaryPhone();
 }
 
-/**
- * Returns WhatsApp contact number.
- */
 export function getWhatsAppPhone(): string | null {
   return _getWhatsAppPhone();
 }
@@ -56,8 +45,6 @@ export function getWhatsAppPhone(): string | null {
 
 /**
  * @deprecated Use getWhatsAppPhone()
- *
- * Kept only for legacy components that still import old naming.
  */
 export function getWhatsAppNumber(): string | null {
   return getWhatsAppPhone();
