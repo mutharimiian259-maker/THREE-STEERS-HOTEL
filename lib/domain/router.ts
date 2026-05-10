@@ -1,7 +1,7 @@
 import { routes, type Route } from "@/lib/routes";
 
 /* =============================================================
-   PATH NORMALIZATION
+   PATH NORMALIZATION (CANONICAL CORE VERSION)
    ============================================================= */
 
 export function normalizePath(path: string): string {
@@ -24,12 +24,16 @@ export function parseRoutePath(path: string): {
 } {
   try {
     const url = new URL(
-      path.startsWith("http") ? path : `http://local${path}`
+      path.startsWith("http")
+        ? path
+        : `http://local${path}`
     );
 
     return {
       base: normalizePath(url.pathname),
-      hash: url.hash ? url.hash.toLowerCase() : null,
+      hash: url.hash
+        ? url.hash.toLowerCase()
+        : null,
     };
   } catch {
     return {
@@ -40,7 +44,7 @@ export function parseRoutePath(path: string): {
 }
 
 /* =============================================================
-   PRECOMPUTED ROUTE INDEX (PERFORMANCE FIX)
+   ROUTE INDEX (STATIC SNAPSHOT - CURRENT ARCHITECTURE)
    ============================================================= */
 
 const ROUTE_INDEX = routes.map((route) => {
@@ -54,7 +58,7 @@ const ROUTE_INDEX = routes.map((route) => {
 });
 
 /* =============================================================
-   ROUTE LOOKUP (O(1) FILTERED SEARCH)
+   ROUTE LOOKUP (LINEAR SEARCH - OPTIMIZED LATER STAGE)
    ============================================================= */
 
 export function getRoute(path: string): Route | null {
