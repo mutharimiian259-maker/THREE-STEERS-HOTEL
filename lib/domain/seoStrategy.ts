@@ -2,7 +2,7 @@ import type { SeoIntent } from "@/lib/seoTypes";
 import { normalizePath } from "@/lib/core/normalizePath";
 
 /* =============================================================
-   SEO KEYWORD REGISTRY (CONFIG ONLY)
+   SEO KEYWORD REGISTRY (INTENT-DRIVEN CONFIG)
    ============================================================= */
 
 const SEO_KEYWORDS: Record<SeoIntent, string[]> = {
@@ -29,7 +29,8 @@ const SEO_KEYWORDS: Record<SeoIntent, string[]> = {
 };
 
 /* =============================================================
-   PATH KEYWORDS (CONFIG ONLY)
+   PATH MAPPING (LEGACY SUPPORT ONLY)
+   NOTE: Should eventually be removed in favor of route intent
    ============================================================= */
 
 const SEO_PATH_KEYWORDS: Record<string, string[]> = {
@@ -37,18 +38,22 @@ const SEO_PATH_KEYWORDS: Record<string, string[]> = {
 };
 
 /* =============================================================
-   INTENT KEYWORDS
+   INTENT-BASED SEO ACCESS
    ============================================================= */
 
-export function getSeoKeywordsByIntent(intent: SeoIntent): string[] {
+export function getSeoKeywordsByIntent(
+  intent: SeoIntent
+): string[] {
   return SEO_KEYWORDS[intent] ?? [];
 }
 
 /* =============================================================
-   PATH KEYWORDS (CLEAN MATCHING ONLY)
+   PATH-BASED SEO ACCESS (LEGACY BRIDGE ONLY)
    ============================================================= */
 
-export function getSeoKeywordsByPath(path?: string): string[] {
+export function getSeoKeywordsByPath(
+  path?: string
+): string[] {
   if (!path) return [];
 
   const normalized = normalizePath(path);
@@ -57,7 +62,7 @@ export function getSeoKeywordsByPath(path?: string): string[] {
 }
 
 /* =============================================================
-   MERGE UTILITY (PURE)
+   KEYWORD MERGER (PURE UTILITY)
    ============================================================= */
 
 export function mergeSeoKeywords(
