@@ -1,11 +1,14 @@
 import { routes } from "@/lib/routes";
 
-import { buildRouteIndex, resolveRoute } from "./pageResolver";
+import {
+  buildRouteIndex,
+  resolveRoute,
+} from "./pageResolver";
+
 import { normalizePath } from "./normalizePath";
 
-import { FUNNEL_STAGE_MAP } from "./types";
-
 import type { PageIdentity } from "./pageIdentity";
+import type { Route } from "@/lib/routes";
 
 /* =============================================================
    STATIC ROUTE INDEX
@@ -14,7 +17,7 @@ import type { PageIdentity } from "./pageIdentity";
 const ROUTE_INDEX = buildRouteIndex(routes);
 
 /* =============================================================
-   PAGE IDENTITY
+   PAGE IDENTITY (ROUTING ONLY)
    ============================================================= */
 
 export function getPageIdentity(
@@ -31,28 +34,19 @@ export function getPageIdentity(
      ROUTE RESOLUTION
      ========================================================= */
 
-  const route = resolveRoute(
-    normalizedPath,
-    ROUTE_INDEX
-  );
+  const route: Route | undefined =
+    resolveRoute(
+      normalizedPath,
+      ROUTE_INDEX
+    );
 
   /* =========================================================
-     FUNNEL DERIVATION
-     ========================================================= */
-
-  const funnelStage =
-    route?.eventType
-      ? FUNNEL_STAGE_MAP[route.eventType]
-      : undefined;
-
-  /* =========================================================
-     FINAL OBJECT
+     FINAL OBJECT (NO ANALYTICS COUPLING)
      ========================================================= */
 
   return Object.freeze({
     path,
     normalizedPath,
     route,
-    funnelStage,
   });
 }
