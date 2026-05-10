@@ -1,10 +1,13 @@
 import type { Route } from "@/lib/routes";
-import type { FunnelStage } from "@/lib/core/types";
 
 /* =============================================================
    SINGLE PAGE TRUTH MODEL (CORE PURE CONTRACT)
    ============================================================= */
 
+/**
+ * Pure routing identity snapshot only.
+ * No analytics, no funnel logic.
+ */
 export type PageIdentity = Readonly<{
   /* =========================================================
      INPUT PATH
@@ -19,14 +22,8 @@ export type PageIdentity = Readonly<{
   normalizedPath: string;
 
   /* =========================================================
-     ROUTE RESOLUTION (IMMUTABLE SNAPSHOT)
+     ROUTE RESOLUTION SNAPSHOT
      ========================================================= */
 
-  route?: Readonly<Route>;
-
-  /* =========================================================
-     CORE DERIVED CONTEXT
-     ========================================================= */
-
-  funnelStage?: FunnelStage;
+  route?: Route;
 }>;
