@@ -1,11 +1,19 @@
-import type { EventAdapter } from "@/lib/core/router";
-import type { StoredEvent, EventType } from "@/lib/core/types";
+import type {
+  EventAdapter,
+} from "@/lib/core/router";
+
+import type {
+  StoredEvent,
+  EventType,
+} from "@/lib/core/types";
 
 /* =============================================================
-   GA EVENT MAPPING (SHOULD EVENTUALLY MOVE TO CORE DOMAIN MAP)
+   GA EVENT NAME MAPPING (DOMAIN RESPONSIBILITY - TEMPORARY HERE)
    ============================================================= */
 
-function mapGAEventName(type: EventType): string {
+function mapGAEventName(
+  type: EventType
+): string {
   switch (type) {
     case "page_view":
       return "page_view";
@@ -40,7 +48,9 @@ type GtagFunction = (
 function getGtag(): GtagFunction | null {
   if (typeof window === "undefined") return null;
 
-  const gtag = (window as Window & { gtag?: unknown }).gtag;
+  const gtag = (window as Window & {
+    gtag?: unknown;
+  }).gtag;
 
   if (typeof gtag !== "function") return null;
 
@@ -48,7 +58,7 @@ function getGtag(): GtagFunction | null {
 }
 
 /* =============================================================
-   SAFE PAYLOAD EXTRACTOR
+   PAYLOAD EXTRACTOR
    ============================================================= */
 
 function getPayloadValue(
@@ -60,24 +70,32 @@ function getPayloadValue(
 }
 
 /* =============================================================
-   CLEAN PARAM BUILDER
+   GA PARAM BUILDER (TRANSPORT SAFE ONLY)
    ============================================================= */
 
-function buildGAParams(event: StoredEvent) {
+function buildGAParams(
+  event: StoredEvent
+) {
   const params: Record<string, unknown> = {
-    event_category: event.source,
+    event_category: event.type, // FIXED: use event.type not source
     page_location: event.url,
-    session_id: event.session_id,
+    session_id: event.sessionId, // FIXED CRITICAL BUG
   };
 
-  const label = getPayloadValue(event.payload, "label");
-  const value = getPayloadValue(event.payload, "value");
+  const label = getPayloadValue(
+    event.payload,
+    "label"
+  );
 
-  if (typeof label === "string") {
-    params.event_label = label;
-  } else {
-    params.event_label = event.type;
-  }
+  const value = getPayloadValue(
+    event.payload,
+    "value"
+  );
+
+  params.event_label =
+    typeof label === "string"
+      ? label
+      : event.type;
 
   if (typeof value === "number") {
     params.value = value;
@@ -87,7 +105,7 @@ function buildGAParams(event: StoredEvent) {
 }
 
 /* =============================================================
-   ADAPTER (PURE TRANSPORT LAYER)
+   ADAPTER (TRANSPORT ONLY)
    ============================================================= */
 
 export const GAAdapter: EventAdapter = {
@@ -97,15 +115,22 @@ export const GAAdapter: EventAdapter = {
     const gtag = getGtag();
 
     if (!gtag) {
-      console.warn("[GAAdapter] gtag not available", {
-        event_id: event.id,
-        type: event.type,
-      });
+      console.warn(
+        "[GAAdapter] gtag not available",
+        {
+          event_id: event.id,
+          type: event.type,
+        }
+      );
       return;
     }
 
     try {
-      gtag("event", mapGAEventName(event.type), buildGAParams(event));
+      gtag(
+        "event",
+        mapGAEventName(event.type),
+        buildGAParams(event)
+      );
     } catch (err) {
       console.error("[GAAdapter] failed", {
         error: err,
