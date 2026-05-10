@@ -1,5 +1,6 @@
 import {
   createEvent,
+  getSessionId,
   isEventSource,
   isEventType,
 } from "./types";
@@ -9,15 +10,14 @@ import type {
   EventSource,
   EventType,
   StoredEvent,
+  TrackingRequest,
 } from "./types";
 
 import { dispatch } from "./router";
 
-export type TrackParams = Readonly<{
-  type: EventType;
-  source: EventSource;
-  payload?: EventPayload;
-}>;
+/* =============================================================
+   TRACK RESULT
+   ============================================================= */
 
 export type TrackResult = Readonly<{
   accepted: boolean;
@@ -26,53 +26,138 @@ export type TrackResult = Readonly<{
 }>;
 
 /* =============================================================
-   CORE TRACK
-   STRICT SYSTEM ENTRY POINT
+   LEGACY TRACK SIGNATURE
    ============================================================= */
 
-export async function track({
-  type,
-  source,
-  payload = {},
-}: TrackParams): Promise<TrackResult> {
+type LegacyTrackSignature = (
+  type: EventType,
+  payload?: EventPayload,
+  source?: EventSource
+) => Promise<TrackResult>;
+
+/* =============================================================
+   CANONICAL TRACK SIGNATURE
+   ============================================================= */
+
+type CanonicalTrackSignature = (
+  request: TrackingRequest
+) => Promise<TrackResult>;
+
+/* =============================================================
+   OVERLOADS
+   ============================================================= */
+
+export function track(
+  request: TrackingRequest
+): Promise<TrackResult>;
+
+export function track(
+  type: EventType,
+  payload?: EventPayload,
+  source?: EventSource
+): Promise<TrackResult>;
+
+/* =============================================================
+   CORE TRACK
+   SYSTEM ENTRY POINT
+   ============================================================= */
+
+export async function track(
+  input:
+    | TrackingRequest
+    | EventType,
+
+  payload: EventPayload = {},
+
+  source: EventSource = "unknown"
+): Promise<TrackResult> {
   try {
     /* -----------------------------
-       STRICT TYPE VALIDATION
+       NORMALIZATION
+       SUPPORTS MIGRATION SAFELY
        ----------------------------- */
 
-    if (!isEventType(type)) {
+    const request: TrackingRequest =
+      typeof input === "string"
+        ? {
+            type: input,
+            payload,
+            source,
+          }
+        : input;
+
+    const normalizedSource =
+      request.source ?? "unknown";
+
+    const normalizedPayload =
+      request.payload ?? {};
+
+    /* -----------------------------
+       STRICT VALIDATION
+       ----------------------------- */
+
+    if (!isEventType(request.type)) {
       throw new Error(
-        `[CORE] Invalid event type: ${String(type)}`
+        `[CORE] Invalid event type: ${String(
+          request.type
+        )}`
       );
     }
 
-    if (!isEventSource(source)) {
+    if (!isEventSource(normalizedSource)) {
       throw new Error(
-        `[CORE] Invalid event source: ${String(source)}`
+        `[CORE] Invalid event source: ${String(
+          normalizedSource
+        )}`
       );
     }
 
     /* -----------------------------
-       EVENT CREATION
-       CORE OWNS INFRASTRUCTURE
+       CORE EVENT OWNERSHIP
        ----------------------------- */
 
     const event = createEvent({
-      type,
-      source,
-      payload,
+      id: crypto.randomUUID() as any,
+
+      type: request.type,
+
+      source: normalizedSource,
+
+      payload: normalizedPayload,
+
+      metadata: request.metadata,
+
+      url:
+        typeof window !== "undefined"
+          ? window.location.href
+          : "server",
+
+      sessionId: getSessionId(),
     });
 
     /* -----------------------------
        DISPATCH
-       MUST COMPLETE BEFORE SUCCESS
        ----------------------------- */
 
     const results = await dispatch(event);
 
-    const accepted = results.every(
-      (result) => result.accepted
+    const accepted =
+      results.length > 0;
+
+    /* -----------------------------
+       ADAPTER FAILURE OBSERVABILITY
+       ----------------------------- */
+
+    const failedAdapters = results.filter(
+      (result) => !result.accepted
     );
+
+    if (failedAdapters.length > 0) {
+      console.warn(
+        "[CORE] Some adapters failed",
+        failedAdapters
+      );
+    }
 
     return {
       accepted,
@@ -80,8 +165,7 @@ export async function track({
     };
   } catch (error) {
     console.error("[CORE] track() failed", {
-      type,
-      source,
+      input,
       error,
     });
 
