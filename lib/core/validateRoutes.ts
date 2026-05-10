@@ -1,26 +1,37 @@
 import { normalizePath } from "./normalizePath";
-import { routes } from "@/lib/routes";
+
+import type { Route } from "@/lib/routes";
+
+/* =============================================================
+   ROUTE VALIDATION REPORT
+   ============================================================= */
 
 export type RouteValidationReport = Readonly<{
   duplicates: Array<{
     path: string;
     normalized: string;
-    first: RouteLike;
-    duplicate: RouteLike;
+    first: Route;
+    duplicate: Route;
   }>;
+
   invalid: unknown[];
+
+  valid: Route[];
+
+  index: Record<string, Route>;
 }>;
 
-type RouteLike = Readonly<{
-  path: string;
-}>;
+/* =============================================================
+   TYPE GUARD
+   ============================================================= */
 
-function isRouteLike(value: unknown): value is RouteLike {
+function isRoute(value: unknown): value is Route {
   return (
     typeof value === "object" &&
     value !== null &&
-    "path" in value &&
-    typeof value.path === "string"
+    typeof (value as Route).path === "string" &&
+    typeof (value as Route).id === "string" &&
+    typeof (value as Route).kind === "string"
   );
 }
 
@@ -28,15 +39,22 @@ function isRouteLike(value: unknown): value is RouteLike {
    ROUTE VALIDATION
    ============================================================= */
 
-export function validateRoutes(): RouteValidationReport {
-  const seen = new Map<string, RouteLike>();
+export function validateRoutes(
+  routesInput: unknown[]
+): RouteValidationReport {
+  const seen = new Map<string, Route>();
 
-  const duplicates: RouteValidationReport["duplicates"] = [];
+  const duplicates: RouteValidationReport["duplicates"] =
+    [];
 
   const invalid: unknown[] = [];
 
-  for (const route of routes) {
-    if (!isRouteLike(route)) {
+  const valid: Route[] = [];
+
+  const index: Record<string, Route> = {};
+
+  for (const route of routesInput) {
+    if (!isRoute(route)) {
       invalid.push(route);
       continue;
     }
@@ -57,10 +75,16 @@ export function validateRoutes(): RouteValidationReport {
     }
 
     seen.set(normalized, route);
+
+    valid.push(route);
+
+    index[normalized] = route;
   }
 
   return {
     duplicates,
     invalid,
+    valid,
+    index,
   };
 }
