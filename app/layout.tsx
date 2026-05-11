@@ -1,15 +1,12 @@
-"use client";
-
 import "@/styles/globals.css";
 import Navbar from "@/components/global/Navbar";
 import StickyCTA from "@/components/global/StickyCTA";
 import Footer from "@/components/global/Footer";
 import ExitIntentModal from "@/components/global/ExitIntentModal";
+import AnalyticsBootstrap from "@/components/global/AnalyticsBootstrap";
 import Script from "next/script";
 
 import { HOTEL } from "@/lib/config";
-import { useEffect } from "react";
-import { initAnalytics } from "@/lib/adapters/bootstrap";
 
 /* ---------------------------------------
    SAFE URL
@@ -41,17 +38,11 @@ export default function RootLayout({
       ? gaId.trim()
       : null;
 
-  /* ---------------------------------------
-     CORE SYSTEM BOOTSTRAP (CRITICAL FIX)
-  --------------------------------------- */
-
-  useEffect(() => {
-    initAnalytics(); // ✅ THIS WAS MISSING
-  }, []);
-
   return (
     <html lang="en" dir="ltr">
       <body className="bg-black text-white antialiased">
+
+        <AnalyticsBootstrap />
 
         <Navbar />
 
