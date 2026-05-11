@@ -1,11 +1,11 @@
 import {
   FUNNEL_STAGE_MAP,
-} from "@/lib/core/types";
+} from "./types";
 
 import type {
   EventType,
   FunnelStage,
-} from "@/lib/core/types";
+} from "./types";
 
 /* =============================================================
    FUNNEL ACCESSOR (READ-ONLY CORE INTERFACE)
@@ -61,7 +61,7 @@ export function isIntentEventType(
  */
 export function resolveFunnelStageWithOverrides(
   eventType: EventType,
-  overrideMap?: Partial<
+  overrideMap?: Partial
     Record<EventType, FunnelStage>
   >
 ): FunnelStage {
