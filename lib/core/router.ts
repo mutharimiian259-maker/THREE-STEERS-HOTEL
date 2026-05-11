@@ -197,6 +197,13 @@ export function getRegisteredAdapters(): string[] {
   return [...adapters.keys()];
 }
 
+/**
+ * Backward-compatible alias for getRegisteredAdapters.
+ * Resolves bootstrap.ts import contract mismatch.
+ * Do not remove — required until bootstrap.ts is updated.
+ */
+export const getAdapters = getRegisteredAdapters;
+
 export function getRouterState(): RouterState {
   return routerState;
 }
