@@ -1,306 +1,177 @@
-export type EventId = string & { readonly __brand: "EventId" };
+import {
+  createEvent,
+  getSessionId,
+  isEventSource,
+  isEventType,
+} from "./types";
 
-export type SessionId = string & {
-  readonly __brand: "SessionId";
-};
+import type {
+  EventPayload,
+  EventSource,
+  EventType,
+  StoredEvent,
+  TrackingRequest,
+} from "./types";
 
-/* =============================================================
-   EVENT TYPES
-   ============================================================= */
-
-export type EventType =
-  | "page_view"
-  | "room_view"
-  | "blog_view"
-  | "whatsapp_click"
-  | "call_click"
-  | "email_click"
-  | "booking_intent"
-  | "navigation"
-  | "system_error";
+import { dispatch } from "./router";
 
 /* =============================================================
-   EVENT SOURCES
+   TRACK RESULT
    ============================================================= */
 
-export type EventSource =
-  | "navbar"
-  | "footer"
-  | "room_card"
-  | "sticky_cta"
-  | "exit_intent"
-  | "call_bar"
-  | "float_button"
-  | "page"
-  | "system"
-  | "unknown";
-
-/* =============================================================
-   CORE PAYLOAD + METADATA
-   ============================================================= */
-
-export type EventPayload = Record<string, unknown>;
-
-export type EventMetadata = Readonly<{
-  pathname?: string;
-  referrer?: string;
-  userAgent?: string;
-  device?: "mobile" | "desktop" | "tablet";
+export type TrackResult = Readonly<{
+  accepted: boolean;
+  event?: StoredEvent;
+  error?: unknown;
 }>;
 
 /* =============================================================
-   TRACKING INPUT CONTRACT
-   UI → CORE
+   LEGACY TRACK SIGNATURE
    ============================================================= */
 
-export type TrackingRequest = Readonly<{
-  type: EventType;
-  source?: EventSource;
-  payload?: EventPayload;
-  metadata?: EventMetadata;
-}>;
-
-/* =============================================================
-   FUNNEL STAGES
-   ============================================================= */
-
-export type FunnelStage =
-  | "VISIT"
-  | "ENGAGEMENT"
-  | "INTENT"
-  | "CONVERSION";
-
-/* =============================================================
-   FUNNEL MAP
-   ============================================================= */
-
-export const FUNNEL_STAGE_MAP: Partial
-  Record<EventType, FunnelStage>
-> = {
-  page_view: "VISIT",
-
-  room_view: "ENGAGEMENT",
-  blog_view: "ENGAGEMENT",
-  navigation: "ENGAGEMENT",
-
-  whatsapp_click: "INTENT",
-  call_click: "INTENT",
-  email_click: "INTENT",
-
-  booking_intent: "CONVERSION",
-};
-
-/* =============================================================
-   VALIDATION SETS
-   ============================================================= */
-
-export const VALID_EVENT_TYPES = new Set<EventType>([
-  "page_view",
-  "room_view",
-  "blog_view",
-  "whatsapp_click",
-  "call_click",
-  "email_click",
-  "booking_intent",
-  "navigation",
-  "system_error",
-]);
-
-export const VALID_EVENT_SOURCES = new Set<EventSource>([
-  "navbar",
-  "footer",
-  "room_card",
-  "sticky_cta",
-  "exit_intent",
-  "call_bar",
-  "float_button",
-  "page",
-  "system",
-  "unknown",
-]);
-
-/* =============================================================
-   SESSION CONTRACT
-   ============================================================= */
-
-const SESSION_KEY = "hotel_session_id";
-
-export function getSessionId(): SessionId {
-  if (typeof window === "undefined") {
-    return crypto.randomUUID() as SessionId;
-  }
-
-  const existing = window.sessionStorage.getItem(
-    SESSION_KEY
-  );
-
-  if (existing) {
-    return existing as SessionId;
-  }
-
-  const id = crypto.randomUUID() as SessionId;
-
-  window.sessionStorage.setItem(SESSION_KEY, id);
-
-  return id;
-}
-
-/* =============================================================
-   STORED EVENT
-   CORE → ADAPTERS
-   ============================================================= */
-
-export type StoredEvent = Readonly<{
-  id: EventId;
-  type: EventType;
-  source: EventSource;
-  payload: EventPayload;
-  metadata?: EventMetadata;
-  timestamp: number;
-  url: string;
-  sessionId: SessionId;
-  version: number;
-  signature: string;
-}>;
-
-/* =============================================================
-   EVENT SCHEMA VERSION
-   ============================================================= */
-
-export const EVENT_SCHEMA_VERSION = 2;
-
-/* =============================================================
-   EVENT FACTORY
-   ============================================================= */
-
-export function createEvent(
-  input: TrackingRequest & {
-    id: EventId;
-    url: string;
-    sessionId: SessionId;
-  }
-): StoredEvent {
-  const timestamp = Date.now();
-
-  const source: EventSource =
-    input.source ?? "unknown";
-
-  const payload: EventPayload =
-    input.payload ?? {};
-
-  const event: StoredEvent = {
-    id: input.id,
-    type: input.type,
-    source,
-    payload,
-    metadata: input.metadata,
-    url: input.url,
-    sessionId: input.sessionId,
-
-    timestamp,
-
-    version: EVENT_SCHEMA_VERSION,
-
-    signature: createEventSignature(
-      input.type,
-      source,
-      input.sessionId,
-      input.url,
-      payload
-    ),
-  };
-
-  return Object.freeze(event);
-}
-
-/* =============================================================
-   DETERMINISTIC SIGNATURE
-   ============================================================= */
-
-export function createEventSignature(
+type LegacyTrackSignature = (
   type: EventType,
-  source: EventSource,
-  sessionId: SessionId,
-  url: string,
-  payload: EventPayload
-): string {
-  return [
-    type,
-    source,
-    sessionId,
-    url,
-    JSON.stringify(payload),
-  ].join("|");
-}
+  payload?: EventPayload,
+  source?: EventSource
+) => Promise<TrackResult>;
 
 /* =============================================================
-   TYPE GUARDS
+   CANONICAL TRACK SIGNATURE
    ============================================================= */
 
-export function isEventType(
-  value: unknown
-): value is EventType {
-  return (
-    typeof value === "string" &&
-    VALID_EVENT_TYPES.has(value as EventType)
-  );
-}
+type CanonicalTrackSignature = (
+  request: TrackingRequest
+) => Promise<TrackResult>;
 
-export function isEventSource(
-  value: unknown
-): value is EventSource {
-  return (
-    typeof value === "string" &&
-    VALID_EVENT_SOURCES.has(value as EventSource)
-  );
-}
+/* =============================================================
+   OVERLOADS
+   ============================================================= */
 
-export function isStoredEvent(
-  value: unknown
-): value is StoredEvent {
-  if (!value || typeof value !== "object") {
-    return false;
+export function track(
+  request: TrackingRequest
+): Promise<TrackResult>;
+
+export function track(
+  type: EventType,
+  payload?: EventPayload,
+  source?: EventSource
+): Promise<TrackResult>;
+
+/* =============================================================
+   CORE TRACK
+   SYSTEM ENTRY POINT
+   ============================================================= */
+
+export async function track(
+  input:
+    | TrackingRequest
+    | EventType,
+
+  payload: EventPayload = {},
+
+  source: EventSource = "unknown"
+): Promise<TrackResult> {
+  try {
+    /* -----------------------------
+       NORMALIZATION
+       SUPPORTS MIGRATION SAFELY
+       ----------------------------- */
+
+    const request: TrackingRequest =
+      typeof input === "string"
+        ? {
+            type: input,
+            payload,
+            source,
+          }
+        : input;
+
+    const normalizedSource =
+      request.source ?? "unknown";
+
+    const normalizedPayload =
+      request.payload ?? {};
+
+    /* -----------------------------
+       STRICT VALIDATION
+       ----------------------------- */
+
+    if (!isEventType(request.type)) {
+      throw new Error(
+        `[CORE] Invalid event type: ${String(
+          request.type
+        )}`
+      );
+    }
+
+    if (!isEventSource(normalizedSource)) {
+      throw new Error(
+        `[CORE] Invalid event source: ${String(
+          normalizedSource
+        )}`
+      );
+    }
+
+    /* -----------------------------
+       CORE EVENT OWNERSHIP
+       ----------------------------- */
+
+    const event = createEvent({
+      id: crypto.randomUUID() as any,
+
+      type: request.type,
+
+      source: normalizedSource,
+
+      payload: normalizedPayload,
+
+      metadata: request.metadata,
+
+      url:
+        typeof window !== "undefined"
+          ? window.location.href
+          : "server",
+
+      sessionId: getSessionId(),
+    });
+
+    /* -----------------------------
+       DISPATCH
+       ----------------------------- */
+
+    const results = await dispatch(event);
+
+    const accepted =
+      results.length > 0;
+
+    /* -----------------------------
+       ADAPTER FAILURE OBSERVABILITY
+       ----------------------------- */
+
+    const failedAdapters = results.filter(
+      (result) => !result.accepted
+    );
+
+    if (failedAdapters.length > 0) {
+      console.warn(
+        "[CORE] Some adapters failed",
+        failedAdapters
+      );
+    }
+
+    return {
+      accepted,
+      event,
+    };
+  } catch (error) {
+    console.error("[CORE] track() failed", {
+      input,
+      error,
+    });
+
+    return {
+      accepted: false,
+      error,
+    };
   }
-
-  const v = value as StoredEvent;
-
-  return (
-    typeof v.id === "string" &&
-    isEventType(v.type) &&
-    isEventSource(v.source) &&
-    typeof v.timestamp === "number" &&
-    typeof v.url === "string" &&
-    typeof v.sessionId === "string" &&
-    typeof v.signature === "string"
-  );
-}
-
-/* =============================================================
-   LOCAL STORAGE CONSTANTS
-   SINGLE SOURCE OF TRUTH — DO NOT REDECLARE ELSEWHERE
-   ============================================================= */
-
-/**
- * Storage key for persisted event queue.
- * Imported by localStorageAdapter — must not be hardcoded there.
- */
-export const STORAGE_KEY_EVENTS =
-  "hotel_events" as const;
-
-/**
- * Maximum number of events retained in localStorage.
- * Prevents unbounded growth. Oldest events are evicted first.
- */
-export const STORAGE_MAX_EVENTS = 50 as const;
-
-/* =============================================================
-   SAFETY UTIL
-   ============================================================= */
-
-export function assertNever(
-  value: never
-): never {
-  throw new Error(
-    `Unhandled case: ${String(value)}`
-  );
 }
