@@ -1,5 +1,5 @@
 import { routes, type Route } from "@/lib/routes";
-import { normalizePath } from "@/lib/utils/normalizePath";
+import { normalizePath } from "@/lib/core/normalizePath";
 
 /* =============================================================
    PRECOMPUTED INDEX (PERFORMANCE LAYER)
@@ -27,11 +27,11 @@ export function getAllRoutes(): Route[] {
 }
 
 export function getNavigationRoutes(): Route[] {
-  return routes.filter((route) => route.type === "navigation");
+  return routes.filter((route) => route.kind === "navigation");
 }
 
 export function getAnchorRoutes(): Route[] {
-  return routes.filter((route) => route.type === "anchor");
+  return routes.filter((route) => route.kind === "anchor");
 }
 
 /* =============================================================
