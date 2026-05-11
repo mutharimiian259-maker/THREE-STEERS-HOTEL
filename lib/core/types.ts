@@ -14,6 +14,7 @@ export type EventType =
   | "blog_view"
   | "whatsapp_click"
   | "call_click"
+  | "email_click"
   | "booking_intent"
   | "navigation"
   | "system_error";
@@ -73,7 +74,7 @@ export type FunnelStage =
    FUNNEL MAP
    ============================================================= */
 
-export const FUNNEL_STAGE_MAP: Partial<
+export const FUNNEL_STAGE_MAP: Partial
   Record<EventType, FunnelStage>
 > = {
   page_view: "VISIT",
@@ -84,6 +85,7 @@ export const FUNNEL_STAGE_MAP: Partial<
 
   whatsapp_click: "INTENT",
   call_click: "INTENT",
+  email_click: "INTENT",
 
   booking_intent: "CONVERSION",
 };
@@ -98,6 +100,7 @@ export const VALID_EVENT_TYPES = new Set<EventType>([
   "blog_view",
   "whatsapp_click",
   "call_click",
+  "email_click",
   "booking_intent",
   "navigation",
   "system_error",
@@ -271,6 +274,24 @@ export function isStoredEvent(
     typeof v.signature === "string"
   );
 }
+
+/* =============================================================
+   LOCAL STORAGE CONSTANTS
+   SINGLE SOURCE OF TRUTH — DO NOT REDECLARE ELSEWHERE
+   ============================================================= */
+
+/**
+ * Storage key for persisted event queue.
+ * Imported by localStorageAdapter — must not be hardcoded there.
+ */
+export const STORAGE_KEY_EVENTS =
+  "hotel_events" as const;
+
+/**
+ * Maximum number of events retained in localStorage.
+ * Prevents unbounded growth. Oldest events are evicted first.
+ */
+export const STORAGE_MAX_EVENTS = 50 as const;
 
 /* =============================================================
    SAFETY UTIL
